@@ -123,7 +123,7 @@ char *expand_filename(const char *str)
         } else {
 
 #if !(HAVE_GETPWNAM && HAVE_PWD_H)
-            tfwprintf("\"~user\" filename expansion is not supported.");
+            wprintf("\"~user\" filename expansion is not supported.");
 #else
             struct passwd *pw;
             Stringncpy(buffer, user, str - user);
@@ -497,7 +497,6 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
     const conString *Sval;
     int len, min, max, leftjust, stars;
     attr_t attrs = buf->attrs;
-    va_list ap_copy;
 
     if (!(flags & SP_APPEND) && buf->data) Stringtrunc(buf, 0);
     while (*fmt) {
@@ -523,9 +522,7 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
         case 'x': case 'X': case 'u': case 'o':
         case 'f': case 'e': case 'E': case 'g': case 'G':
         case 'p':
-            va_copy(ap_copy, ap);
-            vsprintf(tempbuf, spec, ap_copy);
-            va_end(ap_copy);
+            vsprintf(tempbuf, spec, ap);
             Stringcat(buf, tempbuf);
             /* eat the arguments used by vsprintf() */
             while (stars--) (void)va_arg(ap, int);
@@ -719,7 +716,7 @@ void eprintf(const char *fmt, ...)
 }
 
 /* print a formatted warning message */
-void tfwprintf(const char *fmt, ...)
+void wprintf(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -824,7 +821,7 @@ String *tfgetS(String *str, TFILE *file)
             eprintf("keyboard can only be read from a command line command.");
             return NULL;
         }
-        if (read_depth) tfwprintf("nested keyboard read");
+        if (read_depth) wprintf("nested keyboard read");
         oldtfout = tfout;
         oldtfin = tfin;
         tfout = tfscreen;

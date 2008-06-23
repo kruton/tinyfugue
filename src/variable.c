@@ -112,7 +112,7 @@ inline Var *newglobalvar(const char *name)
     var = newvar(name);
     var->node = hash_insert((void*)var, var_table);
     if (setting_nearest && pedantic) {
-	tfwprintf("variable '%s' was not previously defined in any "
+	wprintf("variable '%s' was not previously defined in any "
 	    "scope, so it has been created in the global scope.", name);
     }
     return var;
@@ -296,7 +296,7 @@ Var *hfindnearestvar(const Value *idval)
 	!(var = hfindglobalvar(name, idval->u.hash)))
     {
         if (patmatch(&looks_like_special_sub, NULL, name)) {
-            tfwprintf("\"%s\" in an expression is a variable reference, "
+            wprintf("\"%s\" in an expression is a variable reference, "
 		"and is not the same as special substitution \"{%s}\".",
 		name, name);
         }
@@ -354,7 +354,7 @@ static Var *newvar(const char *name)
     var->val.name = STRDUP(name);
 
     if (patmatch(&looks_like_special_sub, NULL, name)) {
-	tfwprintf("\"%s\" conflicts with the name of a special "
+	wprintf("\"%s\" conflicts with the name of a special "
 	    "substitution, so it will not be accessible with a \"%%%s\" or "
 	    "\"{%s}\" substitution.", name, name, name);
     }
@@ -599,7 +599,7 @@ int setdelim(const char **pp)
 	if (!**pp)
 	    return 0; /* no value */
 	if (**pp == '=')
-	    tfwprintf("'=' following space is part of value.");
+	    wprintf("'=' following space is part of value.");
 	return 1; /* valid value */
     } else if (**pp == '=') {
 	(*pp)++;
@@ -962,13 +962,13 @@ listvar_end:
 
 static int obsolete_prompt(Var *var)
 {
-    tfwprintf("%s is obsolete.  Use prompt_wait instead.", var->val.name);
+    wprintf("%s is obsolete.  Use prompt_wait instead.", var->val.name);
     return 1;
 }
 
 static int undocumented_var(Var *var)
 {
-    tfwprintf("%s is undocumented, possibly unstable, and may be removed in a "
+    wprintf("%s is undocumented, possibly unstable, and may be removed in a "
 	"future version.", var->val.name);
     return 1;
 }
