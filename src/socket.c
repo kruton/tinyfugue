@@ -964,7 +964,7 @@ int tog_keepalive(Var *var)
 	if (setsockopt(sock->fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&flags,
 	    sizeof(flags)) < 0)
 	{
-	    wprintf("setsockopt KEEPALIVE: %s", strerror(errno));
+	    tfwprintf("setsockopt KEEPALIVE: %s", strerror(errno));
 	}
     }
     return 1;
@@ -1549,7 +1549,7 @@ static int openconn(Sock *sock)
 	if (setsockopt(xsock->fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&flags,
 	    sizeof(flags)) < 0)
 	{
-	    wprintf("setsockopt KEEPALIVE: %s", strerror(errno));
+	    tfwprintf("setsockopt KEEPALIVE: %s", strerror(errno));
 	}
     }
 
