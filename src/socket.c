@@ -3263,6 +3263,11 @@ non_telnet:
 		    }
 		    end += ret;
 		}
+
+		if (end == place) {
+		    Stringadd(xsock->buffer, localchar);
+		    end == ++place;
+		}
 #else
                 Stringadd(xsock->buffer, localchar);
                 end = ++place;
