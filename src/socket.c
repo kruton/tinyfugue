@@ -3266,7 +3266,7 @@ non_telnet:
 
 		if (end == place) {
 		    Stringadd(xsock->buffer, localchar);
-		    end == ++place;
+		    end = ++place;
 		}
 #else
                 Stringadd(xsock->buffer, localchar);
