@@ -29,6 +29,10 @@ static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys
 #include <sys/socket.h>
 #include <signal.h>	/* for killing resolver child process */
 
+#if WIDECHAR
+#include <wchar.h>
+#endif
+
 #if HAVE_SSL
 # include <openssl/ssl.h>
 # include <openssl/err.h>
@@ -2873,6 +2877,13 @@ static int handle_socket_input(const char *simbuffer, int simlen)
     fd_set readfds;
     int count, n, received = 0;
     struct timeval timeout;
+#if WIDECHAR
+    mbstate_t mbs;
+    wchar_t wc;
+    size_t ret;
+
+    memset(&mbs, 0, sizeof(mbs));
+#endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
 	return 0;
@@ -3241,11 +3252,24 @@ non_telnet:
             } else {
                 /* Normal character. */
                 const char *end;
+#if WIDECHAR
+		end = place;
+		while (*end != TN_IAC && end - buffer < count &&
+			(ret = mbrtowc(&wc, (char *)end,
+					count - (end - buffer), &mbs)) > 0) {
+		    if (ret >= (size_t) -2 || !iswprint(wc)) {
+			/* Invalid character. Punt. */
+			break;
+		    }
+		    end += ret;
+		}
+#else
                 Stringadd(xsock->buffer, localchar);
                 end = ++place;
                 /* Quickly skip characters that can't possibly be special. */
                 while (is_print(*end) && *end != TN_IAC && end - buffer < count)
                     end++;
+#endif
                 Stringfncat(xsock->buffer, (char*)place, end - place);
                 place = end - 1;
                 xsock->fsastate = (*place == '*') ? '*' : '\0';
