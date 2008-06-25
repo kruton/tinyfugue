@@ -39,6 +39,8 @@ static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys
 
 #if WIDECHAR
 #include <wchar.h>
+#include <unicode/utext.h>
+#include <unicode/ubrk.h>
 #endif
 
 #ifdef EMXANSI
@@ -3094,34 +3096,54 @@ int wraplen(const char *str, int len, int indent)
 {
     int total, max, visible;
 #if WIDECHAR
-    wchar_t wc;
-    size_t ret;
-    mbstate_t mbs;
-
-    memset(&mbs, 0, sizeof(mbs));
+    UText *ut = NULL;
+    UBreakIterator *bi = NULL;
+    UErrorCode icuerr = U_ZERO_ERROR;
+    UChar32 c;
 #endif
 
     if (emulation == EMUL_RAW) return len;
 
     max = Wrap - indent;
 
+#if WIDECHAR
+    ut = utext_openUTF8(ut, str, len, &icuerr);
+    if (!U_SUCCESS(icuerr))
+	return len;
+
+    bi = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
+    if (!U_SUCCESS(icuerr))
+	return len;
+
+    ubrk_setUText(bi, ut, &icuerr);
+    if (U_SUCCESS(icuerr)) {
+	c = utext_next32(ut);
+	visible = 0;
+	while (visible < max && c != U_SENTINEL) {
+	    if (c == '\t')
+		visible += tabsize - visible % tabsize;
+	    else
+		++visible;
+	    c = utext_next32(ut);
+	}
+	
+	if (c == U_SENTINEL)
+	    return len;
+
+	visible = ubrk_preceding(bi, utext_getNativeIndex(ut));
+    
+	if (visible == 0)
+	    return utext_getNativeIndex(ut);
+
+	return visible;
+    }
+    return len;
+#else
     for (visible = total = 0; total < len && visible < max; total++) {
 	if (str[total] == '\t')
 	    visible += tabsize - visible % tabsize;
-	else {
-#if WIDECHAR
-	    ret = mbrtowc(&wc, (char *)str + total, total - len, &mbs);
-	    if (ret >= (size_t) -2) {
-		/* Invalid char. Punt. */
-		visible++;
-	    } else {
-		total += ret - 1;
-		visible += wcwidth(wc);
-	    }
-#else
+	else
 	    visible++;
-#endif
-	}
     }
 
     if (total == len) return len;
@@ -3136,6 +3158,7 @@ int wraplen(const char *str, int len, int indent)
 	}
     }
     return len ? len : total;
+#endif /* WIDECHAR */
 }
 
 

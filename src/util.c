@@ -557,7 +557,6 @@ int ch_timezone(Var *var)
 int ch_locale(Var *var)
 {
 #if HAVE_SETLOCALE
-    const char *lang;
 
 #define tf_setlocale(cat, name, value) \
     do { \
