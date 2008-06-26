@@ -39,8 +39,12 @@ static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys
 
 #if WIDECHAR
 #include <wchar.h>
+#include <unicode/uchar.h>
 #include <unicode/utext.h>
 #include <unicode/ubrk.h>
+
+UBreakIterator *lineBI = NULL;
+UBreakIterator *charBI = NULL;
 #endif
 
 #ifdef EMXANSI
@@ -3097,9 +3101,9 @@ int wraplen(const char *str, int len, int indent)
     int total, max, visible;
 #if WIDECHAR
     UText *ut = NULL;
-    UBreakIterator *bi = NULL;
     UErrorCode icuerr = U_ZERO_ERROR;
     UChar32 c;
+    UEastAsianWidth ea;
 #endif
 
     if (emulation == EMUL_RAW) return len;
@@ -3111,33 +3115,72 @@ int wraplen(const char *str, int len, int indent)
     if (!U_SUCCESS(icuerr))
 	return len;
 
-    bi = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
-    if (!U_SUCCESS(icuerr))
+    c = UTEXT_NEXT32(ut);
+    for (visible = 0; visible < max && c != U_SENTINEL; c = UTEXT_NEXT32(ut)) {
+	if (c == '\t')
+	    visible += tabsize - visible % tabsize;
+	else {
+	    ea = (UEastAsianWidth)u_getIntPropertyValue(c,
+		UCHAR_EAST_ASIAN_WIDTH);
+	    switch (ea) {
+		case U_EA_NEUTRAL:
+		case U_EA_AMBIGUOUS:
+		case U_EA_HALFWIDTH:
+		    ++visible;
+		    break;
+		case U_EA_FULLWIDTH:
+		    visible += 2;
+		    break;
+		case U_EA_NARROW:
+		    ++visible;
+		    break;
+		case U_EA_WIDE:
+		    visible += 2;
+		    break;
+		default:
+		    ++visible;
+	    }
+	}
+    }
+
+    if (c == U_SENTINEL)
 	return len;
 
-    ubrk_setUText(bi, ut, &icuerr);
-    if (U_SUCCESS(icuerr)) {
-	c = utext_next32(ut);
-	visible = 0;
-	while (visible < max && c != U_SENTINEL) {
-	    if (c == '\t')
-		visible += tabsize - visible % tabsize;
-	    else
-		++visible;
-	    c = utext_next32(ut);
-	}
-	
-	if (c == U_SENTINEL)
+    /* If we had a full width character as the last UChar32, go
+     * back one to fit within our max length.
+     */
+    if (visible >= max)
+	UTEXT_PREVIOUS32(ut);
+
+    if (lineBI == NULL) {
+	lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
+	if (!U_SUCCESS(icuerr))
 	    return len;
-
-	visible = ubrk_preceding(bi, utext_getNativeIndex(ut));
-    
-	if (visible == 0)
-	    return utext_getNativeIndex(ut);
-
-	return visible;
     }
-    return len;
+
+    ubrk_setUText(lineBI, ut, &icuerr);
+    if (!U_SUCCESS(icuerr))
+	return utext_getNativeIndex(ut);
+
+    total = ubrk_preceding(lineBI, utext_getNativeIndex(ut));
+
+    /* If we can't break at an acceptable "line break" point.
+     * Break at the previous glyph.
+     */
+    if (total == 0) {
+	if (charBI == NULL) {
+	    charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
+	    if (!U_SUCCESS(icuerr))
+		return utext_getNativeIndex(ut);
+	}
+
+	total = ubrk_preceding(charBI, utext_getNativeIndex(ut));
+
+	/* Return the position we're at if there's no good break. */
+	if (total == 0)
+	    total = utext_getNativeIndex(ut);
+    }
+    return total;
 #else
     for (visible = total = 0; total < len && visible < max; total++) {
 	if (str[total] == '\t')
