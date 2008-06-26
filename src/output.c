@@ -3174,6 +3174,10 @@ int wraplen(const char *str, int len, int indent)
 		return utext_getNativeIndex(ut);
 	}
 
+	ubrk_setUText(charBI, ut, &icuerr);
+	if (!U_SUCCESS(icuerr))
+	    return utext_getNativeIndex(ut);
+
 	total = ubrk_preceding(charBI, utext_getNativeIndex(ut));
 
 	/* Return the position we're at if there's no good break. */
