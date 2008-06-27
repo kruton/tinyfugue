@@ -1210,7 +1210,11 @@ int redraw_window(Screen *screen, int already_clear)
 		if (!first) crnl(1);
 		first = 0;
 		hwrite(pl->str, pl->start,
+#if WIDECHAR
+		    pl->len, /* these should already be correct */
+#else
 		    pl->len < Wrap - pl->indent ? pl->len : Wrap - pl->indent,
+#endif
 		    pl->indent);
 	    }
 	    if (node == screen->bot)
