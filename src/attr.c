@@ -567,9 +567,11 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 		Stringnadd(dst, ' ', tabsize - dst->len % tabsize);
 	    } else {
 #if WIDECHAR
-		int j = 1;
-		while (j++ < ret) {
-		    Stringadd(dst, *s++);
+		if (ret <= -2 && ret >= 0) {
+		    int j = 1;
+		    while (j++ < ret) {
+			Stringadd(dst, *s++);
+		    }
 		}
 #endif
 		Stringadd(dst, *s);
