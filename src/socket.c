@@ -401,7 +401,8 @@ STATIC_BUFFER(telbuf);
 static const char *enum_charset[] = {
     "UTF-8",
     "ISO-8859-1", /* No real support; code passes all chars */
-    "US-ASCII"
+    "US-ASCII",
+    "" /* Null-terminated list, so we can loop */
 };
 /* Note: many telnet servers send DO ECHO and DO SGA together to mean
  * character-at-a-time mode.
@@ -2855,14 +2856,14 @@ static void telnet_subnegotiation(void)
 	      temp_ptr = ++p;
 	      while (p != end && *p != charset_sep) {
 		  temp_buff[p - temp_ptr] = (*p & ~0x80);
-	          ++p;
+		  ++p;
 	      }
 	      temp_buff[p - temp_ptr] = '\0';
-	      /* XXX RFC 2066 requires case-insensitivity, but this isn't */
-	      for (i = 0; i < 3; ++i) {
-		  if (strncmp(enum_charset[i], temp_buff, p - temp_ptr) == 0) {
+	      for (i = 0; enum_charset[i][0]; ++i) {
+		  if (strcasecmp(enum_charset[i], temp_buff) == 0) {
 		     if (chosen_charset == -1 || i < chosen_charset ) {
 		         chosen_charset = i;
+		         break;
 		     }
 		  }
 	      }
