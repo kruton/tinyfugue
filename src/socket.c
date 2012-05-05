@@ -2166,12 +2166,12 @@ static void nuke_dead_socks(void)
     if (quitdone && !hsock) quit_flag = 1;
 }
 
-static void queue_socket_line(Sock *sock, const conString *line, int offset,
+static void queue_socket_line(Sock *sock, const conString *line, int length,
     attr_t attr)
 {
     String *new;
-    (new = StringnewM(NULL, line->len - offset, 0, sock->world->md))->links++;
-    SStringocat(new, line, offset);
+    (new = StringnewM(NULL, length, 0, sock->world->md))->links++;
+    SStringoncat(new, line, 0, length);
     new->attrs |= attr;
     gettime(&new->time);
     sock->time[SOCK_RECV] = new->time;
@@ -2477,7 +2477,7 @@ int handle_fake_recv_function(conString *string, const char *world,
     if (raw)
 	handle_socket_input(string->data, string->len);
     else
-	queue_socket_line(sock, string, 0, 0);
+	queue_socket_line(sock, string, string->len, 0);
     return 1;
 }
 
@@ -2726,7 +2726,7 @@ int tog_lp(Var *var)
 int handle_prompt_func(conString *str)
 {
     if (xsock)
-	queue_socket_line(xsock, str, 0, F_TFPROMPT);
+	queue_socket_line(xsock, str, str->len, F_TFPROMPT);
     return !!xsock;
 }
 
@@ -2993,7 +2993,7 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 			return 0;
 		    /* Socket is blocking; EAGAIN and EWOULDBLOCK impossible. */
 		    if (xsock->buffer->len) {
-			queue_socket_line(xsock, CS(xsock->buffer), 0, 0);
+			queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, 0);
 			Stringtrunc(xsock->buffer, 0);
 		    }
 		    flushxsock();
@@ -3073,7 +3073,7 @@ static int handle_socket_input(const char *simbuffer, int simlen)
                 case TN_GA: case TN_EOR:
                     /* This is definitely a prompt. */
                     telnet_recv(rawchar, 0);
-		    queue_socket_line(xsock, CS(xsock->buffer), 0, F_SERVPROMPT);
+		    queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, F_SERVPROMPT);
 		    Stringtrunc(xsock->buffer, 0);
                     break;
                 case TN_SB:
@@ -3272,7 +3272,7 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 non_telnet:
             if (rawchar == '\n') {
                 /* Complete line received.  Queue it. */
-                queue_socket_line(xsock, CS(xsock->buffer), 0, 0);
+                queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, 0);
 		Stringtrunc(xsock->buffer, 0);
                 xsock->fsastate = rawchar;
 
@@ -3295,7 +3295,7 @@ non_telnet:
                 xsock->fsastate == '*')
 	    {
 		/* "*\b" is an LP editor prompt. */
-		queue_socket_line(xsock, CS(xsock->buffer), 0, F_SERVPROMPT);
+		queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, F_SERVPROMPT);
 		Stringtrunc(xsock->buffer, 0);
                 xsock->fsastate = '\0';
 		/* other occurances of '\b' are handled by decode_ansi(), so
