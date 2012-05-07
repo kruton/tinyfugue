@@ -1,3 +1,11 @@
+Unicode notes:
+  ICU is the branch you want.
+  On Debian or Ubuntu, make sure you apt-get libicu-dev before running
+  ./configure. You'll need to manually add -licuuc to src/Makefile before
+  starting make.
+  Please be aware there are some bugs, but there should be no crashbugs.
+
+======
 
   TinyFugue is Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys.
 
