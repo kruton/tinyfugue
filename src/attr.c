@@ -20,7 +20,7 @@ static const char RCSid[] = "$Id: attr.c,v 35004.10 2007/01/13 23:12:39 kkeys Ex
 #include "parse.h"	/* valstd() */
 
 #if WIDECHAR
-#include <wchar.h>
+#include <unicode/utf8.h>
 #endif
 
 
@@ -466,12 +466,9 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
     attr_t starting_attrs = attrs;
 #if WIDECHAR
     const char *start = s;
+    int index, oldindex;
     int in_len = strlen(s);
-    wchar_t wc;
-    mbstate_t mbs;
-    size_t ret;
-
-    memset(&mbs, 0, sizeof(mbs));
+    UChar32 codepoint;
 #endif
 
     if (emul == EMUL_RAW || emul == EMUL_DEBUG) {
@@ -556,26 +553,6 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
             if (*s == '(' || *s == ')' || *s == '#')
                 if (!*++s) break;
 
-#if WIDECHAR
-        } else if (((ret = mbrtowc(&wc, s, in_len - (s - start), &mbs)) > 0)
-		&& (iswprint(wc) || *s == '\t')) {
-#else
-        } else if (is_print(*s) || *s == '\t') {
-#endif
-	    int orig_len = dst->len;
-	    if (*s == '\t' && expand_tabs) {
-		Stringnadd(dst, ' ', tabsize - dst->len % tabsize);
-	    } else {
-#if WIDECHAR
-		int j = 1;
-		while (j++ < ret) {
-		    Stringadd(dst, *s++);
-		}
-#endif
-		Stringadd(dst, *s);
-	    }
-	    set_attr(dst, orig_len, &starting_attrs, attrs);
-
         } else if (*s == '\b') {
 	    /* bug: doesn't handle expanded tabs */
 	    if (dst->len > 0)
@@ -583,7 +560,33 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 
         } else if (*s == '\07') {
             dst->attrs |= F_BELL;
-        }
+#if WIDECHAR
+        } else {
+	    int orig_len = dst->len;
+            if (*s == '\t' && expand_tabs) {
+                Stringnadd(dst, ' ', tabsize - dst->len % tabsize);
+	    } else {
+                index = s - start;
+                oldindex = index;
+                U8_NEXT(start, index, in_len, codepoint);
+                if (codepoint >= 0) {
+                    Stringfncat(dst, s, index - oldindex);
+                    s = s + index - oldindex - 1;
+                }
+            }
+	    set_attr(dst, orig_len, &starting_attrs, attrs);
+	}
+#else
+        } else if (is_print(*s) || *s == '\t') {
+	    int orig_len = dst->len;
+	    if (*s == '\t' && expand_tabs) {
+		Stringnadd(dst, ' ', tabsize - dst->len % tabsize);
+	    } else {
+		Stringadd(dst, *s);
+	    }
+	    set_attr(dst, orig_len, &starting_attrs, attrs);
+	}
+#endif
     }
 
     if (!dst->charattrs) {
