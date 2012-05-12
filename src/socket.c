@@ -2564,10 +2564,21 @@ static int transmit(const char *str, unsigned int numtowrite)
  */
 int send_line(const char *src, unsigned int len, int eol_flag)
 {
-    int max;
+    int needed;
     int i = 0, j = 0;
-    static char *buf = NULL;
-    static int buflen = 0;
+    static char *buffer1 = NULL;
+    static int bufferlen = 0;
+    static char *buffer2 = NULL;
+#if WIDECHAR
+    /* utf16buf could take less space if it was a union with buffer2 */
+    /* For now, I just want it to work. :) */
+    static UChar *utf16buf = NULL;
+    const UChar *utf16_source;
+    char *target;
+    UErrorCode err;
+    UBool ubool_true = TRUE;
+#endif
+
 
     if (!xsock ||
 	(xsock->constate != SS_CONNECTED && !(xsock->flags & SOCKECHO)))
@@ -2597,31 +2608,70 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 	world_output(xsock->world, CS(str));
     }
 
-    max = 2 * len + 3;
-    if (buflen < max) {
-        buf = XREALLOC(buf, buflen = max);
+    /* Steps:
+     * 1) Copy src to buffer1, add newline endings
+     * 2) Convert string to UTF-16 -> buffer2
+     * 3) Convert string to xsock->charset -> buffer1
+     * 4) Double all Telnet IAC -> buffer2
+     * 5) Transmit buffer2.
+     */
+
+    needed = (len + 3) * 8;
+    if (bufferlen < needed) {
+        bufferlen = needed;
+        buffer1 = XREALLOC(buffer1, bufferlen);
+        buffer2 = XREALLOC(buffer2, bufferlen);
+#if WIDECHAR
+        /* 'needed' calculated as 8-bit wide, not 16-bit */
+        utf16buf = XREALLOC(utf16buf, bufferlen / 2);
+#endif
     }
-    while (j < len) {
-        if (xsock->flags & SOCKTELNET && src[j] == TN_IAC)
-            buf[i++] = TN_IAC;    /* double IAC */
-        buf[i] = unmapchar(src[j]);
-        i++, j++;
-    }
+
+    memcpy(buffer1, src, len);
 
     if (eol_flag) {
         /* In telnet NVT mode, append CR LF; in telnet BINARY mode,
          * append LF, CR, or CR LF, according to variable.
          */
         if (!TELOPT(xsock, us, TN_BINARY) || binary_eol != EOL_LF)
-            buf[i++] = '\r';
+            buffer1[len++] = '\r';
         if (!TELOPT(xsock, us, TN_BINARY) || binary_eol != EOL_CR)
-            buf[i++] = '\n';
+            buffer1[len++] = '\n';
+    }
+
+#if WIDECHAR
+    /* Buf1 -> Buf2  [UTF8  -> UTF16] */
+    /* Buf2 -> Buf1  [UTF16 -> XCHAR] */
+    err = U_ZERO_ERROR;
+    target = buffer1;
+    utf16_source = utf16buf;
+    /* dest, dest_len, written_units, src, src_len, errors */
+    u_strFromUTF8(utf16buf, bufferlen / 2, &j, buffer1, len, &err);
+    /* 'incomingfsm' has an outgoing state machine, as well. Used here. */
+    ucnv_resetFromUnicode(xsock->incomingfsm);
+    ucnv_fromUnicode(xsock->incomingfsm,  /* Converter */
+            &target, buffer1 + bufferlen, /* target, limit_ptr */
+            &utf16_source, utf16buf + j,  /* source, limit_ptr */
+            NULL, ubool_true, &err);      /* offsets, flush, errors */
+    len = target - buffer1; /* 'target' is moved to end during conversion */
+
+    if (U_FAILURE(err))
+        core("outbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+#endif
+
+    /* Buf1 -> Buf2  [Telnet escape]   */
+    i = 0; j = 0;
+    while (j < len) {
+        if (xsock->flags & SOCKTELNET && buffer1[j] == TN_IAC)
+            buffer2[i++] = TN_IAC;    /* double IAC */
+        buffer2[i] = unmapchar(buffer1[j]);
+        i++; j++;
     }
 
     if (xsock->flags & SOCKECHO)
-	handle_socket_input(buf, i, "UTF-8");
+        handle_socket_input(buffer2, i, "UTF-8");
     if (xsock->constate == SS_CONNECTED)
-	return transmit(buf, i);
+        return transmit(buffer2, i);
     return 1;
 }
 
