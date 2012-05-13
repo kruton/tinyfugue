@@ -370,6 +370,9 @@ fi
 
 if test "$enable_widechar" = "yes"; then
     AC_CHECK_HEADERS(wchar.h wctype.h)
+    AC_CHECK_ICU([4.2],
+        [LIBS="${LIBS} -licuuc"],
+        [AC_MSG_ERROR([Widechar cannot be enabled without icu.])])
 fi
 
 AC_CHECK_LIB(z, inflate)
