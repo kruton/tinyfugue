@@ -315,7 +315,6 @@ typedef struct Sock {		/* an open connection to a server */
     conString *prompt;		/* prompt from server */
     struct timeval prompt_timeout; /* when does unterm'd line become a prompt */
     int ttype;			/* index into enum_ttype[] */
-    int charset;		/* index into enum_charset[] */
     attr_t attrs;		/* current text attributes */
     attr_t prepromptattrs;	/* text attributes before implicit prompt */
     unsigned long alert_id;	/* id of last alert on this socket */
@@ -409,16 +408,6 @@ STATIC_BUFFER(telbuf);
 
 #define MAXQUIET        25	/* max # of lines to suppress during login */
 
-static const char *enum_charset[] = {
-    "UTF-8",
-#if WIDECHAR
-    "ISO-8859-1",
-#else
-    "XXX-XXXX-X",
-#endif
-    "US-ASCII",
-    "" /* Null-terminated list, so we can loop */
-};
 /* Note: many telnet servers send DO ECHO and DO SGA together to mean
  * character-at-a-time mode.
  */
@@ -1261,12 +1250,11 @@ static int opensock(World *world, int flags)
     xsock->host = NULL;
     xsock->port = NULL;
     xsock->ttype = -1;
-    xsock->charset = 2; /* Default to US-ASCII, not that we act on it */
 #if WIDECHAR
 	 Stringninit(xsock->incomingposttelnet, 1);
 	 /* TODO: Better error handling, /addworld charset setting. */
     UErrorCode uerr = U_ZERO_ERROR;
-    xsock->incomingfsm = ucnv_open(enum_charset[xsock->charset], &uerr);
+    xsock->incomingfsm = ucnv_open("US-ASCII", &uerr);
     if (U_FAILURE(uerr))
         core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
 #endif
@@ -2885,7 +2873,10 @@ static void telnet_subnegotiation(void)
     char *temp_ptr;
     int ttype;
     char charset_sep = '\0';
-    int chosen_charset = -1;
+#if WIDECHAR
+    UConverter* newconverter = NULL;
+    UErrorCode newconvertererr;
+#endif
 
     static conString enum_ttype[] = {
         STRING_LITERAL("TINYFUGUE"),
@@ -2923,6 +2914,7 @@ static void telnet_subnegotiation(void)
 	}
 	xsock->flags |= SOCKCOMPRESS;
 	break;
+#if WIDECHAR
     case TN_CHARSET:
 	if (!TELOPT(xsock, them, *p)) {
 	    no_reply("option was not agreed upon");
@@ -2937,31 +2929,22 @@ static void telnet_subnegotiation(void)
 		  ++p;
 	      }
 	      temp_buff[p - temp_ptr] = '\0';
-	      for (i = 0; enum_charset[i][0]; ++i) {
-		  if (strcasecmp(enum_charset[i], temp_buff) == 0) {
-		     if (chosen_charset == -1 || i < chosen_charset ) {
-		         chosen_charset = i;
-		         break;
-		     }
-		  }
+	      newconvertererr = U_ZERO_ERROR;
+	      newconverter = ucnv_open(temp_buff, &newconvertererr);
+	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
+	      if (newconverter != NULL) {
+		  p = end; /* Prefer the first valid charset! */
 	      }
 	   }
-	   if (chosen_charset > -1) {
-	      Sprintf(telbuf, "%c%c%c%c%s%c%c", TN_IAC, TN_SB, TN_CHARSET, '\02', enum_charset[chosen_charset], TN_IAC, TN_SE);
-	      if (chosen_charset != xsock->charset) {
-		xsock->charset = chosen_charset;
-#if WIDECHAR
-		/* XXX: This breaks if we were scanning simbuffer. Dangit. */
-		inbound_decode_str(xsock->buffer, xsock->incomingposttelnet, 
-		    xsock->incomingfsm, 1); /* 1; nothing else to convert */
-		handle_socket_input_queue_lines(xsock);
-		ucnv_close(xsock->incomingfsm);
-		UErrorCode err = U_ZERO_ERROR;
-		xsock->incomingfsm = ucnv_open(enum_charset[chosen_charset], &err);
-		if (U_FAILURE(err))
-		    core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
-#endif
-	      }
+	   if (newconverter != NULL) {
+	      Sprintf(telbuf, "%c%c%c%c%s%c%c", TN_IAC, TN_SB, TN_CHARSET, '\02', temp_buff, TN_IAC, TN_SE);
+	      /* TODO: Don't reset if we're already using this charset. */
+	      /* XXX: This breaks if we were scanning simbuffer. Dangit. */
+	      inbound_decode_str(xsock->buffer, xsock->incomingposttelnet, 
+	          xsock->incomingfsm, 1); /* 1; nothing else to convert */
+	      handle_socket_input_queue_lines(xsock);
+	      ucnv_close(xsock->incomingfsm);
+	      xsock->incomingfsm = newconverter;
 	   } else {
 	      Sprintf(telbuf, "%c%c%c%c%c%c", TN_IAC, TN_SB, TN_CHARSET, '\03', TN_IAC, TN_SE);
 	   }
@@ -2971,6 +2954,7 @@ static void telnet_subnegotiation(void)
 	}
 	telnet_send(telbuf);
 	break;
+#endif
     default:
 	no_reply("unknown option");
         break;
@@ -3370,8 +3354,10 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 #endif
                     rawchar == TN_ECHO ||
                     rawchar == TN_SEND_EOR ||
-                    rawchar == TN_BINARY ||
-                    rawchar == TN_CHARSET)         /* accept any of these */
+#if WIDECHAR
+                    rawchar == TN_CHARSET ||
+#endif
+                    rawchar == TN_BINARY)         /* accept any of these */
                 {
                     SET_TELOPT(xsock, them, rawchar);  /* set state */
                     if (TELOPT(xsock, them_tog, rawchar)) {/* we requested it */
