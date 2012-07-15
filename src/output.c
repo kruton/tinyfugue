@@ -3108,6 +3108,7 @@ int wraplen(const char *str, int len, int indent)
     UErrorCode icuerr = U_ZERO_ERROR;
     UChar32 c;
     UEastAsianWidth ea;
+    int nativeIndex = 0;
 #endif
 
     if (emulation == EMUL_RAW) return len;
@@ -3147,8 +3148,10 @@ int wraplen(const char *str, int len, int indent)
 	}
     }
 
-    if (c == U_SENTINEL)
+    if (c == U_SENTINEL) {
+	utext_close(ut);
 	return len;
+    }
 
     /* If we had a full width character as the last UChar32, go
      * back one to fit within our max length.
@@ -3158,13 +3161,18 @@ int wraplen(const char *str, int len, int indent)
 
     if (lineBI == NULL) {
 	lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
-	if (!U_SUCCESS(icuerr))
+	if (!U_SUCCESS(icuerr)) {
+	    utext_close(ut);
 	    return len;
+	}
     }
 
     ubrk_setUText(lineBI, ut, &icuerr);
-    if (!U_SUCCESS(icuerr))
-	return utext_getNativeIndex(ut);
+    if (!U_SUCCESS(icuerr)) {
+	nativeIndex = utext_getNativeIndex(ut);
+	utext_close(ut);
+	return nativeIndex;
+    }
 
     total = ubrk_preceding(lineBI, utext_getNativeIndex(ut));
 
@@ -3174,13 +3182,19 @@ int wraplen(const char *str, int len, int indent)
     if (total == 0) {
 	if (charBI == NULL) {
 	    charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
-	    if (!U_SUCCESS(icuerr))
-		return utext_getNativeIndex(ut);
+	    if (!U_SUCCESS(icuerr)) {
+		nativeIndex = utext_getNativeIndex(ut);
+		utext_close(ut);
+		return nativeIndex;
+	    }
 	}
 
 	ubrk_setUText(charBI, ut, &icuerr);
-	if (!U_SUCCESS(icuerr))
-	    return utext_getNativeIndex(ut);
+	if (!U_SUCCESS(icuerr)) {
+	    nativeIndex = utext_getNativeIndex(ut);
+	    utext_close(ut);
+	    return nativeIndex;
+	}
 
 	total = ubrk_preceding(charBI, utext_getNativeIndex(ut));
 
@@ -3188,6 +3202,7 @@ int wraplen(const char *str, int len, int indent)
 	if (total == 0)
 	    total = utext_getNativeIndex(ut);
     }
+    utext_close(ut);
     return total;
 #else
     for (visible = total = 0; total < len && visible < max; total++) {
