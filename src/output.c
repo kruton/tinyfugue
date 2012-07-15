@@ -42,9 +42,6 @@ static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys
 #include <unicode/uchar.h>
 #include <unicode/utext.h>
 #include <unicode/ubrk.h>
-
-UBreakIterator *lineBI = NULL;
-UBreakIterator *charBI = NULL;
 #endif
 
 #ifdef EMXANSI
@@ -3105,6 +3102,8 @@ int wraplen(const char *str, int len, int indent)
     int total, max, visible;
 #if WIDECHAR
     UText *ut = NULL;
+    UBreakIterator *lineBI = NULL;
+    UBreakIterator *charBI = NULL;
     UErrorCode icuerr = U_ZERO_ERROR;
     UChar32 c;
     UEastAsianWidth ea;
@@ -3159,17 +3158,16 @@ int wraplen(const char *str, int len, int indent)
     if (visible >= max)
 	UTEXT_PREVIOUS32(ut);
 
-    if (lineBI == NULL) {
-	lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
-	if (!U_SUCCESS(icuerr)) {
-	    utext_close(ut);
-	    return len;
-	}
+    lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
+    if (!U_SUCCESS(icuerr)) {
+	utext_close(ut);
+	return len;
     }
 
     ubrk_setUText(lineBI, ut, &icuerr);
     if (!U_SUCCESS(icuerr)) {
 	nativeIndex = utext_getNativeIndex(ut);
+	ubrk_close(lineBI);
 	utext_close(ut);
 	return nativeIndex;
     }
@@ -3180,18 +3178,19 @@ int wraplen(const char *str, int len, int indent)
      * Break at the previous glyph.
      */
     if (total == 0) {
-	if (charBI == NULL) {
-	    charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
-	    if (!U_SUCCESS(icuerr)) {
-		nativeIndex = utext_getNativeIndex(ut);
-		utext_close(ut);
-		return nativeIndex;
-	    }
+	charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
+	if (!U_SUCCESS(icuerr)) {
+	    nativeIndex = utext_getNativeIndex(ut);
+	    ubrk_close(lineBI);
+	    utext_close(ut);
+	    return nativeIndex;
 	}
 
 	ubrk_setUText(charBI, ut, &icuerr);
 	if (!U_SUCCESS(icuerr)) {
 	    nativeIndex = utext_getNativeIndex(ut);
+	    ubrk_close(charBI);
+	    ubrk_close(lineBI);
 	    utext_close(ut);
 	    return nativeIndex;
 	}
@@ -3201,7 +3200,10 @@ int wraplen(const char *str, int len, int indent)
 	/* Return the position we're at if there's no good break. */
 	if (total == 0)
 	    total = utext_getNativeIndex(ut);
+	ubrk_close(charBI);
     }
+
+    ubrk_close(lineBI);
     utext_close(ut);
     return total;
 #else
