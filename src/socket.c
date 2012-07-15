@@ -3428,7 +3428,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
             } else if (rawchar == TN_IAC &&
                 xsock->flags & (SOCKTELNET | SOCKMAYTELNET))
             {
-                xsock->fsastate = rawchar;
+                xsock->fsastate = TN_IAC;
                 continue;  /* avoid non-telnet processing */
             }
 
@@ -3440,21 +3440,27 @@ non_telnet:
 #else
             Stringadd(xsock->buffer, rawchar);
 #endif
-            xsock->fsastate = rawchar;
-	    } /* End of buffer-scanning for-loop */
+	    if (rawchar == '\r' || rawchar == '\n' || rawchar == '*')
+		xsock->fsastate = rawchar;
+	    else
+		xsock->fsastate = '\0';
+	} /* End of buffer-scanning for-loop */
 	    /* No premature optimization; Too much to go wrong.
 	    const char *end;
 	    if (xsock->flags & (SOCKTELNET | SOCKMAYTELNET)) {
 	        end = place++;
 	        while (end - buffer < count && *end != TN_IAC)
 	          ++end;
+#if WIDECHAR
 		Stringfncat(incomingposttelnet, place, end - place);
+#else
+		Stringfncat(xsock->buffer, place, end - place);
+#endif
 		xsock->fsastate = *end;
 	    } else {
 	        end = buffer + count;
 	    }
-	    }
-            */
+*/
 #if WIDECHAR
 	/* Take incomingposttelnet and convert to UTF-8, writing to
          * xsock->buffer. Shift incomingposttelnet by length converted.
