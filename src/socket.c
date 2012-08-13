@@ -2996,11 +2996,15 @@ static z_stream *new_zstream(void)
 static int inbound_decode_str(String *output, String *input, UConverter *conv, const char cflush)
 {
     int shiftby = 0;
-    shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
-    if (cflush == 0) {
-        Stringshift(input, shiftby);
-    } else {
-        Stringtrunc(input, 0);
+    if (input->data < input->data + input->len) {
+        shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
+    }
+    if (shiftby > 0) {
+        if (cflush == 0) {
+            Stringshift(input, shiftby);
+        } else {
+            Stringtrunc(input, 0);
+        }
     }
     return shiftby;
 }
