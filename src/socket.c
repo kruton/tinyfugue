@@ -1254,7 +1254,7 @@ static int opensock(World *world, int flags)
 	 Stringninit(xsock->incomingposttelnet, 1);
 	 /* TODO: Better error handling, /addworld charset setting. */
     UErrorCode uerr = U_ZERO_ERROR;
-    xsock->incomingfsm = ucnv_open("US-ASCII", &uerr);
+    xsock->incomingfsm = ucnv_open(world->charset, &uerr);
     if (U_FAILURE(uerr))
         core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
 #endif
