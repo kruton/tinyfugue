@@ -4,6 +4,10 @@ Unicode notes:
   ./configure.
   Please be aware there are some bugs, but there should be no crashbugs.
 
+  For servers that don't negotiate charsets, /set default_charset=NAME
+  before defining a world with /addworld or /test addworld(). I recommend
+  putting /set default_charset=Latin-1 at the top of your worlds.tf.
+
 ======
 
   TinyFugue is Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys.
