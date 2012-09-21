@@ -30,7 +30,8 @@ static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys
 #include <signal.h>	/* for killing resolver child process */
 
 #if WIDECHAR
-#include <wchar.h>
+#include <unicode/ucnv.h>
+#include <unicode/ustring.h>
 #endif
 
 #if HAVE_SSL
@@ -304,8 +305,12 @@ typedef struct Sock {		/* an open connection to a server */
     short numquiet;		/* # of lines to gag after connecting */
     struct World *world;	/* world to which socket is connected */
     struct Sock *next, *prev;	/* next/prev sockets in linked list */
-    Stringp buffer;		/* buffer for incoming characters */
-    Stringp subbuffer;		/* buffer for incoming characters */
+#if WIDECHAR
+    Stringp incomingposttelnet;	/* incoming text stripped of telnet commands */
+    UConverter *incomingfsm;	/* converter for incomingposttelnet to buffer */
+#endif
+    Stringp buffer;		/* above buffer processed into UTF-8 */
+    Stringp subbuffer;		/* buffer for processing telnet commands */
     Queue queue;		/* queue of incoming lines */
     conString *prompt;		/* prompt from server */
     struct timeval prompt_timeout; /* when does unterm'd line become a prompt */
@@ -352,7 +357,12 @@ static void  unprompt(Sock *sock, int update);
 static void  test_prompt(void);
 static void  schedule_prompt(Sock *sock);
 static void  handle_socket_lines(void);
-static int   handle_socket_input(const char *simbuffer, int simlen);
+#if WIDECHAR
+static int   inbound_decode_str(String *outut, String *input, UConverter *conv, const char cflush);
+static int   inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush);
+#endif
+static int   handle_socket_input(const char *simbuffer, int simlen, const char* encoding);
+static void  handle_socket_input_queue_lines(Sock *sock);
 static int   transmit(const char *s, unsigned int len);
 static void  telnet_send(String *cmd);
 static void  telnet_subnegotiation(void);
@@ -379,6 +389,7 @@ static void  killsock(Sock *sock);
 #define PROC_WAIT 100000
 #endif
 
+#define BUFFSIZE (4*1024)	/* how big are our byte-buffers? */
 #define SPAM (4*1024)		/* break loop if this many chars are received */
 
 static fd_set readers;		/* input file descriptors */
@@ -436,7 +447,7 @@ STATIC_BUFFER(telbuf);
 #define TN_ENVIRON	((char)36)	/* 1408 - (not used) */
 #define TN_AUTH		((char)37)	/* 1416 - (not used) */
 #define TN_NEW_ENVIRON	((char)39)	/* 1572 - (not used) */
-#define TN_CHARSET	((char)42)	/* 2066 - (not used) */
+#define TN_CHARSET	((char)42)	/* 2066 - Charset negotiation */
 /* 85 & 86 are not standard.  See http://www.randomly.org/projects/MCCP/ */
 #define TN_COMPRESS	((char)85)	/* MCCP v1 */
 #define TN_COMPRESS2	((char)86)	/* MCCP v2 */
@@ -839,7 +850,7 @@ void main_loop(void)
                         } else if (xsock->constate == SS_CONNECTING) {
                             establish(xsock);
                         } else if (xsock == fsock || background) {
-                            received += handle_socket_input(NULL, 0);
+                            received += handle_socket_input(NULL, 0, NULL);
                         } else {
                             FD_CLR(xsock->fd, &readers);
                         }
@@ -1239,6 +1250,14 @@ static int opensock(World *world, int flags)
     xsock->host = NULL;
     xsock->port = NULL;
     xsock->ttype = -1;
+#if WIDECHAR
+	 Stringninit(xsock->incomingposttelnet, 1);
+	 /* TODO: Better error handling, /addworld charset setting. */
+    UErrorCode uerr = U_ZERO_ERROR;
+    xsock->incomingfsm = ucnv_open(world->charset, &uerr);
+    if (U_FAILURE(uerr))
+        core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
+#endif
     xsock->fd = -1;
     xsock->pid = -1;
     xsock->fsastate = '\0';
@@ -2158,12 +2177,12 @@ static void nuke_dead_socks(void)
     if (quitdone && !hsock) quit_flag = 1;
 }
 
-static void queue_socket_line(Sock *sock, const conString *line, int offset,
+static void queue_socket_line(Sock *sock, const conString *line, int length,
     attr_t attr)
 {
     String *new;
-    (new = StringnewM(NULL, line->len - offset, 0, sock->world->md))->links++;
-    SStringocat(new, line, offset);
+    (new = StringnewM(NULL, length, 0, sock->world->md))->links++;
+    SStringoncat(new, line, 0, length);
     new->attrs |= attr;
     gettime(&new->time);
     sock->time[SOCK_RECV] = new->time;
@@ -2178,6 +2197,10 @@ static void dc(Sock *s)
     String *buffer = Stringnew(NULL, -1, 0);
     Sock *oldxsock = xsock;
     xsock = s;
+#if WIDECHAR
+    inbound_decode_str(s->buffer, s->incomingposttelnet, s->incomingfsm, 1);
+    handle_socket_input_queue_lines(xsock);
+#endif
     flushxsock();
     Sprintf(buffer, "%% Connection to %s closed.", s->world->name);
     world_output(s->world, CS(buffer));
@@ -2443,6 +2466,7 @@ int handle_send_function(conString *string, const char *world,
     return result;
 }
 
+/* Code for the undocumented fake_recv script function. */
 int handle_fake_recv_function(conString *string, const char *world,
     const char *flags)
 {
@@ -2467,14 +2491,14 @@ int handle_fake_recv_function(conString *string, const char *world,
 	return 0;
     }
     if (raw)
-	handle_socket_input(string->data, string->len);
+	handle_socket_input(string->data, string->len, NULL);
     else
-	queue_socket_line(sock, string, 0, 0);
+	queue_socket_line(sock, string, string->len, 0);
     return 1;
 }
 
 
-/* tramsmit text to current socket */
+/* transmit bytes to current socket */
 static int transmit(const char *str, unsigned int numtowrite)
 {
     int numwritten, err;
@@ -2528,10 +2552,21 @@ static int transmit(const char *str, unsigned int numtowrite)
  */
 int send_line(const char *src, unsigned int len, int eol_flag)
 {
-    int max;
+    int needed;
     int i = 0, j = 0;
-    static char *buf = NULL;
-    static int buflen = 0;
+    static char *buffer1 = NULL;
+    static int bufferlen = 0;
+    static char *buffer2 = NULL;
+#if WIDECHAR
+    /* utf16buf could take less space if it was a union with buffer2 */
+    /* For now, I just want it to work. :) */
+    static UChar *utf16buf = NULL;
+    const UChar *utf16_source;
+    char *target;
+    UErrorCode err;
+    UBool ubool_true = TRUE;
+#endif
+
 
     if (!xsock ||
 	(xsock->constate != SS_CONNECTED && !(xsock->flags & SOCKECHO)))
@@ -2561,31 +2596,70 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 	world_output(xsock->world, CS(str));
     }
 
-    max = 2 * len + 3;
-    if (buflen < max) {
-        buf = XREALLOC(buf, buflen = max);
+    /* Steps:
+     * 1) Copy src to buffer1, add newline endings
+     * 2) Convert string to UTF-16 -> buffer2
+     * 3) Convert string to xsock->charset -> buffer1
+     * 4) Double all Telnet IAC -> buffer2
+     * 5) Transmit buffer2.
+     */
+
+    needed = (len + 3) * 8;
+    if (bufferlen < needed) {
+        bufferlen = needed;
+        buffer1 = XREALLOC(buffer1, bufferlen);
+        buffer2 = XREALLOC(buffer2, bufferlen);
+#if WIDECHAR
+        /* 'needed' calculated as 8-bit wide, not 16-bit */
+        utf16buf = XREALLOC(utf16buf, bufferlen / 2);
+#endif
     }
-    while (j < len) {
-        if (xsock->flags & SOCKTELNET && src[j] == TN_IAC)
-            buf[i++] = TN_IAC;    /* double IAC */
-        buf[i] = unmapchar(src[j]);
-        i++, j++;
-    }
+
+    memcpy(buffer1, src, len);
 
     if (eol_flag) {
         /* In telnet NVT mode, append CR LF; in telnet BINARY mode,
          * append LF, CR, or CR LF, according to variable.
          */
         if (!TELOPT(xsock, us, TN_BINARY) || binary_eol != EOL_LF)
-            buf[i++] = '\r';
+            buffer1[len++] = '\r';
         if (!TELOPT(xsock, us, TN_BINARY) || binary_eol != EOL_CR)
-            buf[i++] = '\n';
+            buffer1[len++] = '\n';
+    }
+
+#if WIDECHAR
+    /* Buf1 -> Buf2  [UTF8  -> UTF16] */
+    /* Buf2 -> Buf1  [UTF16 -> XCHAR] */
+    err = U_ZERO_ERROR;
+    target = buffer1;
+    utf16_source = utf16buf;
+    /* dest, dest_len, written_units, src, src_len, errors */
+    u_strFromUTF8(utf16buf, bufferlen / 2, &j, buffer1, len, &err);
+    /* 'incomingfsm' has an outgoing state machine, as well. Used here. */
+    ucnv_resetFromUnicode(xsock->incomingfsm);
+    ucnv_fromUnicode(xsock->incomingfsm,  /* Converter */
+            &target, buffer1 + bufferlen, /* target, limit_ptr */
+            &utf16_source, utf16buf + j,  /* source, limit_ptr */
+            NULL, ubool_true, &err);      /* offsets, flush, errors */
+    len = target - buffer1; /* 'target' is moved to end during conversion */
+
+    if (U_FAILURE(err))
+        core("outbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+#endif
+
+    /* Buf1 -> Buf2  [Telnet escape]   */
+    i = 0; j = 0;
+    while (j < len) {
+        if (xsock->flags & SOCKTELNET && buffer1[j] == TN_IAC)
+            buffer2[i++] = TN_IAC;    /* double IAC */
+        buffer2[i] = unmapchar(buffer1[j]);
+        i++; j++;
     }
 
     if (xsock->flags & SOCKECHO)
-	handle_socket_input(buf, i);
+        handle_socket_input(buffer2, i, "UTF-8");
     if (xsock->constate == SS_CONNECTED)
-	return transmit(buf, i);
+        return transmit(buffer2, i);
     return 1;
 }
 
@@ -2718,7 +2792,7 @@ int tog_lp(Var *var)
 int handle_prompt_func(conString *str)
 {
     if (xsock)
-	queue_socket_line(xsock, str, 0, F_TFPROMPT);
+	queue_socket_line(xsock, str, str->len, F_TFPROMPT);
     return !!xsock;
 }
 
@@ -2792,8 +2866,18 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
+    unsigned int i;
     char *p;
+    const char *end;
+    char temp_buff[255]; /* Same length as whole subnegotiation line. */
+    char *temp_ptr;
     int ttype;
+    char charset_sep = '\0';
+#if WIDECHAR
+    UConverter* newconverter = NULL;
+    UErrorCode newconvertererr;
+#endif
+
     static conString enum_ttype[] = {
         STRING_LITERAL("TINYFUGUE"),
         STRING_LITERAL("ANSI-ATTR"),
@@ -2804,6 +2888,7 @@ static void telnet_subnegotiation(void)
     telnet_debug("recv", xsock->subbuffer->data, xsock->subbuffer->len);
     Stringtrunc(xsock->subbuffer, xsock->subbuffer->len - 2);
     p = xsock->subbuffer->data + 2;
+    end = p + xsock->subbuffer->len;
     switch (*p) {
     case TN_TTYPE:
 	if (!TELOPT(xsock, us, *p)) {
@@ -2829,6 +2914,47 @@ static void telnet_subnegotiation(void)
 	}
 	xsock->flags |= SOCKCOMPRESS;
 	break;
+#if WIDECHAR
+    case TN_CHARSET:
+	if (!TELOPT(xsock, them, *p)) {
+	    no_reply("option was not agreed upon");
+	    break;
+	}
+	if (*++p == '\01') { /* REQUEST <sep> <character set>... */
+	   charset_sep = *++p;
+	   while (p != end) {
+	      temp_ptr = ++p;
+	      while (p != end && *p != charset_sep) {
+		  temp_buff[p - temp_ptr] = (*p & ~0x80);
+		  ++p;
+	      }
+	      temp_buff[p - temp_ptr] = '\0';
+	      newconvertererr = U_ZERO_ERROR;
+	      newconverter = ucnv_open(temp_buff, &newconvertererr);
+	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
+	      if (newconverter != NULL) {
+		  p = end; /* Prefer the first valid charset! */
+	      }
+	   }
+	   if (newconverter != NULL) {
+	      Sprintf(telbuf, "%c%c%c%c%s%c%c", TN_IAC, TN_SB, TN_CHARSET, '\02', temp_buff, TN_IAC, TN_SE);
+	      /* TODO: Don't reset if we're already using this charset. */
+	      /* XXX: This breaks if we were scanning simbuffer. Dangit. */
+	      inbound_decode_str(xsock->buffer, xsock->incomingposttelnet, 
+	          xsock->incomingfsm, 1); /* 1; nothing else to convert */
+	      handle_socket_input_queue_lines(xsock);
+	      ucnv_close(xsock->incomingfsm);
+	      xsock->incomingfsm = newconverter;
+	   } else {
+	      Sprintf(telbuf, "%c%c%c%c%c%c", TN_IAC, TN_SB, TN_CHARSET, '\03', TN_IAC, TN_SE);
+	   }
+	} else {
+	    no_reply("option not implemented");
+	    break;
+	}
+	telnet_send(telbuf);
+	break;
+#endif
     default:
 	no_reply("unknown option");
         break;
@@ -2866,45 +2992,116 @@ static z_stream *new_zstream(void)
 }
 #endif /* HAVE_MCCP */
 
-/* handle input from current socket */
-static int handle_socket_input(const char *simbuffer, int simlen)
+#if WIDECHAR
+static int inbound_decode_str(String *output, String *input, UConverter *conv, const char cflush)
 {
-    char rawchar, localchar, inbuffer[4096];
-    const char *buffer, *place;
+    int shiftby = 0;
+    if (input->data < input->data + input->len) {
+        shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
+    }
+    if (shiftby > 0) {
+        if (cflush == 0) {
+            Stringshift(input, shiftby);
+        } else {
+            Stringtrunc(input, 0);
+        }
+    }
+    return shiftby;
+}
+/* Take input of a particular encoding and Stringcat it into 'output'.
+ * Flush shold be FALSE(0) unless the socket is being shut down.
+ * Returns number of bytes the input pointer should increment.
+ * Only modifies 'output' and 'conv' arguments.
+ */
+static int inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush)
+{
+    /* This definitely, definitely needs optimizations for
+          * ISO-8859-1 -> UTF-8, and UTF-8 -> UTF-8. */
+    const char *iptr = input;
+
+    UChar outbufferUTF16[BUFFSIZE*4];
+    UChar *optr = outbufferUTF16;
+    const UChar *oendptr = outbufferUTF16 + BUFFSIZE*4;
+    UErrorCode err16 = U_ZERO_ERROR;
+
+    char outbufferUTF8[BUFFSIZE*8];
+    UErrorCode err8 = U_ZERO_ERROR;
+    int32_t utf8written = 0;
+
+    UBool flush = cflush ? TRUE : FALSE;
+    
+    /* xcharset -> UTF-16 -> UTF-8 */
+    ucnv_toUnicode(conv, &optr, oendptr, &iptr, iendptr, NULL, flush, &err16);
+/*
+void ucnv_toUnicode 	( 	UConverter *  	converter,
+		UChar **  	target,
+		const UChar *  	targetLimit,
+		const char **  	source,
+		const char *  	sourceLimit,
+		int32_t *  	offsets,
+		UBool  	flush,
+		UErrorCode *  	err 
+	)
+*/
+    u_strToUTF8(outbufferUTF8, BUFFSIZE*8, &utf8written, outbufferUTF16, (int32_t)(optr - outbufferUTF16), &err8);
+/*
+char* u_strToUTF8 	( 	char *  	dest,
+		int32_t  	destCapacity,
+		int32_t *  	pDestLength,
+		const UChar *  	src,
+		int32_t  	srcLength,
+		UErrorCode *  	pErrorCode 
+	) 	
+*/
+    Stringfncat(output, outbufferUTF8, utf8written);
+    if (U_FAILURE(err16) || U_FAILURE(err8))
+        core("inbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+    return (iptr - input); /* return number of input bytes consumed */
+
+}
+#endif
+/* handle input from current socket
+ * simbuffer and simlen are 'simulation', used when recursing (from MCCP)
+ * or when we're simulating input, such as from local echo from send_line.
+ * If 'encoding' is NULL then this writes to the partial socket buffers,
+ * otherwise initializes and uses a new converter.
+ */
+static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
+{
+    char rawchar, localchar, inbuffer[BUFFSIZE];
+    const char *incoming, *place;
 #if HAVE_MCCP
-    char outbuffer[4096];
+    char mccpbuffer[BUFFSIZE];
 #endif
     fd_set readfds;
     int count, n, received = 0;
     struct timeval timeout;
 #if WIDECHAR
-    mbstate_t mbs;
-    wchar_t wc;
-    size_t ret;
-
-    memset(&mbs, 0, sizeof(mbs));
+    String *incomingposttelnet;
+    UConverter *incomingFSM = NULL;
+    UErrorCode incomingERR;
+    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
 	return 0;
 
-    if (xsock->prompt && !(xsock->flags & SOCKPROMPT)) {
-        /* We assumed last text was a prompt, but now we have more text, so
-         * we now assume that they are both part of the same long line.  (If
-         * we're wrong, the previous prompt appears as output.  But if we did
-         * the opposite, a real begining of a line would never appear in the
-         * output window; that would be a worse mistake.)
-	 * Note that a terminated (EOR or GOAHEAD) prompt will NOT be cleared
-	 * when new text arrives (it will only be cleared when there is a new
-	 * prompt).
-         */
-        unprompt(xsock, xsock==fsock);
+#if WIDECHAR
+    if (encoding == NULL) {
+	incomingposttelnet = xsock->incomingposttelnet;
+	incomingFSM = xsock->incomingfsm;
+    } else {
+        /* Using simlen because we assume we'll have UTF-8 anyway */
+	incomingposttelnet = Stringnew(NULL, simlen, 0);
+	incomingFSM = ucnv_open(encoding, &incomingERR);
+	if (incomingERR == U_MEMORY_ALLOCATION_ERROR || incomingERR == U_FILE_ACCESS_ERROR)
+            core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
     }
-    xsock->prompt_timeout = tvzero;
+#endif
 
     do {  /* while there are more data to be processed */
 	if (simbuffer) {
-	    buffer = simbuffer;
+	    incoming = simbuffer;
 	    count = simlen;
 	} else {
 #if HAVE_MCCP
@@ -2941,8 +3138,13 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 		    if (count < 0 && errno == EINTR)
 			return 0;
 		    /* Socket is blocking; EAGAIN and EWOULDBLOCK impossible. */
-		    if (xsock->buffer->len) {
-			queue_socket_line(xsock, CS(xsock->buffer), 0, 0);
+#if WIDECHAR
+		    inbound_decode_str(xsock->buffer, incomingposttelnet, 
+                        incomingFSM, 1);
+#endif
+		    if (xsock->buffer->len) { /* Destroy the buffers */
+			handle_socket_input_queue_lines(xsock);
+			queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, 0);
 			Stringtrunc(xsock->buffer, 0);
 		    }
 		    flushxsock();
@@ -2968,19 +3170,20 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 		    xsock->zstream->next_in = (Bytef*)inbuffer;
 		    xsock->zstream->avail_in = count;
 		}
-		xsock->zstream->next_out = (Bytef*)(buffer = outbuffer);
-		xsock->zstream->avail_out = sizeof(outbuffer);
+		xsock->zstream->next_out = (Bytef*)(incoming = mccpbuffer);
+		xsock->zstream->avail_out = sizeof(mccpbuffer);
 		zret = inflate(xsock->zstream, Z_PARTIAL_FLUSH);
 		switch (zret) {
 		case Z_OK:
-		    count = (char*)xsock->zstream->next_out - outbuffer;
+		    count = (char*)xsock->zstream->next_out - mccpbuffer;
 		    break;
 		case Z_STREAM_END:
 		    /* handle stuff inflated before stream end */
-		    count = (char*)xsock->zstream->next_out - outbuffer;
-		    received += handle_socket_input(outbuffer, count);
+		    /* NOTE: This could be partway into parsing a character!? */
+		    count = (char*)xsock->zstream->next_out - mccpbuffer;
+		    received += handle_socket_input(mccpbuffer, count, NULL);
 		    /* prepare to handle noncompressed stuff after stream end */
-		    buffer = (char*)xsock->zstream->next_in;
+		    incoming = (char*)xsock->zstream->next_in;
 		    count = xsock->zstream->avail_in;
 		    /* clean up zstream */
 		    inflateEnd(xsock->zstream);
@@ -2989,6 +3192,10 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 		    xsock->flags &= ~SOCKCOMPRESS;
 		    break;
 		default:
+#if WIDECHAR
+		    inbound_decode_str(xsock->buffer, incomingposttelnet, 
+                        incomingFSM, 1);
+#endif
 		    flushxsock();
 		    zombiesock(xsock); /* before hook, so constate is correct */
 		    DISCON(xsock->world->name, "inflate",
@@ -2997,17 +3204,13 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 		}
 	    } else
 #endif
-		buffer = inbuffer;
+		incoming = inbuffer;
 	}
 
-        for (place = buffer; place - buffer < count; place++) {
-
-            /* We always accept 8-bit data, even though RFCs 854 and 1123
-             * say server shouldn't transmit it unless in BINARY mode.  What
-             * we do with it depends on the locale.
-             */
+	/* At this point, buffer is the latest chunk of data received */
+	/* Unpeel the Telnet commands from the data stream */
+        for (place = incoming; place - incoming < count; place++) {
             rawchar = *place;
-            localchar = localize(rawchar);
 
             /* Telnet processing
              * If we're not sure yet whether server speaks telnet protocol,
@@ -3022,7 +3225,12 @@ static int handle_socket_input(const char *simbuffer, int simlen)
                 case TN_GA: case TN_EOR:
                     /* This is definitely a prompt. */
                     telnet_recv(rawchar, 0);
-		    queue_socket_line(xsock, CS(xsock->buffer), 0, F_SERVPROMPT);
+#if WIDECHAR
+		    inbound_decode_str(xsock->buffer, incomingposttelnet,
+                        incomingFSM, 0);
+		    handle_socket_input_queue_lines(xsock);
+#endif
+		    queue_socket_line(xsock, CS(xsock->buffer), xsock->buffer->len, F_SERVPROMPT);
 		    Stringtrunc(xsock->buffer, 0);
                     break;
                 case TN_SB:
@@ -3043,7 +3251,11 @@ static int handle_socket_input(const char *simbuffer, int simlen)
                     /* just change state */
                     break;
                 case TN_IAC:
-                    Stringadd(xsock->buffer, localchar);  /* literal IAC */
+#if WIDECHAR
+                    Stringadd(incomingposttelnet, rawchar);  /* literal IAC */
+#else
+                    Stringadd(xsock->buffer, rawchar);  /* literal IAC */
+#endif
                     xsock->fsastate = '\0';
                     break;
 
@@ -3085,12 +3297,17 @@ static int handle_socket_input(const char *simbuffer, int simlen)
             } else if (xsock->fsastate == TN_SB) {
 		if (xsock->subbuffer->len > 255) {
 		    /* It shouldn't take this long; server is broken.  Abort. */
+#if WIDECHAR
+		    SStringcat(incomingposttelnet, CS(xsock->subbuffer));
+#else
 		    SStringcat(xsock->buffer, CS(xsock->subbuffer));
+#endif
 		    Stringtrunc(xsock->subbuffer, 0);
 		} else if (xsock->substate == TN_IAC) {
                     if (rawchar == TN_SE) {
 			Sappendf(xsock->subbuffer, "%c%c", TN_IAC, TN_SE);
                         xsock->fsastate = '\0';
+		        /* XXX: this WILL break if IAC CHARSET is in simbuffer */
                         telnet_subnegotiation();
                     } else {
                         Stringadd(xsock->subbuffer, rawchar);
@@ -3118,7 +3335,7 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 			zombiesock(xsock);
 		    } else {
 			xsock->zstream->next_in = (Bytef*)++place;
-			xsock->zstream->avail_in = count - (place - buffer);
+			xsock->zstream->avail_in = count - (place - incoming);
 		    }
 		    count = 0; /* abort the buffer scan */
 		}
@@ -3141,7 +3358,10 @@ static int handle_socket_input(const char *simbuffer, int simlen)
 #endif
                     rawchar == TN_ECHO ||
                     rawchar == TN_SEND_EOR ||
-                    rawchar == TN_BINARY)              /* accept any of these */
+#if WIDECHAR
+                    rawchar == TN_CHARSET ||
+#endif
+                    rawchar == TN_BINARY)         /* accept any of these */
                 {
                     SET_TELOPT(xsock, them, rawchar);  /* set state */
                     if (TELOPT(xsock, them_tog, rawchar)) {/* we requested it */
@@ -3212,74 +3432,51 @@ static int handle_socket_input(const char *simbuffer, int simlen)
             } else if (rawchar == TN_IAC &&
                 xsock->flags & (SOCKTELNET | SOCKMAYTELNET))
             {
-                xsock->fsastate = rawchar;
+                xsock->fsastate = TN_IAC;
                 continue;  /* avoid non-telnet processing */
             }
 
             /* non-telnet processing*/
 non_telnet:
-            if (rawchar == '\n') {
-                /* Complete line received.  Queue it. */
-                queue_socket_line(xsock, CS(xsock->buffer), 0, 0);
-		Stringtrunc(xsock->buffer, 0);
-                xsock->fsastate = rawchar;
-
-            } else if (emulation == EMUL_DEBUG) {
-                if (localchar != rawchar)
-                    Stringcat(xsock->buffer, "M-");
-                if (is_print(localchar))
-                    Stringadd(xsock->buffer, localchar);
-                else {
-                    Stringadd(xsock->buffer, '^');
-                    Stringadd(xsock->buffer, CTRL(localchar));
-                }
-                xsock->fsastate = '\0';
-
-            } else if (rawchar == '\r' || rawchar == '\0') {
-                /* Ignore CR and NUL. */
-                xsock->fsastate = rawchar;
-
-            } else if (rawchar == '\b' && emulation >= EMUL_PRINT &&
-                xsock->fsastate == '*')
-	    {
-		/* "*\b" is an LP editor prompt. */
-		queue_socket_line(xsock, CS(xsock->buffer), 0, F_SERVPROMPT);
-		Stringtrunc(xsock->buffer, 0);
-                xsock->fsastate = '\0';
-		/* other occurances of '\b' are handled by decode_ansi(), so
-		 * ansi codes aren't clobbered before they're interpreted */
-
-            } else {
-                /* Normal character. */
-                const char *end;
+	    /* This is char-by-char. Very inefficient. */
 #if WIDECHAR
-		end = place;
-		while (*end != TN_IAC && end - buffer < count &&
-			(ret = mbrtowc(&wc, (char *)end,
-					count - (end - buffer), &mbs)) > 0) {
-		    if (ret >= (size_t) -2 || !iswprint(wc)) {
-			/* Invalid character. Punt. */
-			break;
-		    }
-		    end += ret;
-		}
-
-		if (end == place) {
-		    Stringadd(xsock->buffer, localchar);
-		    end = ++place;
-		}
+	    Stringadd(incomingposttelnet, rawchar);
 #else
-                Stringadd(xsock->buffer, localchar);
-                end = ++place;
-                /* Quickly skip characters that can't possibly be special. */
-                while (is_print(*end) && *end != TN_IAC && end - buffer < count)
-                    end++;
+            Stringadd(xsock->buffer, rawchar);
 #endif
-                Stringfncat(xsock->buffer, (char*)place, end - place);
-                place = end - 1;
-                xsock->fsastate = (*place == '*') ? '*' : '\0';
-            }
-        }
+	    if (rawchar == '\r' || rawchar == '\n' || rawchar == '*')
+		xsock->fsastate = rawchar;
+	    else
+		xsock->fsastate = '\0';
+	} /* End of buffer-scanning for-loop */
+	    /* No premature optimization; Too much to go wrong.
+	    const char *end;
+	    if (xsock->flags & (SOCKTELNET | SOCKMAYTELNET)) {
+	        end = place++;
+	        while (end - buffer < count && *end != TN_IAC)
+	          ++end;
+#if WIDECHAR
+		Stringfncat(incomingposttelnet, place, end - place);
+#else
+		Stringfncat(xsock->buffer, place, end - place);
+#endif
+		xsock->fsastate = *end;
+	    } else {
+	        end = buffer + count;
+	    }
+*/
+#if WIDECHAR
+	/* Take incomingposttelnet and convert to UTF-8, writing to
+         * xsock->buffer. Shift incomingposttelnet by length converted.
+         * Data CAN be left over. */
+        inbound_decode_str(xsock->buffer, incomingposttelnet, incomingFSM, 0);
+#endif
+        /* Non-WIDECHAR just writes to xsock->buffer.
+        Stringcpy(xsock->buffer, incomingposttelnet);
+        Stringtrunc(incomingposttelnet, 0);
+        */
+	/* Start walking xsock->buffer, which only contains valid UTF-8 */
+	handle_socket_input_queue_lines(xsock);
 
         /* See if anything arrived while we were parsing */
 
@@ -3292,6 +3489,12 @@ non_telnet:
 	if (xsock->zstream && xsock->zstream->avail_in) {
 	    n = xsock->zstream->avail_in;
 	    continue;
+	}
+#endif
+#if WIDECHAR
+	if (encoding != NULL) {
+	   Stringfree(incomingposttelnet);
+	   ucnv_close(incomingFSM);
 	}
 #endif
 
@@ -3308,11 +3511,87 @@ non_telnet:
 
     } while (n > 0);
 
+    /* Set to tvzero for LPMuds while xsock->queue.list.head is true. */
+    /* Might be logically unnecessary, but it's complicated to think about */
+    xsock->prompt_timeout = tvzero;
     test_prompt();
 
     return received;
 }
 
+
+/* This function CAN leave data in sock->buffer */
+STATIC_BUFFER(nextline); /* Static for speed */
+static void handle_socket_input_queue_lines(Sock *sock)
+{
+    String *debug = sock->buffer;
+    char *place;
+    char *bufferend = sock->buffer->data + sock->buffer->len;
+    char rawchar, localchar;
+    char lastchar = '\0';
+    for (place = sock->buffer->data; place != bufferend; ++place) {
+        /* We always accept 8-bit data, even though RFCs 854 and 1123
+         * say server shouldn't transmit it unless in BINARY mode.  What
+         * we do with it depends on the locale.
+         */
+        rawchar = *place;
+        localchar = localize(rawchar); /* NOP if WIDECHAR defined */
+        if (rawchar == '\n') {
+            /* Complete line received.  Queue it. */
+            queue_socket_line(sock, CS(nextline), nextline->len, 0);
+            /* Shift to one past the end. */
+            Stringshift(sock->buffer, place - sock->buffer->data + 1);
+            Stringtrunc(nextline, 0);
+            place = sock->buffer->data - 1;
+            bufferend = sock->buffer->data + sock->buffer->len;
+
+        } else if (emulation == EMUL_DEBUG) {
+            if (localchar != rawchar)
+                Stringcat(nextline, "M-");
+            if (is_print(localchar))
+                Stringadd(nextline, localchar);
+            else {
+                Stringadd(nextline, '^');
+                Stringadd(nextline, CTRL(localchar));
+            }
+
+        } else if (rawchar == '\r' || rawchar == '\0') {
+            /* Ignore CR and NUL. */
+
+        } else if (rawchar == '\b' && emulation >= EMUL_PRINT &&
+            lastchar == '*')
+        {
+            /* "*\b" is an LP editor prompt. */
+            queue_socket_line(sock, CS(nextline), nextline->len, F_SERVPROMPT);
+            Stringshift(sock->buffer, place - sock->buffer->data + 1);
+            Stringtrunc(nextline, 0);
+            place = sock->buffer->data - 1;
+            bufferend = sock->buffer->data + sock->buffer->len;
+            /* other occurances of '\b' are handled by decode_ansi(), so
+            * ansi codes aren't clobbered before they're interpreted */
+
+        } else {
+            /* Explicitly pop the first byte so we can't get stuck. */
+            Stringadd(nextline, localchar);
+            char *end;
+            end = ++place;
+            /* Quickly skip characters that can't possibly be special. */
+#if WIDECHAR
+            while (end != bufferend && *end != '\n' && *end != '\r' &&
+                *end != '\0' && *end != '\b' && *end != '*')
+#else
+            while (end != bufferend && is_print(*end) && *end != TN_IAC)
+#endif
+                ++end;
+            Stringfncat(nextline, place, end - place);
+            place = end - 1;
+        }
+        lastchar = *place;
+    } /* End of buffer-scanning for-loop */
+    /* Shouldn't need to be here, but last lines get duplicated otherwise. */
+    /* This implies something is wrong. */
+    Stringtrunc(nextline, 0);
+}
 
 static int is_quiet(const char *str)
 {
@@ -3418,6 +3697,21 @@ static void telnet_debug(const char *dir, const char *str, int len)
 			len++, str--;
 		    } else if (*str == (char)1) {
 			Stringcat(buffer, " SEND");
+		    }
+		    state = 0;
+		} else if (state == TN_CHARSET) {
+		    if (*str == (char)1) {
+			Stringcat(buffer, " REQUEST ");
+			while (len--, str++, is_print(*str) && !(*str & 0x80))
+			    Stringadd(buffer, *str);
+			len++, str--;
+		    } else if (*str == (char)2) {
+			Stringcat(buffer, " ACCEPTED ");
+			while (len--, str++, is_print(*str) && !(*str & 0x80))
+			    Stringadd(buffer, *str);
+			len++, str--;
+		    } else if (*str == (char)3) {
+			Stringcat(buffer, " REJECTED");
 		    }
 		    state = 0;
 		} else {

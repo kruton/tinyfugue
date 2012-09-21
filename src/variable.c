@@ -26,6 +26,7 @@ static const char RCSid[] = "$Id: variable.c,v 35004.110 2007/01/13 23:12:39 kke
 #include "process.h"	/* runall() */
 #include "expand.h"	/* SUB_KEYWORD */
 #include "parse.h"	/* types */
+#include "world.h"
 #include "variable.h"
 
 static const char *varchar(Var *var);
