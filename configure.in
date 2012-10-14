@@ -377,11 +377,7 @@ fi
 
 AC_CHECK_LIB(z, inflate)
 
-AC_CHECK_LIB(pcre, pcre_compile, :, [
-    AC_MSG_NOTICE([Note: will use old copy of pcre distributed with tf]);
-    PCRE=pcre; LDFLAGS="${LDFLAGS} -Lpcre-2.08"; ])
-AC_SUBST(PCRE)
-
+AC_CHECK_LIB(pcre, pcre_compile)
 
 dnl ########### headers ############
 
