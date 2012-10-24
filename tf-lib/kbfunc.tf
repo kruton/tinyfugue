@@ -140,7 +140,7 @@
     /endif
 
 /def -i kb_down_or_recallf = \
-    /if (mod(kbpoint(), wrapsize) == mod(kblen(), wrapsize)) \
+    /if (kbpoint() == kblen()) \
 	/dokey_recallf%; \
     /else \
 	/dokey_down%; \
