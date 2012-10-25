@@ -491,6 +491,7 @@ static void filenputs(const char *str, int n, FILE *fp)
 
 void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
 {
+    va_list local_ap;
     static smallstr spec, tempbuf;
     const char *q, *sval;
     char *specptr, quote;
@@ -522,8 +523,26 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
         case 'x': case 'X': case 'u': case 'o':
         case 'f': case 'e': case 'E': case 'g': case 'G':
         case 'p':
-            vsprintf(tempbuf, spec, ap);
-            Stringcat(buf, tempbuf);
+	   /* Apparently it is not ok to use the a va_list
+	    * a second time without calling va_end
+	    * then va_start or using va_copy.  This
+	    * doesn't appear to be a problem on 32 bit systems
+	    * but causes problems on 64 bit systems.
+	    * In this case, va_copy is used since I'm usure
+	    * if the program relies on ap staying constant
+	    * or not.  It appears to work fine, but YMMV.
+	    * Also there is a fallback since va_copy doesn't
+	    * appear to be defined in all cases (non-C99 compilers?).
+	    */
+	#ifdef va_copy
+		va_copy(local_ap, ap);
+		vsprintf(tempbuf, spec, local_ap);
+		va_end(local_ap);
+	#else /* assume the old behavior */
+		vsprintf(tempbuf, spec, ap);
+	#endif
+
+	    Stringcat(buf, tempbuf);
             /* eat the arguments used by vsprintf() */
             while (stars--) (void)va_arg(ap, int);
             switch (*fmt) {
