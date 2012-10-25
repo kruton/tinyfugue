@@ -351,7 +351,7 @@ int stringliteral(String *dest, const char **str)
 		/* XXX handle backslash-newline */
 #endif
             } else if ((*str)[1] && pedantic) {
-                wprintf("the only legal escapes within this quoted "
+                tfwprintf("the only legal escapes within this quoted "
 		    "string are \\\\ and \\%c.  \\\\%c is the correct way to "
 		    "write a literal \\%c inside a quoted string.",
 		    quote, (*str)[1], (*str)[1]);
@@ -557,7 +557,6 @@ int ch_timezone(Var *var)
 int ch_locale(Var *var)
 {
 #if HAVE_SETLOCALE
-    const char *lang;
 
 #define tf_setlocale(cat, name, value) \
     do { \
@@ -673,7 +672,7 @@ void init_util2(void)
         Stringfree(path);
 #endif
     } else {
-        wprintf("Can't figure out name of mail file.");
+        tfwprintf("Can't figure out name of mail file.");
     }
 }
 

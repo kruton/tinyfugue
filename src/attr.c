@@ -19,6 +19,10 @@ static const char RCSid[] = "$Id: attr.c,v 35004.10 2007/01/13 23:12:39 kkeys Ex
 #include "variable.h"
 #include "parse.h"	/* valstd() */
 
+#if WIDECHAR
+#include <unicode/utf8.h>
+#endif
+
 
 const int feature_256colors = (NCOLORS == 256);
 
@@ -460,6 +464,12 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
     String *dst;
     int i, colorstate = 0;
     attr_t starting_attrs = attrs;
+#if WIDECHAR
+    const char *start = s;
+    int index, oldindex;
+    int in_len = strlen(s);
+    UChar32 codepoint;
+#endif
 
     if (emul == EMUL_RAW || emul == EMUL_DEBUG) {
 	if (final_attrs) *final_attrs = attrs;
@@ -543,6 +553,30 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
             if (*s == '(' || *s == ')' || *s == '#')
                 if (!*++s) break;
 
+        } else if (*s == '\b') {
+	    /* bug: doesn't handle expanded tabs */
+	    if (dst->len > 0)
+		Stringtrunc(dst, dst->len - 1);
+
+        } else if (*s == '\07') {
+            dst->attrs |= F_BELL;
+#if WIDECHAR
+        } else {
+	    int orig_len = dst->len;
+            if (*s == '\t' && expand_tabs) {
+                Stringnadd(dst, ' ', tabsize - dst->len % tabsize);
+	    } else {
+                index = s - start;
+                oldindex = index;
+                U8_NEXT(start, index, in_len, codepoint);
+                if (codepoint >= 0) {
+                    Stringfncat(dst, s, index - oldindex);
+                    s = s + index - oldindex - 1;
+                }
+            }
+	    set_attr(dst, orig_len, &starting_attrs, attrs);
+	}
+#else
         } else if (is_print(*s) || *s == '\t') {
 	    int orig_len = dst->len;
 	    if (*s == '\t' && expand_tabs) {
@@ -551,15 +585,8 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 		Stringadd(dst, *s);
 	    }
 	    set_attr(dst, orig_len, &starting_attrs, attrs);
-
-        } else if (*s == '\b') {
-	    /* bug: doesn't handle expanded tabs */
-	    if (dst->len > 0)
-		Stringtrunc(dst, dst->len - 1);
-
-        } else if (*s == '\07') {
-            dst->attrs |= F_BELL;
-        }
+	}
+#endif
     }
 
     if (!dst->charattrs) {

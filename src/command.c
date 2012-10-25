@@ -522,7 +522,7 @@ int do_file_load(const char *args, int tinytalk)
 		    Stringadd(libfile, *path++);
 		}
 		if (!is_absolute_path(libfile->data)) {
-		    wprintf("invalid directory in TFPATH: %S", libfile);
+		    tfwprintf("invalid directory in TFPATH: %S", libfile);
 		} else {
 		    Sappendf(libfile, "/%s", args);
 		    file = tfopen(expand_filename(libfile->data), "r");
@@ -530,7 +530,7 @@ int do_file_load(const char *args, int tinytalk)
 	    } while (!file && *path);
 	} else {
 	    if (!is_absolute_path(TFLIBDIR)) {
-		wprintf("invalid TFLIBDIR: %s", TFLIBDIR);
+		tfwprintf("invalid TFLIBDIR: %s", TFLIBDIR);
 	    } else {
 		Sprintf(libfile, "%s/%s", TFLIBDIR, args);
 		file = tfopen(expand_filename(libfile->data), "r");
@@ -587,7 +587,7 @@ int do_file_load(const char *args, int tinytalk)
                 i = line->len - 1;
                 while (i > 0 && is_space(line->data[i])) i--;
                 if (line->data[i] == '\\')
-                    wprintf("whitespace following final '\\'");
+                    tfwprintf("whitespace following final '\\'");
             }
         } else {
             last_cmd_line = 0;

@@ -37,6 +37,13 @@ static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys
 #include "keyboard.h"	/* keyboard_pos */
 #include "cmdlist.h"
 
+#if WIDECHAR
+#include <wchar.h>
+#include <unicode/uchar.h>
+#include <unicode/utext.h>
+#include <unicode/ubrk.h>
+#endif
+
 #ifdef EMXANSI
 # define INCL_VIO
 # include <os2.h>
@@ -476,12 +483,12 @@ static void init_term(void)
 	if ((str = getvar("TERMCAP")) && (len = strlen(str)) > 0) {
 	    is_csh = ((shell = getenv("SHELL")) && smatch("*csh", shell) == 0);
 	    if (str[len-1] != ':') {
-		wprintf("unsetting invalid TERMCAP variable%s.",
+		tfwprintf("unsetting invalid TERMCAP variable%s.",
 		    is_csh ?  ", which appears to have been corrupted by your "
 		    "broken *csh shell" : "");
 		unsetvar(ffindglobalvar("TERMCAP"));
 	    } else if (len == 1023 && (!getenv("TF_FORCE_TERMCAP")) && is_csh) {
-		wprintf("unsetting the TERMCAP environment variable because "
+		tfwprintf("unsetting the TERMCAP environment variable because "
 		    "it looks like it has been truncated by your broken *csh "
 		    "shell.  To force TF to use TERMCAP, restart TF with the "
 		    "TF_FORCE_TERMCAP environment variable set.");
@@ -491,9 +498,9 @@ static void init_term(void)
     }
 
     if (!TERM || !*TERM) {
-        wprintf("TERM undefined.");
+        tfwprintf("TERM undefined.");
     } else if (tgetent(termcap_entry, TERM) <= 0) {
-        wprintf("\"%s\" terminal unsupported.", TERM);
+        tfwprintf("\"%s\" terminal unsupported.", TERM);
     } else {
         if (columns <= 0) columns = tgetnum("co");
         if (lines   <= 0) lines   = tgetnum("li");
@@ -1200,7 +1207,11 @@ int redraw_window(Screen *screen, int already_clear)
 		if (!first) crnl(1);
 		first = 0;
 		hwrite(pl->str, pl->start,
+#if WIDECHAR
+		    pl->len, /* these should already be correct */
+#else
 		    pl->len < Wrap - pl->indent ? pl->len : Wrap - pl->indent,
+#endif
 		    pl->indent);
 	    }
 	    if (node == screen->bot)
@@ -1468,7 +1479,7 @@ static ListEntry *find_statusfield_by_name(int row, const char *spec)
 int ch_status_int(Var *var)
 {
     if (warn_status)
-	wprintf("the default value of %s has "
+	tfwprintf("the default value of %s has "
 	    "changed between tf version 4 and 5.", var->val.name);
     return 1;
 }
@@ -1540,7 +1551,7 @@ static int status_add(int reset, int nodup, int row, ListEntry *where,
     }
 
     if (totwidth > columns) {
-        wprintf("total status width (%d) is wider than screen (%d)",
+        tfwprintf("total status width (%d) is wider than screen (%d)",
 	    totwidth, columns);
     }
 
@@ -1625,7 +1636,7 @@ struct Value *handle_status_add_command(String *args, int offset)
 int ch_status_fields(Var *var)
 {
     if (warn_status) {
-	wprintf("setting status_fields directly is deprecated, "
+	tfwprintf("setting status_fields directly is deprecated, "
 	    "and may clobber useful new features introduced in version 5.  "
 	    "The recommended way to change "
 	    "status fields is with /status_add, /status_rm, or /status_edit. "
@@ -2807,6 +2818,13 @@ static void hwrite(conString *line, int start, int len, int indent)
     int i, ctrl;
     int col = 0;
     char c;
+#if WIDECHAR
+    size_t ret;
+    mbstate_t is, os;
+
+    memset(&is, 0, sizeof(is));
+    memset(&os, 0, sizeof(os));
+#endif
 
     if (line->attrs & F_BELL && start == 0) {
         dobell(1);
@@ -2837,7 +2855,22 @@ static void hwrite(conString *line, int start, int len, int indent)
             bufputnc(' ', tabsize - col % tabsize);
             col += tabsize - col % tabsize;
         } else {
+#if WIDECHAR
+	    ret = mbrtowc(NULL, (char *)line->data+i, len - i, &is);
+	    if (ret >= (size_t) -2) {
+		/* Invalid character. Punt. */
+		bufputc(ctrl ? CTRL(c) : c);
+	    } else {
+		int j = 1;
+		bufputc(c);
+		while (j++ < ret) {
+		  c = line->data[++i];
+		  bufputc(c);
+		}
+	    }
+#else
             bufputc(ctrl ? CTRL(c) : c);
+#endif
             col++;
         }
     }
@@ -3067,11 +3100,113 @@ static int next_physline(Screen *screen)
 int wraplen(const char *str, int len, int indent)
 {
     int total, max, visible;
+#if WIDECHAR
+    UText *ut = NULL;
+    UBreakIterator *lineBI = NULL;
+    UBreakIterator *charBI = NULL;
+    UErrorCode icuerr = U_ZERO_ERROR;
+    UChar32 c;
+    UEastAsianWidth ea;
+    int nativeIndex = 0;
+#endif
 
     if (emulation == EMUL_RAW) return len;
 
     max = Wrap - indent;
 
+#if WIDECHAR
+    ut = utext_openUTF8(ut, str, len, &icuerr);
+    if (!U_SUCCESS(icuerr))
+	return len;
+
+    c = UTEXT_NEXT32(ut);
+    for (visible = 0; visible < max && c != U_SENTINEL; c = UTEXT_NEXT32(ut)) {
+	if (c == '\t')
+	    visible += tabsize - visible % tabsize;
+	else {
+	    ea = (UEastAsianWidth)u_getIntPropertyValue(c,
+		UCHAR_EAST_ASIAN_WIDTH);
+	    switch (ea) {
+		case U_EA_NEUTRAL:
+		case U_EA_AMBIGUOUS:
+		case U_EA_HALFWIDTH:
+		    ++visible;
+		    break;
+		case U_EA_FULLWIDTH:
+		    visible += 2;
+		    break;
+		case U_EA_NARROW:
+		    ++visible;
+		    break;
+		case U_EA_WIDE:
+		    visible += 2;
+		    break;
+		default:
+		    ++visible;
+	    }
+	}
+    }
+
+    if (c == U_SENTINEL) {
+	utext_close(ut);
+	return len;
+    }
+
+    /* If we had a full width character as the last UChar32, go
+     * back one to fit within our max length.
+     */
+    if (visible >= max)
+	UTEXT_PREVIOUS32(ut);
+
+    lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
+    if (!U_SUCCESS(icuerr)) {
+	utext_close(ut);
+	return len;
+    }
+
+    ubrk_setUText(lineBI, ut, &icuerr);
+    if (!U_SUCCESS(icuerr)) {
+	nativeIndex = utext_getNativeIndex(ut);
+	ubrk_close(lineBI);
+	utext_close(ut);
+	return nativeIndex;
+    }
+
+    total = ubrk_preceding(lineBI, utext_getNativeIndex(ut));
+
+    /* If we can't break at an acceptable "line break" point.
+     * Break at the previous glyph.
+     */
+    if (total == 0) {
+	charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
+	if (!U_SUCCESS(icuerr)) {
+	    nativeIndex = utext_getNativeIndex(ut);
+	    ubrk_close(lineBI);
+	    utext_close(ut);
+	    return nativeIndex;
+	}
+
+	ubrk_setUText(charBI, ut, &icuerr);
+	if (!U_SUCCESS(icuerr)) {
+	    nativeIndex = utext_getNativeIndex(ut);
+	    ubrk_close(charBI);
+	    ubrk_close(lineBI);
+	    utext_close(ut);
+	    return nativeIndex;
+	}
+
+	total = ubrk_preceding(charBI, utext_getNativeIndex(ut));
+
+	/* Return the position we're at if there's no good break. */
+	if (total == 0)
+	    total = utext_getNativeIndex(ut);
+	ubrk_close(charBI);
+    }
+
+    ubrk_close(lineBI);
+    utext_close(ut);
+    return total;
+#else
     for (visible = total = 0; total < len && visible < max; total++) {
 	if (str[total] == '\t')
 	    visible += tabsize - visible % tabsize;
@@ -3091,6 +3226,7 @@ int wraplen(const char *str, int len, int indent)
 	}
     }
     return len ? len : total;
+#endif /* WIDECHAR */
 }
 
 
