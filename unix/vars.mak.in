@@ -39,4 +39,3 @@ STRIP      = @STRIP@
 RANLIB     = @RANLIB@
 LIBS       = @LIBS@
 OTHER_OBJS = @OTHER_OBJS@
-PCRE       = @PCRE@
