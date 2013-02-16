@@ -1,5 +1,5 @@
 Unicode notes:
-  ICU is the branch you want.
+  "Release" is the branch you want.
   On Debian or Ubuntu, make sure you apt-get libicu-dev before running
   ./configure.
   Please be aware there are some bugs, but there should be no crashbugs.
