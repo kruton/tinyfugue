@@ -2,11 +2,11 @@ Unicode notes:
   "Release" is the branch you want.
   On Debian or Ubuntu, make sure you apt-get libicu-dev before running
   ./configure.
-  There is a known and easily triggered crashbug: The backspace, delete, and
-  arrow keys move by bytes, not by characters. Thusly, do not try to edit
-  an input line containing extended multibyte characters.
-  I will fix this as soon as possible,
-  and will also gladly accept pull requests.
+  There is a known and easily triggered bug: The backspace, delete, and
+  arrow keys move by bytes, not by characters. For now, editing a line
+  with multibyte characters will send XML hexadecimal escape codes
+  if unencodeable bytes are in the input box.
+  I will gladly accept pull requests.
 
   For servers that don't negotiate charsets, /set default_charset=NAME
   before defining a world with /addworld or /test addworld(). I recommend
