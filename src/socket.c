@@ -2633,8 +2633,15 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     err = U_ZERO_ERROR;
     target = buffer1;
     utf16_source = utf16buf;
+    /* First attempt at fixing. Probably better to make this one stick
+     * around longer but enh. */
+    UConverter *utf8_conv = ucnv_open("UTF8", &err);
+    ucnv_setToUCallBack(utf8_conv, UCNV_TO_U_CALLBACK_ESCAPE,
+                        UCNV_ESCAPE_XML_HEX, NULL, NULL, &err);
+    j = ucnv_toUChars(utf8_conv, utf16buf, bufferlen / 2, buffer1, len, &err);
+    ucnv_close(utf8_conv);
     /* dest, dest_len, written_units, src, src_len, errors */
-    u_strFromUTF8(utf16buf, bufferlen / 2, &j, buffer1, len, &err);
+    /* u_strFromUTF8(utf16buf, bufferlen / 2, &j, buffer1, len, &err); */
     /* 'incomingfsm' has an outgoing state machine, as well. Used here. */
     ucnv_resetFromUnicode(xsock->incomingfsm);
     ucnv_fromUnicode(xsock->incomingfsm,  /* Converter */
@@ -2644,7 +2651,11 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     len = target - buffer1; /* 'target' is moved to end during conversion */
 
     if (U_FAILURE(err))
-        core("outbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+    {
+        eprintf("Broken characters found. Line not sent.");
+        return 0;
+        /* core("outbound_decode U_FAILURE", __FILE__, __LINE__, 0); */
+    }
 #endif
 
     /* Buf1 -> Buf2  [Telnet escape]   */
