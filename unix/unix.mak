@@ -87,8 +87,8 @@ TF tf$(X):     $(OBJS) $(BUILDERS) $(PCRE)
 	-test -z "$(STRIP)" || $(STRIP) tf$(X) || true
 
 PREFIXDIRS:
-	test -d "$(bindir)" || mkdir $(bindir)
-	test -d "$(datadir)" || mkdir $(datadir)
+	test -d "$(bindir)" || mkdir -p $(bindir)
+	test -d "$(datadir)" || mkdir -p $(datadir)
 
 install_TF $(TF): tf$(X) $(BUILDERS)
 	-@rm -f $(TF)
@@ -103,7 +103,7 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 #	@# Overly simplified shell commands, to avoid problems on ultrix
 	-@test -n "$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
 	test -n "$(TF_LIBDIR)"
-	test -d "$(TF_LIBDIR)" || mkdir $(TF_LIBDIR)
+	test -d "$(TF_LIBDIR)" || mkdir -p $(TF_LIBDIR)
 	-@test -d "$(TF_LIBDIR)" || echo "Can't make $(TF_LIBDIR) directory.  See if"
 	-@test -d "$(TF_LIBDIR)" || echo "there is already a file with that name."
 	test -d "$(TF_LIBDIR)"
