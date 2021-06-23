@@ -116,7 +116,7 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	rm -f worldqueue.tf;   ln -s  world-q.tf   worldqueue.tf;
 
 makehelp: makehelp.c
-	$(CC) $(CFLAGS) -o makehelp makehelp.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o makehelp makehelp.c
 
 __always__:
 
