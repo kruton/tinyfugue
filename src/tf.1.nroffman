@@ -128,7 +128,7 @@ commands to use in a \fITF\fR configuration file are /addworld and /load.
 
 For backward compatibility, \fITF\fR will also try
 to read the \fITinyTalk\fR configuration file.
-Its name defautls to $HOME/.tinytalk, or can be defined by the TINYTALK
+Its name defaults to $HOME/.tinytalk, or can be defined by the TINYTALK
 environment variable.
 This file may start with a list of worlds that will be defined as if with
 /addworld.
