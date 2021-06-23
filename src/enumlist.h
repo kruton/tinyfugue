@@ -71,6 +71,7 @@ bicode(STAT_ACTIVE,	STRING_LITERAL("active")),
 bicode(STAT_LOGGING,	STRING_LITERAL("log")),
 bicode(STAT_MAIL,	STRING_LITERAL("mail")),
 bicode(STAT_CLOCK,	STRING_LITERAL("clock")),
+bicode(STAT_ALERT,	STRING_LITERAL("alert")),
 bicode(STAT_COUNT,	STRING_NULL),
 bicode(STAT_NONE = -1,	STRING_NULL)
 }
