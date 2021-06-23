@@ -198,6 +198,9 @@ enum Vars {
 #define keypad		getintvar(VAR_keypad)
 #define kprefix		getstrvar(VAR_kprefix)
 #define login		getintvar(VAR_login)
+#ifdef LOG_PREFIX
+#define log_prefix	getstrvar(VAR_log_prefix)
+#endif
 #define lpflag		getintvar(VAR_lp)
 #define lpquote		getintvar(VAR_lpquote)
 #define maildelay	gettimevar(VAR_maildelay)

@@ -140,7 +140,27 @@ static void save_to_log(History *hist, const conString *str)
 	    remaining -= len;
         } while (remaining);
     } else {
-        tfputs(str->data, hist->logfile);
+#ifdef LOG_PREFIX
+       if (log_prefix->len) {
+               time_t t;
+               struct tm *tm_;
+               int len;
+               String *buffer = NULL;
+
+               buffer = Stringnew(NULL, 256 + str->len, 0);
+               buffer->links++;
+               tftime(buffer, log_prefix, &str->time);
+               Stringcat(buffer, str->data);
+
+               tfputs(buffer->data, hist->logfile);
+
+               Stringfree(buffer);
+       } else {
+           tfputs(str->data, hist->logfile);
+       }
+#else
+       tfputs(str->data, hist->logfile);
+#endif
     }
     tfflush(hist->logfile);
 }

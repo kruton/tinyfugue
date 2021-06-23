@@ -87,6 +87,9 @@ varflag(VAR_keepalive,	"keepalive",	TRUE,		tog_keepalive)
 varflag(VAR_keypad,	"keypad",	FALSE,		tog_keypad)
 varstr (VAR_kprefix,	"kprefix",	NULL,		NULL)
 varflag(VAR_login,	"login",	TRUE,		NULL)
+#ifdef LOG_PREFIX
+varstr (VAR_log_prefix, "log_prefix",	"%H:%M:%S ",	NULL)
+#endif
 varflag(VAR_lp,		"lp",		FALSE,		tog_lp)
 varflag(VAR_lpquote,	"lpquote",	FALSE,		ch_lpquote)
 vartime(VAR_maildelay,	"maildelay",	60,0,		ch_maildelay)

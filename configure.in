@@ -99,7 +99,12 @@ AC_ARG_WITH(incdir) dnl because I never remember if it's singular or plural
 AC_ARG_WITH(libdir) dnl because I never remember if it's singular or plural
 AC_ARG_WITH(inclibdir) dnl because I never remember if it's singular or plural
 
+AC_ARG_ENABLE(logprefix, , , enable_logprefix=no)
 AC_ARG_ENABLE(manpage, , , enable_manpage=no)
+
+if test "$enable_logprefix" = "yes"; then
+     AC_DEFINE(LOG_PREFIX)
+fi
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink
@@ -155,7 +160,6 @@ fi
 
 AC_MSG_NOTICE([])
 
-
 dnl XXX option: TTYDRIVER
 
 UNAME=`{ uname -s && uname -v && uname -r || uname -a; } 2>/dev/null`
@@ -184,10 +188,10 @@ dnl ########### programs ############
 
 AC_PROG_MAKE_SET
 
-##if test "$enable_core" = "no"; then
-##    AC_CHECK_PROG(STRIP, strip, strip, :)
-##fi
-#AC_SUBST(STRIP)
+if test "$enable_core" = "no"; then
+    AC_CHECK_PROG(STRIP, strip, strip, :)
+fi
+AC_SUBST(STRIP)
 
 AC_CHECK_PROG(RANLIB, ranlib, ranlib, :)
 
