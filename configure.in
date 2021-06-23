@@ -132,9 +132,6 @@ if test "$enable_development" = "yes"; then
     if test "$enable_symlink" = "default"; then
 	enable_symlink=no
     fi
-    if test -z "${CC}"; then
-	AC_CHECK_PROGS(CC, tfcc gcc-anal)
-    fi
 else
     AC_DEFINE(NDEBUG)
 fi
@@ -159,8 +156,8 @@ AC_SUBST(UNAME)
 
 dnl ########### programs ############
 
-AC_PROG_CC
-AC_PROG_GCC_TRADITIONAL
+AC_PROG_CC([clang gcc cc])
+
 dnl XXX STD_C=1, if compiler is standard
 
 dnl XXX
