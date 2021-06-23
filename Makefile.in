@@ -12,7 +12,7 @@
 @SET_MAKE@
 LONGPATH=${PATH}:@PATH@
 
-default: files
+default: files 
 
 files all install tf clean uninstall: _force_
 	@cd src; PATH=${LONGPATH} ${MAKE} $@
