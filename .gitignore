@@ -1,6 +1,7 @@
 autom4te.cache
 config.log
 config.status
+Makefile
 lib/tf/tf-help.idx
 src/*.o
 src/tf
