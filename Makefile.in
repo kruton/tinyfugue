@@ -12,12 +12,12 @@
 @SET_MAKE@
 LONGPATH=${PATH}:@PATH@
 
-default: files
+# Note: the space on the end of the next line is intentional, so it will
+# still work in unix for idiots who got ^M on the end of every line.
+default: files 
 
 files all install tf clean uninstall: _force_
-	@cd src; PATH="${LONGPATH}" ${MAKE} $@
-
-_force_:
+	@cd src; PATH=${LONGPATH} ${MAKE} $@
 
 # The next line is a hack to get around a bug in BSD/386 make.
 make:
