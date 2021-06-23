@@ -1,4 +1,3 @@
-.\" $Id: tf.1.nroffman,v 34000.8 2007/01/13 23:12:39 kkeys Exp $
 .TH TF 1 LOCAL
 .SH NAME
 tf \- TinyFugue, a MUD client

@@ -95,12 +95,14 @@
 #define NCOLORS 16
 #define WIDECHAR 0
 
+#define USE_DMALLOC 0
+#define USE_MMALLOC 0
+
 #define HAVE_MCCP (HAVE_ZLIB_H && HAVE_LIBZ)
 
 #undef inline
 
 #include "tfdefs.h"
 
-#undef NDEBUG
 #include <assert.h>
 
