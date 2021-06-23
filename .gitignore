@@ -1,0 +1,13 @@
+autom4te.cache
+config.log
+config.status
+lib/tf/tf-help.idx
+src/*.o
+src/tf
+src/Makefile
+src/TF_LIBDIR.build
+src/makehelp
+src/tfconfig.h
+src/tfdefs.h
+tf-lib/tf-help.idx
+unix/vars.mak
