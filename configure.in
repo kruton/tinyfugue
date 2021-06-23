@@ -104,18 +104,10 @@ AC_ARG_WITH(inclibdir) dnl because I never remember if it's singular or plural
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink
-AC_ARG_ENABLE(development, , , enable_development=default)
+AC_ARG_ENABLE(development, , , enable_development=yes)
 AC_ARG_ENABLE(dmalloc, , , enable_dmalloc=no)
 
 AC_MSG_NOTICE([])
-
-if test "$enable_development" = "default"; then
-    if test -d CVS; then
-	enable_development=yes
-    else
-	enable_development=no
-    fi
-fi
 
 if test "$enable_development" = "yes"; then
     AC_MSG_NOTICE([Development version.])
@@ -251,6 +243,10 @@ dnl on all platforms since it will _follow_ the -l option for the library
 dnl being tested.)
 LDFLAGS="$LDFLAGS $LIBDIRS"
 
+dnl This is needed to compile on newer linux systems.
+if test "$GCC" = "yes"; then
+    LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
+fi
 
 AC_SEARCH_LIBS(select, bsd, ,
     AC_MSG_ERROR([TF can not work without select().]))
@@ -370,9 +366,13 @@ fi
 
 if test "$enable_widechar" = "yes"; then
     AC_CHECK_HEADERS(wchar.h wctype.h)
-    AC_CHECK_ICU([4.2],
-        [LIBS="${LIBS} -licuuc"],
-        [AC_MSG_ERROR([Widechar cannot be enabled without icu.])])
+    AC_CHECK_LIB(icuuc, main,,
+        AC_MSG_ERROR([Widechar cannot be enabled without icu.]))
+    AC_CHECK_LIB(icudata, main,,
+        AC_MSG_ERROR([Widechar cannot be enabled without icu.]))
+    AC_CHECK_LIB(icui18n, main,,
+        AC_MSG_ERROR([Widechar cannot be enabled without icu.]))
+    
 fi
 
 AC_CHECK_LIB(z, inflate)
