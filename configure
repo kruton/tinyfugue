@@ -633,6 +633,8 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 OTHER_OBJS
 MODE
+MANTYPE
+MANPAGE
 SYMLINK
 LIBNAME
 PROGNAME
@@ -714,8 +716,10 @@ with_inclibpfx
 with_incdir
 with_libdir
 with_inclibdir
+enable_manpage
 enable_development
 enable_dmalloc
+enable_mmalloc
 '
       ac_precious_vars='build_alias
 host_alias
@@ -2552,6 +2556,13 @@ if test "${with_inclibdir+set}" = set; then :
   withval=$with_inclibdir;
 fi
 
+# Check whether --enable-manpage was given.
+if test "${enable_manpage+set}" = set; then :
+  enableval=$enable_manpage;
+else
+  enable_manpage=no
+fi
+
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink
@@ -2559,7 +2570,7 @@ fi
 if test "${enable_development+set}" = set; then :
   enableval=$enable_development;
 else
-  enable_development=yes
+  enable_development=no
 fi
 
 # Check whether --enable-dmalloc was given.
@@ -2569,9 +2580,13 @@ else
   enable_dmalloc=no
 fi
 
+# Check whether --enable-mmalloc was given.
+if test "${enable_mmalloc+set}" = set; then :
+  enableval=$enable_mmalloc;
+else
+  enable_mmalloc=no
+fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
 
 if test "$enable_development" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Development version." >&5
@@ -2597,9 +2612,6 @@ if test "$enable_development" = "yes"; then
     if test "$enable_symlink" = "default"; then
 	enable_symlink=no
     fi
-else
-    $as_echo "#define NDEBUG 1" >>confdefs.h
-
 fi
 
 if test "$enable_core" = "yes"; then
@@ -2608,12 +2620,29 @@ $as_echo "$as_me: Core dumps enabled." >&6;}
     CFLAGS="${CFLAGS} -g"
     STRIP=":"
 else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Core dumps disabled." >&5
-$as_echo "$as_me: Core dumps disabled." >&6;}
     $as_echo "#define DISABLE_CORE 1" >>confdefs.h
 
 fi
 
+if test "$enable_dmalloc" = "yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Debug malloc enabled." >&5
+$as_echo "$as_me: Debug malloc enabled." >&6;}
+    CPPFLAGS="${CPPFLAGS} -DUSE_DMALLOC"
+    OTHER_OBJS="$OTHER_OBJS dmalloc.o"
+    $as_echo "#define USE_DMALLOC 1" >>confdefs.h
+
+fi
+
+if test "$enable_mmalloc" = "yes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: GNU malloc enabled." >&5
+$as_echo "$as_me: GNU malloc enabled." >&6;}
+    CPPFLAGS="${CPPFLAGS} -DUSE_MMALLOC"
+    $as_echo "#define USE_MMALLOC 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
+$as_echo "$as_me: " >&6;}
 
 
 
@@ -4643,7 +4672,6 @@ else
   as_fn_error $? "Widechar cannot be enabled without icu." "$LINENO" 5
 fi
 
-
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflate in -lz" >&5
@@ -5466,6 +5494,15 @@ fi
 
 
 
+### man page
+
+if test "$enable_manpage" = "yes"; then
+    MANPAGE='${mandir}/man1/'${EXENAME}.1
+    MANTYPE='nroff'
+else
+    MANPAGE=''
+    MANTYPE=''
+fi
 
 
 
@@ -5484,10 +5521,6 @@ MODE=755
 PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr/new:/usr/new/bin:/usr/nbin:/usr/ccs/bin"
 
 
-if test "$enable_dmalloc" = "yes"; then
-    CPPFLAGS="$CPPFLAGS -DUSE_DMALLOC"
-    OTHER_OBJS="$OTHER_OBJS dmalloc.o"
-fi
 
 
 if test "$enable_inet6"   = "yes"; then $as_echo "#define ENABLE_INET6 1" >>confdefs.h
@@ -6817,9 +6850,11 @@ fi
 ## prefix: $prefix
 ## exec_prefix: $exec_prefix
 ## bindir: $bindir
+## datarootdir: $datarootdir
 ## datadir: $datadir
 ## executable: \${bindir}/$EXENAME
 ## library: \${datadir}/$LIBNAME
+## manpage: ${MANPAGE}
 ##
 ## TinyFugue configuration successful.
 ## Use \"make\" to build.
@@ -6829,9 +6864,11 @@ $as_echo "$as_me:
 ## prefix: $prefix
 ## exec_prefix: $exec_prefix
 ## bindir: $bindir
+## datarootdir: $datarootdir
 ## datadir: $datadir
 ## executable: \${bindir}/$EXENAME
 ## library: \${datadir}/$LIBNAME
+## manpage: ${MANPAGE}
 ##
 ## TinyFugue configuration successful.
 ## Use \"make\" to build.

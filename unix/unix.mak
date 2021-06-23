@@ -82,7 +82,7 @@ PREFIXDIRS:
 	test -d "$(bindir)" || mkdir -p $(bindir)
 	test -d "$(datadir)" || mkdir -p $(datadir)
 
-install_TF: tf$(X) $(BUILDERS)
+install_TF $(TF): tf$(X) $(BUILDERS)
 	-@rm -f $(TF)
 	cp tf$(X) $(TF)
 	chmod $(MODE) $(TF)
