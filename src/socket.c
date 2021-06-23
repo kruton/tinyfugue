@@ -2878,7 +2878,6 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
-// UNUSED    unsigned int i;
     char *p;
     const char *end;
     char temp_buff[255]; /* Same length as whole subnegotiation line. */
@@ -3080,7 +3079,6 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
-// UNUSED char localchar
     char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
@@ -3093,7 +3091,6 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     String *incomingposttelnet;
     UConverter *incomingFSM = NULL;
     UErrorCode incomingERR;
-// UNUSED    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3537,7 +3534,6 @@ non_telnet:
 STATIC_BUFFER(nextline); /* Static for speed */
 static void handle_socket_input_queue_lines(Sock *sock)
 {
-// UNUSED    String *debug = sock->buffer;
     char *place;
     char *bufferend = sock->buffer->data + sock->buffer->len;
     char rawchar, localchar;

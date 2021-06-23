@@ -405,7 +405,6 @@ struct Value *handle_limit_command(String *args, int offset)
 {
     int mflag = matching;
     int got_opts = 0;
- // UNUSED had_filter
     int result, has_new_pat;
     char c;
     const char *ptr;
@@ -442,7 +441,6 @@ struct Value *handle_limit_command(String *args, int offset)
 	    goto end;
 	}
     }
-// UNUSED    had_filter = screen_has_filter(screen);
     clear_screen_filter(screen);
     set_screen_filter(screen, has_new_pat ? &pat : NULL, attr_flag, sense);
 
