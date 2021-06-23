@@ -639,6 +639,7 @@ LIBNAME
 PROGNAME
 EXENAME
 RANLIB
+STRIP
 SET_MAKE
 EGREP
 GREP
@@ -714,6 +715,7 @@ with_inclibpfx
 with_incdir
 with_libdir
 with_inclibdir
+enable_logprefix
 enable_manpage
 enable_development
 enable_dmalloc
@@ -2556,6 +2558,13 @@ if test "${with_inclibdir+set}" = set; then :
   withval=$with_inclibdir;
 fi
 
+# Check whether --enable-logprefix was given.
+if test "${enable_logprefix+set}" = set; then :
+  enableval=$enable_logprefix;
+else
+  enable_logprefix=no
+fi
+
 # Check whether --enable-manpage was given.
 if test "${enable_manpage+set}" = set; then :
   enableval=$enable_manpage;
@@ -2563,6 +2572,11 @@ else
   enable_manpage=no
 fi
 
+
+if test "$enable_logprefix" = "yes"; then
+     $as_echo "#define LOG_PREFIX 1" >>confdefs.h
+
+fi
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink
@@ -2643,7 +2657,6 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}
-
 
 
 UNAME=`{ uname -s && uname -v && uname -r || uname -a; } 2>/dev/null`
@@ -3899,10 +3912,47 @@ $as_echo "no" >&6; }
 fi
 
 
-##if test "$enable_core" = "no"; then
-##    AC_CHECK_PROG(STRIP, strip, strip, :)
-##fi
-#AC_SUBST(STRIP)
+if test "$enable_core" = "no"; then
+    # Extract the first word of "strip", so it can be a program name with args.
+set dummy strip; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_STRIP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$STRIP"; then
+  ac_cv_prog_STRIP="$STRIP" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_STRIP="strip"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_STRIP" && ac_cv_prog_STRIP=":"
+fi
+fi
+STRIP=$ac_cv_prog_STRIP
+if test -n "$STRIP"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $STRIP" >&5
+$as_echo "$STRIP" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+
 
 # Extract the first word of "ranlib", so it can be a program name with args.
 set dummy ranlib; ac_word=$2
