@@ -243,7 +243,7 @@ dnl on all platforms since it will _follow_ the -l option for the library
 dnl being tested.)
 LDFLAGS="$LDFLAGS $LIBDIRS"
 
-dnl This is needed to compile on newer linux systems.
+dnl This is needed to compile when usinc GCC 10
 if test "$GCC" = "yes"; then
     LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
 fi
