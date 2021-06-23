@@ -1996,11 +1996,10 @@ void alert(conString *msg)
 	new_pos = 0;
 	new_len = msg->len > Wrap ? Wrap : msg->len;
 	if (msg->len < Wrap) {
-	    /* if there's a field after @world, and msg fits there, use it */
-	    for (node = statusfield_list[row]->head; node; node = node->next) {
-		field = (StatusField*)node->datum;
-		if (field->internal == STAT_WORLD && node->next) {
-		    field = (StatusField*)node->next->datum;
+            /* use the @alert field */
+            for (node = statusfield_list[row]->head; node; node = node->next) {
+ 		field = (StatusField*)node->datum;
+                if (field->internal == STAT_ALERT) {
 		    break;
 		}
 	    }
