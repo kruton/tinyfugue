@@ -34,8 +34,12 @@
 #endif
 
 #if HAVE_SSL
-# include <openssl/ssl.h>
-# include <openssl/err.h>
+# if HAVE_GNUTLS_OPENSSL_H
+#  include <gnutls/openssl.h>
+# else
+#  include <openssl/ssl.h>
+#  include <openssl/err.h>
+# endif
     SSL_CTX *ssl_ctx;
 #endif
 
@@ -548,9 +552,11 @@ static void ssl_io_err(Sock *sock, int ret, int hook)
     case SSL_ERROR_WANT_WRITE:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_WRITE");
 	break;
+#ifdef SSL_ERROR_WANT_CONNECT
     case SSL_ERROR_WANT_CONNECT:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_CONNECT");
 	break;
+#endif
     case SSL_ERROR_SYSCALL:
 	if (ret == 0) {
 	    ssl_io_err_hook("SSL/system", "invalid EOF");
@@ -3126,9 +3132,12 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 #if HAVE_SSL
 	    if (xsock->ssl) {
 		count = SSL_read(xsock->ssl, inbuffer, sizeof(inbuffer));
-		if (count == 0 &&
-		    SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
-		    ERR_peek_error() == 0)
+		if (count == 0
+# if HAVE_ERR_PEEK_ERROR
+		    && SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
+		    ERR_peek_error() == 0
+# endif
+		    )
 		{
 		    /* Treat a count of 0 with no errors as a normal EOF */
 		    goto eof;
