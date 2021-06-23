@@ -30,3 +30,4 @@ install files tf clean uninstall: all
 
 # The next line is a hack to get around a bug in BSD/386 make.
 make:
+

@@ -1,4 +1,3 @@
-# $Id: unix.mak,v 35004.50 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
 #  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
@@ -17,7 +16,6 @@
 SHELL      = /bin/sh
 BUILDERS   = Makefile
 
-
 default: all
 
 install:  _all PREFIXDIRS $(TF) LIBRARY $(MANPAGE) $(SYMLINK)
@@ -26,7 +24,7 @@ install:  _all PREFIXDIRS $(TF) LIBRARY $(MANPAGE) $(SYMLINK)
 	@echo '## TinyFugue installation successful.'
 	@echo '##    tf binary: $(TF)'
 	@echo '##    library:   $(TF_LIBDIR)'
-#	@echo '##    manpage:   $(MANPAGE)'
+	@echo '##    manpage:   $(MANPAGE)'
 	@DIR=`echo $(TF) | sed 's;/[^/]*$$;;'`; \
 	echo ":$(PATH):" | egrep ":$${DIR}:" >/dev/null 2>&1 || { \
 	    echo "##"; \
@@ -49,7 +47,7 @@ all files:  _all
 	@echo '## Use "$(MAKE) install" to install:'
 	@echo '##    tf binary: $(TF)'
 	@echo '##    library:   $(TF_LIBDIR)'
-#	@echo '##    manpage:   $(MANPAGE)'
+	@echo '##    manpage:   $(MANPAGE)'
 
 _all:  tf$(X) ../tf-lib/tf-help.idx
 
@@ -73,7 +71,7 @@ _failmsg:
 #	    echo '## variable CC to "cc", and run ./configure again.'; \
 #	fi
 
-TF tf$(X):     $(OBJS) $(BUILDERS) $(PCRE)
+TF tf$(X):     $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre
 #	@# Some stupid linkers return ok status even if they fail.
 	@test -f "tf$(X)"
@@ -101,7 +99,6 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	-@test -d "$(TF_LIBDIR)" || echo "Can't make $(TF_LIBDIR) directory.  See if"
 	-@test -d "$(TF_LIBDIR)" || echo "there is already a file with that name."
 	test -d "$(TF_LIBDIR)"
-#
 #	@#rm -f $(TF_LIBDIR)/*;  # wrong: this would remove local.tf, etc.
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
@@ -165,7 +162,6 @@ uninstall:
 
 clean distclean cleanest:
 	cd ..; make -f unix/Makefile $@
-
 
 # development stuff, not necessarily portable.
 

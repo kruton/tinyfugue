@@ -1,4 +1,3 @@
-# $Id: rules.mak,v 1.21 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
 #  Copyright (C) 1998, 1999, 2002, 2006-2007 Ken Keys
