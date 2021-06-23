@@ -163,35 +163,33 @@ UNAME=`echo $UNAME`  # remove newlines
 AC_SUBST(UNAME)
 #AC_CYGWIN
 
-dnl ########### programs ############
 
+dnl ########### compiler characteristics ############
+
+AC_LANG_PUSH([C])
 AC_PROG_CC([clang gcc cc])
+AX_COMPILER_VENDOR
+AC_LANG_POP([C])
+
+AC_C_INLINE
+
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+
+AC_EXEEXT
+AC_OBJEXT
+
+dnl ########### programs ############
 
 AC_PROG_MAKE_SET
 
 ##if test "$enable_core" = "no"; then
 ##    AC_CHECK_PROG(STRIP, strip, strip, :)
 ##fi
-AC_SUBST(STRIP)
+#AC_SUBST(STRIP)
 
 AC_CHECK_PROG(RANLIB, ranlib, ranlib, :)
-
-
-dnl ########### compiler characteristics ############
-
-AC_CHECK_SIZEOF(short)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-
-if test "$GCC" = "yes"; then
-    # gcc may generate a warning for "inline", so use "__inline__" instead.
-    AC_MSG_CHECKING([for inline])
-    AC_MSG_RESULT([yes])
-    AC_DEFINE(inline, __inline__)
-else
-    AC_C_INLINE
-fi
-
 
 dnl ########### libraries ############
 
@@ -231,7 +229,7 @@ dnl being tested.)
 LDFLAGS="$LDFLAGS $LIBDIRS"
 
 dnl This is needed to compile when usinc GCC 10
-if test "$GCC" = "yes"; then
+if test "$ax_cv_c_compiler_vendor" = "gnu"; then
     LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
 fi
 
@@ -540,9 +538,6 @@ fi
 
 dnl ########### system services ############
 
-dnl # These should come after AC_PROG_CC.
-AC_EXEEXT
-AC_OBJEXT
 
 dnl ### Find mail directory by looking at $MAIL, then in the usual places.
 if test "$enable_mailcheck" = "no"; then
