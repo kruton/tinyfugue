@@ -265,10 +265,6 @@ enum Vars {
 
 extern Var special_var[];
 
-// #if HAVE_SETLOCALE
-// static char *lang = NULL;
-// #endif
-
 #define reset_kbnum()	unsetvar(&special_var[VAR_kbnum])
 
 #endif /* GLOBALS_H */
