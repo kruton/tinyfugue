@@ -36,10 +36,12 @@
 #define HAVE_LIBZ 0
 #define SOCKS 0
 #define HAVE_SSL 0
+#define HAVE_GNUTLS_OPENSSL_H 0
 
 #define HAVE_BCOPY 0
 #define HAVE_BZERO 0
 #define HAVE_CONNECT 0
+#define HAVE_ERR_PEEK_ERROR 0
 #define HAVE_FILENO 0
 #define HAVE_GETCWD 0
 #define HAVE_GETHOSTBYNAME 0

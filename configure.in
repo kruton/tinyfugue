@@ -278,14 +278,19 @@ if test "$enable_ssl" = "yes"; then
     old_CPPFLAGS="$CPPFLAGS"
     while true; do
 	dnl -lssl needs -lcrypto
-	dnl Try in default locations first, then /usr/local/ssl
+	dnl Try in default locations first, then /usr/local/ssl, then try the
+        dnl GnuTLS compatibility layer
 	LIBS="$LIBS -lssl -lcrypto"
 	AC_MSG_CHECKING([for libcrypto and libssl])
 	AC_TRY_LINK_FUNC(SSL_new, AC_MSG_RESULT([yes]),
 	    CFLAGS="$CFLAGS -L/usr/local/ssl/lib";
 	    CPPFLAGS="-I/usr/local/ssl/include $CPPFLAGS";
 	    AC_TRY_LINK_FUNC(SSL_new, AC_MSG_RESULT([/usr/local/ssl]),
-		AC_MSG_RESULT([no]); break))
+		LIBS="$old_LIBS -lgnutls-openssl"
+		CFLAGS="$old_CFLAGS"
+		CPPFLAGS="$old_CPPFLAGS"
+		AC_TRY_LINK_FUNC(SSL_new, AC_MSG_RESULT([gnutls]),
+		    AC_MSG_RESULT([no]); break)))
 	dnl Red Hat 9 and Yellow Dog Linux have ssl.h in a standard place,
 	dnl but it depends on krb5.h which isn't in a standard place.
 	AC_MSG_CHECKING(for ssl kerberos dependency)
@@ -295,9 +300,12 @@ if test "$enable_ssl" = "yes"; then
 	else
 	    AC_MSG_RESULT([no])
 	fi
-	AC_CHECK_HEADER(openssl/ssl.h, , break)
-	AC_DEFINE(HAVE_SSL)
-	ok=1
+	AC_CHECK_HEADER(openssl/ssl.h, ok=1,
+	    [AC_CHECK_HEADERS([gnutls/openssl.h], [ok=1])])
+	if test "$ok" = "1"; then
+	    AC_DEFINE(HAVE_SSL)
+            AC_CHECK_FUNCS(ERR_peek_error)
+	fi
 	break
     done
     if test "$ok" = "0"; then
