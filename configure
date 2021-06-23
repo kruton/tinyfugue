@@ -636,6 +636,7 @@ OTHER_OBJS
 MODE
 SYMLINK
 LIBNAME
+PROGNAME
 EXENAME
 RANLIB
 STRIP
@@ -5721,7 +5722,7 @@ if test "$enable_version" != "no" && test "$program_suffix" = "NONE"; then
     program_suffix="-${TFVER}"
 fi
 
-EXENAME="tf"
+EXENAME="tf" PROGNAME="tf"
 test "${program_prefix}" != "NONE" && EXENAME="${program_prefix}${EXENAME}"
 test "${program_suffix}" != "NONE" && EXENAME="${EXENAME}${program_suffix}"
 if test "${program_transform_name}" != "NONE"; then
@@ -5736,6 +5737,7 @@ elif test "$enable_symlink" = "yes"; then
 else
     SYMLINK="$enable_symlink"
 fi
+
 
 
 

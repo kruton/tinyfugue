@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /***************************************************************
@@ -2689,7 +2688,9 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-	    incoming_text = line;
+        // XXX: This should be cleaner. Adding cast to avoid warning,
+        // But really we should have a copy function or something, right?
+	    incoming_text = (String *) line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}
@@ -2877,7 +2878,7 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
-    unsigned int i;
+// UNUSED    unsigned int i;
     char *p;
     const char *end;
     char temp_buff[255]; /* Same length as whole subnegotiation line. */
@@ -2944,7 +2945,7 @@ static void telnet_subnegotiation(void)
 	      newconverter = ucnv_open(temp_buff, &newconvertererr);
 	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
 	      if (newconverter != NULL) {
-		  p = end; /* Prefer the first valid charset! */
+		  p = (char *) end; /* Prefer the first valid charset! */
 	      }
 	   }
 	   if (newconverter != NULL) {
@@ -3079,7 +3080,8 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
-    char rawchar, localchar, inbuffer[BUFFSIZE];
+// UNUSED char localchar
+    char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
     char mccpbuffer[BUFFSIZE];
@@ -3091,7 +3093,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     String *incomingposttelnet;
     UConverter *incomingFSM = NULL;
     UErrorCode incomingERR;
-    int shiftby;
+// UNUSED    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3535,7 +3537,7 @@ non_telnet:
 STATIC_BUFFER(nextline); /* Static for speed */
 static void handle_socket_input_queue_lines(Sock *sock)
 {
-    String *debug = sock->buffer;
+// UNUSED    String *debug = sock->buffer;
     char *place;
     char *bufferend = sock->buffer->data + sock->buffer->len;
     char rawchar, localchar;
