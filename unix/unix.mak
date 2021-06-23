@@ -52,24 +52,9 @@ all files:  _all
 _all:  tf$(X) ../tf-lib/tf-help.idx
 
 _failmsg:
-#	@echo '#####################################################'
-#	@echo '## TinyFugue installation FAILED.'
-#	@echo '## See README for help.'
-#	@if [ "$(STD_C)" != "1" ]; then \
-#	    echo '## '; \
-#	    echo '## TF requires a standard (ANSI/ISO 9889-1990) C compiler.'; \
-#	    echo '## The standard has existed since 1989, and gcc is freely'; \
-#	    echo '## available for many platforms, so there is really no'; \
-#	    echo '## excuse for not having a standard compiler at this time.'; \
-#	    echo '## If your system does not have one, you should complain'; \
-#	    echo '## strongly to the vendor or administrator.  Do not bother'; \
-#	    echo '## contacting the author of TF.'; \
-#	elif [ "$(CC)" = "gcc" ]; then \
-#	    echo '## '; \
-#	    echo '## Perhaps $(CC) is not configured correctly.  Before'; \
-#	    echo '## contacting the TF author, try setting the environment'; \
-#	    echo '## variable CC to "cc", and run ./configure again.'; \
-#	fi
+	@echo '#####################################################'
+	@echo '## TinyFugue installation FAILED.'
+	@echo '## See README for help.'
 
 TF tf$(X):     $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre

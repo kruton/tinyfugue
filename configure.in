@@ -13,7 +13,7 @@ dnl Note: autoconf uses <<EOF, so we use <<END instead.
 
 dnl ### Initialization variables.
 
-AC_INIT(src/tf.h)
+AC_INIT([tinyfugue], [50b8])
 
 SOCKS=''
 OTHER_OBJS=""
@@ -166,25 +166,6 @@ AC_SUBST(UNAME)
 dnl ########### programs ############
 
 AC_PROG_CC([clang gcc cc])
-
-dnl XXX STD_C=1, if compiler is standard
-
-dnl XXX
-dnl ${CC} ${CCFLAGS} -c symtest.c >symtest.out 2>&1 || {
-dnl     echo
-dnl     cat symtest.out
-dnl     echo
-dnl     echo "## The messages above indicate one of these configuration problems:"
-dnl     echo "##   1. the compiler is not installed correctly;"
-dnl     echo "##   2. you do not have permission to execute the compiler; or"
-dnl     echo "##   3. CCFLAGS='${CCFLAGS}' in unix/Config is invalid."
-dnl     echo "## In any case, this is a local problem that can only be"
-dnl     echo "## solved by you or a system administrator, so don't ask me."
-dnl     echo
-dnl     exit 1
-dnl }
-
-dnl XXX AC_AIX
 
 AC_PROG_MAKE_SET
 

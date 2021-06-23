@@ -34,7 +34,6 @@ MODE       = @MODE@
 CC         = @CC@
 CFLAGS     = @CFLAGS@ @CPPFLAGS@
 LDFLAGS    = @LDFLAGS@
-STD_C      = @STD_C@
 STRIP      = @STRIP@
 RANLIB     = @RANLIB@
 LIBS       = @LIBS@
