@@ -111,7 +111,9 @@ struct sockaddr_in {
 # endif
 #endif
 
-#include NETDB_H
+#ifdef NETDB_H
+  #include NETDB_H
+#endif
 
 #if !HAVE_GAI_STRERROR || !defined(AI_NUMERICHOST) || !defined(EAI_SERVICE)
   /* System's implementation is incomplete.  Avoid it. */
@@ -2489,10 +2491,12 @@ int handle_fake_recv_function(conString *string, const char *world,
         eprintf("no open world %s", world ? world : "");
 	return 0;
     }
-    if (raw)
+    if (raw) {
 	handle_socket_input(string->data, string->len, NULL);
-    else
+    } else {
 	queue_socket_line(sock, string, string->len, 0);
+	flushxsock();
+    }
     return 1;
 }
 
