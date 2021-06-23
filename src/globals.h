@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: globals.h,v 35000.78 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -266,9 +265,9 @@ enum Vars {
 
 extern Var special_var[];
 
-#if HAVE_SETLOCALE
-static char *lang = NULL;
-#endif
+// #if HAVE_SETLOCALE
+// static char *lang = NULL;
+// #endif
 
 #define reset_kbnum()	unsetvar(&special_var[VAR_kbnum])
 

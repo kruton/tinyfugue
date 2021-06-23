@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: signals.c,v 35004.70 2007/01/14 19:28:36 kkeys Exp $";
 
 /* Signal handling, core dumps, job control, and interactive shells */
 
@@ -218,7 +217,7 @@ const char *checkstring(const char *s) {
 	    break;
 	}
     }
-    
+ 
 exit:
     setsighandler(SIGBUS, old_sigbus_handler);
     setsighandler(SIGSEGV, old_sigsegv_handler);
@@ -503,9 +502,9 @@ static const char *get_exename(pid_t pid)
     while (1) {
 	len = strcspn(dir, ":\0");
 	if (*dir == '/')
-	    sprintf(exebuf, "%.*s/%s", len, dir, argv0);
+	    sprintf(exebuf, "%.*s/%s", (int) len, dir, argv0);
 	else
-	    sprintf(exebuf, "%s/%.*s/%s", initial_dir, len, dir, argv0);
+	    sprintf(exebuf, "%s/%.*s/%s", initial_dir, (int) len, dir, argv0);
 	if (stat(exebuf, &statbuf) == 0)
 	    return exebuf;
 	if (!dir[len])
@@ -531,9 +530,9 @@ static int debugger_dump(void)
 	    fprintf(stderr, "fork: %s\r\n", strerror(errno));
 	} else if (child_pid > 0) {
 	    /* parent */
-	    pid_t wait_pid = 0;
+// UNUSED	    pid_t wait_pid = 0;
 	    int status = 0;
-	    wait_pid = waitpid(child_pid, &status, 0);
+// UNUSED	    wait_pid = waitpid(child_pid, &status, 0);
 	    if (shell_status(status) == 0) {
 		return 1;
 	    } else {

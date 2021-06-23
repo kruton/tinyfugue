@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: port.h,v 35004.38 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef PORT_H
 #define PORT_H
@@ -246,7 +245,7 @@ extern char *sys_errlist[];
 # ifdef MAXPATHLEN
 #  define PATH_MAX MAXPATHLEN
 # else
-#  define PATH_MAX 1024
+#  define PATH_MAX 1023
 # endif
 #endif
 

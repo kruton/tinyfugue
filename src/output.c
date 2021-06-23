@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys Exp $";
 
 
 /*****************************************************************
@@ -47,6 +46,10 @@ static const char RCSid[] = "$Id: output.c,v 35004.242 2007/01/14 00:44:19 kkeys
 #ifdef EMXANSI
 # define INCL_VIO
 # include <os2.h>
+#endif
+
+#if HAVE_SETLOCALE
+static char *lang = NULL;
 #endif
 
 /* Terminal codes and capabilities.
