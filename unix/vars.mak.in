@@ -31,10 +31,10 @@ MANPAGE    = ${mandir}/man1/tf.1
 MANTYPE    = @MANTYPE@
 MODE       = @MODE@
 CC         = @CC@
-CFLAGS     = @CFLAGS@ @CPPFLAGS@
+CFLAGS     = @CFLAGS@ @CPPFLAGS@ @ICU_CFLAGS@
 LDFLAGS    = @LDFLAGS@
 STRIP      = @STRIP@
 RANLIB     = @RANLIB@
-LIBS       = @LIBS@
+LIBS       = @LIBS@ @ICU_LIBS@
 OTHER_OBJS = @OTHER_OBJS@
 
