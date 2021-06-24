@@ -582,6 +582,7 @@ PACKAGE_STRING='tinyfugue 50b8'
 PACKAGE_BUGREPORT=''
 PACKAGE_URL=''
 
+ac_unique_file="src/tf.h"
 ac_default_prefix=`
     if test -w /usr/local/bin && test -w /usr/local/share; then
 	echo "/usr/local"
@@ -638,6 +639,12 @@ SYMLINK
 LIBNAME
 PROGNAME
 EXENAME
+ICU_LIBS
+ICU_CXXFLAGS
+ICU_CFLAGS
+ICU_CPPFLAGS
+PKG_CONFIG
+ICU_CONFIG
 RANLIB
 STRIP
 SET_MAKE
@@ -2001,60 +2008,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_func
-
-# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
-# -------------------------------------------
-# Tests whether TYPE exists after having included INCLUDES, setting cache
-# variable VAR accordingly.
-ac_fn_c_check_type ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-$as_echo_n "checking for $2... " >&6; }
-if eval \${$3+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  eval "$3=no"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof ($2))
-	 return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-if (sizeof (($2)))
-	    return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  eval "$3=yes"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-eval ac_res=\$$3
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_type
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -2408,6 +2361,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
 SOCKS=''
 OTHER_OBJS=""
 TFVER=`sed -ne 's/^TFVER=\(.*\)/\1/p' src/vars.mak`
@@ -2641,7 +2595,6 @@ fi
 if test "$enable_dmalloc" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Debug malloc enabled." >&5
 $as_echo "$as_me: Debug malloc enabled." >&6;}
-    CPPFLAGS="${CPPFLAGS} -DUSE_DMALLOC"
     OTHER_OBJS="$OTHER_OBJS dmalloc.o"
     $as_echo "#define USE_DMALLOC 1" >>confdefs.h
 
@@ -2662,7 +2615,8 @@ $as_echo "$as_me: " >&6;}
 UNAME=`{ uname -s && uname -v && uname -r || uname -a; } 2>/dev/null`
 UNAME=`echo $UNAME`  # remove newlines
 
-#AC_CYGWIN
+
+
 
 
 
@@ -4697,6 +4651,202 @@ fi
 fi
 
 if test "$enable_widechar" = "yes"; then
+
+  succeeded=no
+
+  if test -z "$ICU_CONFIG"; then
+    # Extract the first word of "icu-config", so it can be a program name with args.
+set dummy icu-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICU_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICU_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICU_CONFIG="$ICU_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICU_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_ICU_CONFIG" && ac_cv_path_ICU_CONFIG="no"
+  ;;
+esac
+fi
+ICU_CONFIG=$ac_cv_path_ICU_CONFIG
+if test -n "$ICU_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CONFIG" >&5
+$as_echo "$ICU_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  fi
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  fi
+
+  if test "$ICU_CONFIG" = "no" && test "$PKG_CONFIG" = "no" ; then
+    echo "*** Neither icu-config nor pkg-config could not be found. Make sure either is"
+    echo "*** in your path, and that taglib is properly installed."
+    echo "*** Or see http://ibm.com/software/globalization/icu/"
+  fi
+
+  if test "$ICU_CONFIG" != "no" ; then
+    ICU_VERSION=`$ICU_CONFIG --version`
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICU >= 1 via icu-config" >&5
+$as_echo_n "checking for ICU >= 1 via icu-config... " >&6; }
+        VERSION_CHECK=`expr $ICU_VERSION \>\= 1`
+        if test "$VERSION_CHECK" = "1" ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            succeeded=yes
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CPPFLAGS" >&5
+$as_echo_n "checking ICU_CPPFLAGS... " >&6; }
+            ICU_CPPFLAGS=`$ICU_CONFIG --cppflags`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CPPFLAGS" >&5
+$as_echo "$ICU_CPPFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CFLAGS" >&5
+$as_echo_n "checking ICU_CFLAGS... " >&6; }
+            ICU_CFLAGS=`$ICU_CONFIG --cflags`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CFLAGS" >&5
+$as_echo "$ICU_CFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CXXFLAGS" >&5
+$as_echo_n "checking ICU_CXXFLAGS... " >&6; }
+            ICU_CXXFLAGS=`$ICU_CONFIG --cxxflags`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CXXFLAGS" >&5
+$as_echo "$ICU_CXXFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_LIBS" >&5
+$as_echo_n "checking ICU_LIBS... " >&6; }
+            ICU_LIBS=`$ICU_CONFIG --ldflags`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_LIBS" >&5
+$as_echo "$ICU_LIBS" >&6; }
+        else
+            ICU_CPPFLAGS=""
+            ICU_CFLAGS=""
+            ICU_CXXFLAGS=""
+            ICU_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+
+        fi
+  fi
+
+  if test "$succeeded" != "yes" && test "$PKG_CONFIG" != "no" ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICU >= 1 via pkg-config" >&5
+$as_echo_n "checking for ICU >= 1 via pkg-config... " >&6; }
+        if $PKG_CONFIG --atleast-version=1 icu-i18n ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            succeeded=yes
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CPPFLAGS" >&5
+$as_echo_n "checking ICU_CPPFLAGS... " >&6; }
+            ICU_CPPFLAGS=`$PKG_CONFIG --variable=CPPFLAGS icu-i18n`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CPPFLAGS" >&5
+$as_echo "$ICU_CPPFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CFLAGS" >&5
+$as_echo_n "checking ICU_CFLAGS... " >&6; }
+            ICU_CFLAGS=`$PKG_CONFIG --cflags icu-i18n`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CFLAGS" >&5
+$as_echo "$ICU_CFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_CXXFLAGS" >&5
+$as_echo_n "checking ICU_CXXFLAGS... " >&6; }
+            ICU_CXXFLAGS=`$PKG_CONFIG --variable=CXXFLAGS icu-i18n`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_CXXFLAGS" >&5
+$as_echo "$ICU_CXXFLAGS" >&6; }
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking ICU_LIBS" >&5
+$as_echo_n "checking ICU_LIBS... " >&6; }
+            ICU_LIBS=`$PKG_CONFIG --libs icu-i18n`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICU_LIBS" >&5
+$as_echo "$ICU_LIBS" >&6; }
+        else
+            ICU_CPPFLAGS=""
+            ICU_CFLAGS=""
+            ICU_CXXFLAGS=""
+            ICU_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+
+        fi
+  fi
+
+  if test "$succeeded" = "yes"; then
+
+
+
+
+
+$as_echo "#define WIDECHAR 1" >>confdefs.h
+
+  else
+     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libicuuc not found.. disabling widechar support." >&5
+$as_echo "$as_me: WARNING: libicuuc not found.. disabling widechar support." >&2;}
+  fi
+
     for ac_header in wchar.h wctype.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -4741,97 +4891,21 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_icuuc_main" >&5
 $as_echo "$ac_cv_lib_icuuc_main" >&6; }
 if test "x$ac_cv_lib_icuuc_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBICUUC 1
-_ACEOF
 
-  LIBS="-licuuc $LIBS"
+$as_echo "#define WIDECHAR 1" >>confdefs.h
 
 else
-  as_fn_error $? "Widechar cannot be enabled without icu." "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libicuuc not found.. disabling widechar support." >&5
+$as_echo "$as_me: WARNING: libicuuc not found.. disabling widechar support." >&2;}
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -licudata" >&5
-$as_echo_n "checking for main in -licudata... " >&6; }
-if ${ac_cv_lib_icudata_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-licudata  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_icudata_main=yes
-else
-  ac_cv_lib_icudata_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_icudata_main" >&5
-$as_echo "$ac_cv_lib_icudata_main" >&6; }
-if test "x$ac_cv_lib_icudata_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBICUDATA 1
-_ACEOF
-
-  LIBS="-licudata $LIBS"
+    ac_fn_c_check_header_mongrel "$LINENO" "unicode/utypes.h" "ac_cv_header_unicode_utypes_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_utypes_h" = xyes; then :
 
 else
-  as_fn_error $? "Widechar cannot be enabled without icu." "$LINENO" 5
+  as_fn_error $? "header file <unicode/utypes.h> is required for ICU" "$LINENO" 5
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -licui18n" >&5
-$as_echo_n "checking for main in -licui18n... " >&6; }
-if ${ac_cv_lib_icui18n_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-licui18n  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_icui18n_main=yes
-else
-  ac_cv_lib_icui18n_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_icui18n_main" >&5
-$as_echo "$ac_cv_lib_icui18n_main" >&6; }
-if test "x$ac_cv_lib_icui18n_main" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBICUI18N 1
-_ACEOF
-
-  LIBS="-licui18n $LIBS"
-
-else
-  as_fn_error $? "Widechar cannot be enabled without icu." "$LINENO" 5
-fi
 
 fi
 
@@ -4927,118 +5001,6 @@ _ACEOF
 fi
 
 
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ANSI C header files" >&5
-$as_echo_n "checking for ANSI C header files... " >&6; }
-if ${ac_cv_header_stdc+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <float.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_header_stdc=yes
-else
-  ac_cv_header_stdc=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-if test $ac_cv_header_stdc = yes; then
-  # SunOS 4.x string.h does not declare mem*, contrary to ANSI.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <string.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "memchr" >/dev/null 2>&1; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
-fi
-
-if test $ac_cv_header_stdc = yes; then
-  # ISC 2.0.2 stdlib.h does not declare free, contrary to ANSI.
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "free" >/dev/null 2>&1; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f conftest*
-
-fi
-
-if test $ac_cv_header_stdc = yes; then
-  # /bin/cc in Irix-4.0.5 gets non-ANSI ctype macros unless using -ansi.
-  if test "$cross_compiling" = yes; then :
-  :
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ctype.h>
-#include <stdlib.h>
-#if ((' ' & 0x0FF) == 0x020)
-# define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
-# define TOUPPER(c) (ISLOWER(c) ? 'A' + ((c) - 'a') : (c))
-#else
-# define ISLOWER(c) \
-		   (('a' <= (c) && (c) <= 'i') \
-		     || ('j' <= (c) && (c) <= 'r') \
-		     || ('s' <= (c) && (c) <= 'z'))
-# define TOUPPER(c) (ISLOWER(c) ? ((c) | 0x40) : (c))
-#endif
-
-#define XOR(e, f) (((e) && !(f)) || (!(e) && (f)))
-int
-main ()
-{
-  int i;
-  for (i = 0; i < 256; i++)
-    if (XOR (islower (i), ISLOWER (i))
-	|| toupper (i) != TOUPPER (i))
-      return 2;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-else
-  ac_cv_header_stdc=no
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_stdc" >&5
-$as_echo "$ac_cv_header_stdc" >&6; }
-if test $ac_cv_header_stdc = yes; then
-
-$as_echo "#define STDC_HEADERS 1" >>confdefs.h
-
-fi
 
 for ac_header in unistd.h memory.h sys/select.h
 do :
@@ -5143,8 +5105,6 @@ done
 
 
 
-
-
     found=0;
     for f in netinet/in.h sys/in.h sys/netinet/in.h; do
 	for ac_header in $f
@@ -5159,8 +5119,8 @@ _ACEOF
 #define NETINET_IN_H <$f>
 _ACEOF
 
-	    found=1
-	    break
+            found=1
+            break
 fi
 
 done
@@ -5191,8 +5151,8 @@ _ACEOF
 #define ARPA_INET_H <$f>
 _ACEOF
 
-	    found=1
-	    break
+            found=1
+            break
 fi
 
 done
@@ -5223,8 +5183,8 @@ _ACEOF
 #define NETDB_H <$f>
 _ACEOF
 
-	    found=1
-	    break
+            found=1
+            break
 fi
 
 done
@@ -5252,7 +5212,8 @@ else
 int
 main ()
 {
-struct sockaddr sa; return sa.sa_len;
+struct sockaddr sa; return
+        sa.sa_len;
   ;
   return 0;
 }
@@ -5271,7 +5232,6 @@ if test "${tf_cv_sa_len}" = "yes"; then
     $as_echo "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
 
 fi
-
 
 
 for ac_header in termios.h termio.h sgtty.h
@@ -5299,115 +5259,6 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 
 fi
 rm -f conftest*
-
-
-
-
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking return type of signal handlers" >&5
-$as_echo_n "checking return type of signal handlers... " >&6; }
-if ${ac_cv_type_signal+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-#include <signal.h>
-
-int
-main ()
-{
-return *(signal (0, 0)) (0) == 1;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_type_signal=int
-else
-  ac_cv_type_signal=void
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_signal" >&5
-$as_echo "$ac_cv_type_signal" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define RETSIGTYPE $ac_cv_type_signal
-_ACEOF
-
-
-ac_fn_c_check_type "$LINENO" "pid_t" "ac_cv_type_pid_t" "$ac_includes_default"
-if test "x$ac_cv_type_pid_t" = xyes; then :
-
-else
-
-cat >>confdefs.h <<_ACEOF
-#define pid_t int
-_ACEOF
-
-fi
-
-ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
-if test "x$ac_cv_type_size_t" = xyes; then :
-
-else
-
-cat >>confdefs.h <<_ACEOF
-#define size_t unsigned int
-_ACEOF
-
-fi
-
-ac_fn_c_check_type "$LINENO" "time_t" "ac_cv_type_time_t" "$ac_includes_default"
-if test "x$ac_cv_type_time_t" = xyes; then :
-
-else
-
-cat >>confdefs.h <<_ACEOF
-#define time_t long
-_ACEOF
-
-fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for socklen_t" >&5
-$as_echo_n "checking for socklen_t... " >&6; }
-if ${ac_cv_type_socklen_t+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#if STDC_HEADERS
-#include <stdlib.h>
-#include <stddef.h>
-#endif
-
-#include <sys/types.h>
-#include <sys/socket.h>
-
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "(^|[^a-zA-Z_0-9])socklen_t[^a-zA-Z_0-9]" >/dev/null 2>&1; then :
-  ac_cv_type_socklen_t=yes
-else
-  ac_cv_type_socklen_t=no
-fi
-rm -f conftest*
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_socklen_t" >&5
-$as_echo "$ac_cv_type_socklen_t" >&6; }
-if test $ac_cv_type_socklen_t = no; then
-  $as_echo "#define socklen_t int" >>confdefs.h
-
-fi
-
-
-
 
 
 
@@ -5579,7 +5430,8 @@ main ()
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define IN6_ADDR $type
 _ACEOF
 
