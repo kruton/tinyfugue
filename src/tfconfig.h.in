@@ -89,7 +89,7 @@
 #define HAVE_GAI_STRERROR 0
 #define ENABLE_INET6 0
 #define DISABLE_CORE 0
-#undef IN6_ADDR
+#undef  IN6_ADDR
 #define NO_HISTORY 0
 #define NO_PROCESS 0
 #define NO_FLOAT 0
@@ -97,6 +97,10 @@
 #define WIDECHAR 0
 #define USE_DMALLOC 0
 #define USE_MMALLOC 0
+
+#define ENABLE_ATCP 0
+#define ENABLE_GMCP 0
+#define ENABLE_OPTION102 0
 
 #define HAVE_MCCP (HAVE_ZLIB_H && HAVE_LIBZ)
 
