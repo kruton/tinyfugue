@@ -1,4 +1,6 @@
 *.o
+*.orig
+*.rej
 *.sw!
 *.un~
 /Makefile
