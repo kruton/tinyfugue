@@ -1,6 +1,6 @@
 *.o
-*.un~
 *.sw!
+*.un~
 /Makefile
 /autom4te.cache
 /config.*
