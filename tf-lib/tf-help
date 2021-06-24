@@ -17,7 +17,7 @@ addworld()
   ____________________________________________________________________________
 
   Defines a new [1mworld[22;0m or redefines an existing [1mworld[22;0m with the name <[4mname[24m>.  
-  <[4mName[24m> may not contain spaces; addtionally, when defining a new world, 
+  <[4mName[24m> may not contain spaces; additionally, when defining a new world, 
   <[4mname[24m> may not begin with "(".  
 
   <[4mHost[24m> is a server's internet hostname, IPv4 address, or (if your platform 
@@ -33,7 +33,7 @@ addworld()
   [1mworlds[22;0m with omitted fields will use the new default values.  
 
   In function form, <[4mflags[24m> is a string of 0 or more letters that modify the 
-  behavior of the function.  For compatability with older versions of TF, an 
+  behavior of the function.  For compatibility with older versions of TF, an 
   "f" or "0" in <[4mflags[24m> has the same effect as "p", and an "n" or "1" in 
   <[4mflags[24m> has no effect.  
 
@@ -63,11 +63,11 @@ addworld()
   The library pre-defines WORLD and LOGIN hooks for types that match these 
   [1mglob patterns[22;0m: 
 
-  (none)  TinyMud [1mlogin[22;0m format ("connect <[4mchar[24m> <[4mpass[24m>"), the value of [1mlp[22;0m is 
+  (none)  TinyMUD [1mlogin[22;0m format ("connect <[4mchar[24m> <[4mpass[24m>"), the value of [1mlp[22;0m is 
           not changed.  
 
   tiny, tiny.* 
-          TinyMud [1mlogin[22;0m format ("connect <[4mchar[24m> <[4mpass[24m>"), [1mlp[22;0m=off.  
+          TinyMUD [1mlogin[22;0m format ("connect <[4mchar[24m> <[4mpass[24m>"), [1mlp[22;0m=off.  
 
   lp, lp.* 
   diku, diku.* 
@@ -97,7 +97,7 @@ addworld()
   you could also define your own [1mtriggers[22;0m and [1mhooks[22;0m specific to TinyMUCKs or 
   TinyMOOs (e.g., "[1m/def[22;0m [1m-T[22;0mtiny.muck.*") or to worlds that support MSP 
   regardless of their server type (e.g., "[1m/def[22;0m [1m-T[22;0m*.msp.*"), etc.  Note the 
-  trailing period on the world type defintions, which make it easier to write 
+  trailing period on the world type definitions, which make it easier to write 
   matching triggers.  
 
   Any <[4mtype[24m> is valid, but is only useful if it is matched by a "[1m-T<[4mtype[24m>[22;0m" 
@@ -553,7 +553,7 @@ addworld()
           considered a match, so no [1mattributes[22;0m (-a) will be applied, and this 
           macro will not prevent matches of lower [1mpriority[22;0m (-p), and its body 
           will not be executed.  If the value of <[4mexpression[24m> is non-zero, the 
-          comparison proceedes as usual.  Note: 
+          comparison proceeds as usual.  Note: 
           * [1mpositional parameters[22;0m ([1m%n[22;0m) and [1msubexpression matches[22;0m ([1m%Pn[22;0m) are not 
           available in <[4mexpression[24m>.  
           * Remember that for every macro with a trigger and an -E expression, 
@@ -573,7 +573,7 @@ addworld()
   -t<[4mpattern[24m> 
           Defines a [1mtrigger[22;0m pattern which will cause the [1mmacro[22;0m to be called 
           when it is matched by a line of text from a socket.  <[4mPattern[24m> may 
-          be enclosed in quotes (", ', or `); if so, all occurances of quotes 
+          be enclosed in quotes (", ', or `); if so, all occurrences of quotes 
           and '\' within the pattern must be preceded with a '\'.  The [1mpattern[22;0m 
           matching style is determined by the [1m-m[22;0m option, or defaults to the 
           value of [1m%{matching}[22;0m.  Default: no [1mtrigger[22;0m.  See: [1mtriggers[22;0m.  
@@ -585,7 +585,7 @@ addworld()
           <[4mevent[24m> occurs and its arguments match <[4mpattern[24m>.  <[4mEvent[24m> may be a 
           single event name or a list separated by '|'.  If <[4mpattern[24m> is 
           omitted, it will match any arguments, and the quotes may also be 
-          omitted.  If quotes are used, then all occurances of quotes and '\' 
+          omitted.  If quotes are used, then all occurrences of quotes and '\' 
           within the option argument must be preceded with a '\'.  The [1mpattern[22;0m 
           matching style is determined by the [1m-m[22;0m option, or defaults to the 
           value of [1m%{matching}[22;0m.  Default: no [1mhook[22;0m.  See: [1mhooks[22;0m.  
@@ -899,7 +899,7 @@ echo()
           Echo <[4mtext[24m> with the [1mattributes[22;0m given by <[4mattrs[24m>.  
   command: -p 
   function: <[4minline[24m> = "on" or 1 
-          Interpet "@{<[4mattr[24m>}" strings as commands to set [1mattributes[22;0m inline.  
+          Interpret "@{<[4mattr[24m>}" strings as commands to set [1mattributes[22;0m inline.  
           "@@" strings are interpreted as "@".  "@{n}" or "@{x}" will turn 
           attributes off.  See also: [1mdecode_attr()[22;0m.  
   command: -w<[4mworld[24m> 
@@ -976,7 +976,7 @@ echo()
   on the command line.  
 
   The [1m-i[22;0m flag will be cleared automatically from the [1mmacro[22;0m if it is not 
-  explicitly given to [1m/edit[22;0m.  The body may be cleared by specifiying "=" with 
+  explicitly given to [1m/edit[22;0m.  The body may be cleared by specifying "=" with 
   nothing after it; if "=" is not present at all, the macro's body will be 
   unchanged.  It is not possible to clear the [1m-F[22;0m option.  The [1m-w[22;0m, [1m-T[22;0m [1m-t[22;0m, and 
   [1m-h[22;0m options also can not be cleared, but their arguments can be changed.  The 
@@ -1131,7 +1131,7 @@ eval()
 
   Evaluates <[4m[1mexpression[22;0m[24m> and prints its value.  This almost the same as "[1m/eval[22;0m 
   [1m/echo[22;0m -- $$[<[4m[1mexpression[22;0m[24m>]", except that [1m{#}[22;0m and [1mpositional parameters[22;0m ({1}, 
-  etc) are not defined.  If you neet to print a value of an expression that 
+  etc) are not defined.  If you need to print a value of an expression that 
   uses positional parameters, use [1m/result[22;0m or [1mecho()[22;0m.  
 
   Example: 
@@ -2617,7 +2617,7 @@ mapping
   Command [1moptions[22;0m: 
   -a<[4mattrs[24m> 
           Apply the [1mattributes[22;0m given by <[4mattrs[24m> to <[4mtext[24m>.  
-  -p      Interpet "@{<[4mattr[24m>}" strings within <[4mtext[24m> as commands to set 
+  -p      Interpret "@{<[4mattr[24m>}" strings within <[4mtext[24m> as commands to set 
           [1mattributes[22;0m inline.  See [1mdecode_attr()[22;0m.  
 
   [1m/prompt[22;0m is most useful when called from a PROMPT [1mhook[22;0m, like this: 
@@ -3025,7 +3025,7 @@ Quoter Commands
   given, [1m%{matching}[22;0m otherwise.  
 
   If the output of [1m/recall[22;0m is being sent to the screen, it will be preceded by 
-  "================ Recall start ================" and follwed by 
+  "================ Recall start ================" and followed by 
   "================= Recall end =================" unless -q is used.  These 
   lines will not be produced if the output is redirected, for example with 
   [1m$(...)[22;0m [1mcommand substitution[22;0m or "[1m/quote `[22;0m[1m/recall[22;0m".  When -A, -B, or -C is 
@@ -3077,7 +3077,7 @@ Quoter Commands
           -t@) instead of the current time 
   -a<[4mattrs[24m> 
           Record <[4mtext[24m> with the [1mattributes[22;0m given by <[4mattrs[24m>.  
-  -p      Interpet "@{<[4mattr[24m>}" strings as commands to set [1mattributes[22;0m inline.  
+  -p      Interpret "@{<[4mattr[24m>}" strings as commands to set [1mattributes[22;0m inline.  
           "@@" strings are interpreted as "@".  "@{n}" or "@{x}" will turn 
           attributes off.  See also: [1mdecode_attr()[22;0m.  
 
@@ -3446,7 +3446,7 @@ Quoter Commands
   In the function form, the optional <[4mflags[24m> is a string containing letters 
   that modify the function's behavior: 
   "h"     test for and invoke matching SEND [1mhooks[22;0m.  
-  "u"     send <[4mtext[24m> unterminaed (i.e., without a CR LF end-of-line marker).  
+  "u"     send <[4mtext[24m> unterminated (i.e., without a CR LF end-of-line marker).  
   For backwards compatibility, the flags "o", "n", and "1" are ignored, and 
   the flags "0" and "f" are equivalent to "u".  
 
@@ -3687,7 +3687,7 @@ spelling checker
           [1mattribute[22;0m.  
   command: -p 
   function: <[4minline[24m> = "on" or 1 
-          Interpet @{<[4mattr[24m>} strings as commands to set [1mattributes[22;0m inline, as 
+          Interpret @{<[4mattr[24m>} strings as commands to set [1mattributes[22;0m inline, as 
           in [1m/echo[22;0m.  (See [1m/echo[22;0m).  
 
   Example: 
@@ -3950,7 +3950,7 @@ Text Utilities
   and /tick_action ("TICK") macros.  You can make them perform any tf command, 
   not just printing.  
 
-  It is up to you to start the ticker in synch with the mud.  If the mud 
+  It is up to you to start the ticker in sync with the mud.  If the mud 
   prints something on a tick, you can define a [1mtrigger[22;0m on that which calls 
   [1m/tickon[22;0m.  
 
@@ -4429,7 +4429,7 @@ display attributes
   at once, without editing each one individually.  
 
   The "f" (flash) and "d" (dim) [1mattributes[22;0m are accepted for backward 
-  compatiblity, but ignored.  
+  compatibility, but ignored.  
 
   All [1mattributes[22;0m except 'n' may be combined usefully.  (Even [1mgag[22;0ms can be 
   combined with other [1mattributes[22;0m: combining 'g' and 'B', for example, will [1mgag[22;0m 
@@ -4548,7 +4548,7 @@ colors
     
 
   Colors are numbered 0 through 255 in the order in which they are described 
-  above, but refering to colors by their enumeration number is generally not 
+  above, but referring to colors by their enumeration number is generally not 
   recommended, as the numbering is subject to change.  In particular, the 
   numbering and interpretation of background colors changed in version 5.0 
   beta 7.  
@@ -5176,7 +5176,7 @@ String functions
 #
 #replace()
   [1mreplace[22m([4ms1[24m, [4ms2[24m, [4ms3[24m) 
-          (int) Returns <[4ms3[24m> with every occurance of <[4ms1[24m> replaced with <[4ms2[24m>.  
+          (int) Returns <[4ms3[24m> with every occurrence of <[4ms1[24m> replaced with <[4ms2[24m>.  
           See: "[1m/replace[22;0m".  
 #strcat
 #strcat()
@@ -5248,11 +5248,11 @@ String functions
 #decode_attr
 #decode_attr()
   [1mdecode_attr[22m([4ms1[24m [, [4ms2[24m [, f]]) 
-          (str) Returns <[4ms1[24m> with "@{<[4mattr[24m>}" codes interpeted as display 
+          (str) Returns <[4ms1[24m> with "@{<[4mattr[24m>}" codes interpreted as display 
           [1mattributes[22;0m, as in [1m/echo[22;0m -p.  If present, <[4ms2[24m> is a string of 
           [1mattributes[22;0m that will be applied to the entire string (as in [1m/echo[22;0m 
           -a<[4ms2[24m>).  If <[4mf[24m> is present and equal to 0 or "off", then 
-          "@{<[4mattr[24m>}" codes are [4mnot[24m interpeted; this is useful for applying 
+          "@{<[4mattr[24m>}" codes are [4mnot[24m interpreted; this is useful for applying 
           <[4ms2[24m> attributes with no other effects.  
 #encode_attr
 #encode_attr()
@@ -5262,10 +5262,10 @@ String functions
 #decode_ansi
 #decode_ansi()
   [1mdecode_ansi[22m([4ms[24m) 
-          (str) Returns <[4ms[24m> with attribute control codes interpeted as display 
+          (str) Returns <[4ms[24m> with attribute control codes interpreted as display 
           [1mattributes[22;0m, and, if [1m%expand_tabs[22;0m is on, tabs are expanded to spaces 
           according to [1m%tabsize[22;0m.  Any attributes originally on <[4ms[24m> are [4mnot[24m 
-          copied to the result.  The attribute control codes recognzied 
+          copied to the result.  The attribute control codes recognized 
           include ANSI codes, ISO 6429 16-color extension codes, and xterm 
           256-color extension codes.  
 #encode_ansi
@@ -6013,7 +6013,7 @@ interface
 
   Any input line that does not begin with '/' will be sent directly to the 
   [1mforeground[22;0m world, if there is one.  A line starting with more than one '/' 
-  will be sent to the forground [1msocket[22;0m after having the first '/' removed.  
+  will be sent to the foreground [1msocket[22;0m after having the first '/' removed.  
   (Exception: lines may be caught with a SEND [1mhook[22;0m before being sent; see 
   "[1mhooks[22;0m").  
 
@@ -6270,7 +6270,7 @@ Other useful commands not bound by default
 #tty
 #stty
 Terminal keys
-  Some keys are interpeted by the terminal, not TF, so if you want to change 
+  Some keys are interpreted by the terminal, not TF, so if you want to change 
   them, you must do so outside of TF (e.g.  with stty in unix).  Typical unix 
   terminal keys include: 
 
@@ -6414,7 +6414,7 @@ Mapping Named Keys to functions
       /def key_down = /dokey_recallf
 
   Before version 5.0, [1m/def -B[22;0m was the only way to bind a named key to a [1mmacro[22;0m. 
-  This, however, has been superceded by the use of "key_<[4mname[24m>" macros.  
+  This, however, has been superseded by the use of "key_<[4mname[24m>" macros.  
   Whereas [1m/def -B[22;0m depends strictly on termcap entries, the bindings to 
   "key_<[4mname[24m>" macros are automatically generated from TF's own list of 
   standard keybindings in addition to termcap entries.  Termcap entries are 
@@ -6455,7 +6455,7 @@ Mapping character sequences to Named Keys
   actual keystrokes, but only the characters generated by a keystroke.  For 
   example, the up arrow key on many terminals generates "^[[A", and that is 
   what [1mTF[22m receives.  Thus, [1mTF[22m uses a set of definitions like "[1m/def 
-  -b[22;0m'<[4mcharsequence[24m>' = /key_<[4mname[24m>" to map chracter sequences to the keys that 
+  -b[22;0m'<[4mcharsequence[24m>' = /key_<[4mname[24m>" to map character sequences to the keys that 
   generate them.  If two different keys generate the same sequence of 
   characters, there is no way for [1mTF[22m to tell them apart.  
 
@@ -6732,7 +6732,7 @@ locale
   of locale rules: 
   LC_CTYPE 
           determines what characters are allowed, and whether they should be 
-          treated as letters, digits, puctuation, or control characters.  When 
+          treated as letters, digits, punctuation, or control characters.  When 
           using a locale with an 8-bit character set, make sure that [1m%istrip[22;0m 
           is off and [1m%meta_esc[22;0m is off or nonprint, so you can type 8-bit 
           characters with the meta key.  
@@ -7172,7 +7172,7 @@ Regular expressions ("regexp")
 
   The syntax and semantics of these regular expressions is nearly identical to 
   those in perl 5, and is roughly a superset of those used in versions of tf 
-  prior to 5.0.  There is one incompatability with old tf regexps: the "{" 
+  prior to 5.0.  There is one incompatibility with old tf regexps: the "{" 
   character is now special, and must be written "\{" to match a literal "{".  
   To help with the transition to the new syntax, you will be warned if you use 
   a regexp containing "{", unless you turn off the [1mwarn_curly_re[22;0m variable.  
@@ -7300,14 +7300,14 @@ Notes.
       BACKSLASH 
 
       The backslash character has several uses.  Firstly, if it is followed by 
-      a non-alphameric character, it takes away any special meaning that 
+      a non-alphanumeric character, it takes away any special meaning that 
       character may have.  This use of backslash as an escape character 
       applies both inside and outside character classes.  
 
       For example, if you want to match a "*" character, you write "\*" in the 
       pattern.  This applies whether or not the following character would 
       otherwise be interpreted as a meta-character, so it is always safe to 
-      precede a non-alphameric with "\" to specify that it stands for itself.  
+      precede a non-alphanumeric with "\" to specify that it stands for itself.  
       In particular, if you want to match a backslash, you write "\\".  
 
       If a pattern is compiled with the "x" (PCRE_EXTRA) option, whitespace in 
@@ -7516,7 +7516,7 @@ Notes.
       For example, the class [^\W_] matches any letter or digit, but not 
       underscore.  
 
-      All non-alphameric characters other than \, -, ^ (at the start) and the 
+      All non-alphanumeric characters other than \, -, ^ (at the start) and the 
       terminating ] are non-special in character classes, but it does no harm 
       if they are escaped.  
     * 
@@ -7571,7 +7571,7 @@ Notes.
       the same option at top level, the rightmost setting is used.  
 
       If an option change occurs inside a subpattern, the effect is different. 
-      This is a change of behaviour in Perl 5.005.  An option change inside a 
+      This is a change of behavior in Perl 5.005.  An option change inside a 
       subpattern affects only that part of the subpattern that follows it, so 
 
 
@@ -7590,7 +7590,7 @@ Notes.
       matches "Xab", "XaB", "Xc", and "XC", even though when matching "C" the 
       first branch is abandoned before the option setting.  This is because 
       the effects of option settings happen at compile time.  There would be 
-      some very weird behaviour otherwise.  
+      some very weird behavior otherwise.  
     * 
 #SEC20
       SUBPATTERNS 
@@ -7621,7 +7621,7 @@ Notes.
       the captured substrings are "red king", "red", and "king", and are 
       numbered 1, 2, and 3.  
 
-      The fact that plain parentheses fulfil two functions is not always 
+      The fact that plain parentheses fulfill two functions is not always 
       helpful.  There are often times when a grouping subpattern is required 
       without a capturing requirement.  If an opening parenthesis is followed 
       by "?:", the subpattern does not do any capturing, and is not counted 
@@ -7756,7 +7756,7 @@ Notes.
       If the "U" (PCRE_UNGREEDY) option is set (an option which is not 
       available in Perl) then the quantifiers are not greedy by default, but 
       individual ones can be made greedy by following them with a question 
-      mark.  In other words, it inverts the default behaviour.  
+      mark.  In other words, it inverts the default behavior.  
 
       When a parenthesized subpattern is quantified with a minimum repeat 
       count that is greater than 1 or with a limited maximum, more store is 
@@ -8120,7 +8120,7 @@ Notes.
       Certain items that may appear in patterns are more efficient than 
       others.  It is more efficient to use a character class like [aeiou] than 
       a set of alternatives such as (a|e|i|o|u).  In general, the simplest 
-      construction that provides the required behaviour is usually the most 
+      construction that provides the required behavior is usually the most 
       efficient.  Jeffrey Friedl's book contains a lot of discussion about 
       optimizing regular expressions for efficient performance.  
 
@@ -8148,7 +8148,7 @@ Notes.
       matching procedure, PCRE checks that there is a "b" later in the subject 
       string, and if there is not, it fails the match immediately.  However, 
       when there is no following literal this optimization cannot be used.  
-      You can see the difference by comparing the behaviour of 
+      You can see the difference by comparing the behavior of 
 
 
         (a+)*\d
@@ -9847,7 +9847,7 @@ Configuring the status area
                   /status_add -A@world hp:4 
 
           Multiple fields may be specified, but padding is not automatically 
-          added between them; you must specify padding explicly.  For example, 
+          added between them; you must specify padding explicitly.  For example, 
                   /status_add -Aclock foo:4 :1 bar:4 :2 baz:4 
           is equivalent to 
                   /status_add -Aclock foo:4 
@@ -9867,7 +9867,7 @@ Configuring the status area
 
 #
 
-  For backward compatiblity, you can get and set the status fields for row 0 
+  For backward compatibility, you can get and set the status fields for row 0 
   via the %status_fields [1mvariable[22;0m, but doing so is deprecated.  
 
   The default list of status fields is: 
@@ -9921,7 +9921,7 @@ Configuring the status area
   it will be truncated to fit within the specified width.  Fields may also be 
   truncated if they would not fit on the screen.  
 
-  The [1mattributes[22;0m explicily given in the field definiton are combined with 
+  The [1mattributes[22;0m explicitly given in the field definition are combined with 
   those in the corresponding %status_attr_int_<[4mfieldname[24m> (for internal state 
   fields) or %status_attr_var_<[4mvarname[24m> (for variable fields).  The combined 
   [1mattributes[22;0m are applied to the field text when it is displayed, but not to 
@@ -9932,7 +9932,7 @@ Configuring the status area
   To bring fields up to their specified width, they are padded with 
   [1m%status_pad[22;0m, which is "_" by default.  By setting [1mstatus_pad[22;0m to " " and 
   [1mstatus_attr[22;0m to "r", you can create a status line that looks more like the 
-  one in emacs or the irc client.  
+  one in emacs or the IRC client.  
 
   When a status field is updated, the text displayed for that field is 
   determined by evaluating the [1mexpression[22;0m contained in the [1mvariable[22;0m 
@@ -10218,7 +10218,7 @@ Regexp subexpressions.
   This is actually a special case of [1mvariable substitution[22;0m.  The [1m%P[22;0m variables 
   get their values from the last successful regexp match in scope.  [1m%P0[22;0m 
   expands to the text matched by the entire [1mregexp[22;0m.  [1m%P[4mn[24m[22;0m expands to the text 
-  matched by the <[4mn[24m>th parenthesised subexpression of the [1mregexp[22;0m.  [1m%PL[22;0m and [1m%PR[22;0m 
+  matched by the <[4mn[24m>th parenthesized subexpression of the [1mregexp[22;0m.  [1m%PL[22;0m and [1m%PR[22;0m 
   expand to the text to the left and right, respectively, of the text matched 
   by the entire [1mregexp[22;0m.  The "scope" of a [1mregexp[22;0m match is the lifetime of the 
   [1mmacro[22;0m expansion it [1mtrigger[22;0med, [1mhook[22;0med, or in which it occurred (i.e., with 
@@ -10231,7 +10231,7 @@ Regexp subexpressions.
   then the following expansions will be available until the [1mmacro[22;0m exits: PL = 
   "Jabba the Hutt"; P0 = " goes east."; P1 = "east".  
 
-  The number <[4mn[24m> can be any nonnegative number.  If there is no subexpression 
+  The number <[4mn[24m> can be any non-negative number.  If there is no subexpression 
   corresponding to <[4mn[24m>, the substitution will be ignored.  When parentheses 
   are nested, <[4mn[24m> refers to the order of the opening parentheses.  
 
@@ -10357,7 +10357,7 @@ tf
 
 tfio
 
-  TF normally does its output through "streams", which are analagous to the 
+  TF normally does its output through "streams", which are analogous to the 
   streams of C stdio.  
 
   Output from most tf commands, including [1m/echo[22;0m, are output to the "[1mtfout[22;0m" 
@@ -10599,7 +10599,7 @@ triggers
   it had been called with ``/<[4mmacro[24m> <[4mtext[24m>''.  Positional parameters (e.g., 
   [1m%1[22;0m) refer the the corresponding word in the [1mtrigger[22;0ming text.  If the [1mtrigger[22;0m 
   is a [1mregexp[22;0m, subexpression parameters refer to the text matched by the 
-  corresponding parenthesised subexpression (see also: [1m%Pn[22;0m).  
+  corresponding parenthesized subexpression (see also: [1m%Pn[22;0m).  
 
   If the selected [1mmacro[22;0m(s) have display [1mattributes[22;0m, the [1mattributes[22;0m are used to 
   display the text which [1mtrigger[22;0med the [1mmacro[22;0m.  
