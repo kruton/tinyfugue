@@ -100,12 +100,7 @@ AC_ARG_WITH(incdir) dnl because I never remember if it's singular or plural
 AC_ARG_WITH(libdir) dnl because I never remember if it's singular or plural
 AC_ARG_WITH(inclibdir) dnl because I never remember if it's singular or plural
 
-AC_ARG_ENABLE(logprefix, , , enable_logprefix=no)
 AC_ARG_ENABLE(manpage, , , enable_manpage=no)
-
-if test "$enable_logprefix" = "yes"; then
-     AC_DEFINE(LOG_PREFIX)
-fi
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink

@@ -42,6 +42,7 @@ varstr (VAR_TFPATH,	"TFPATH",	NULL,		NULL)
 varstrx(VAR_TZ,		"TZ",		NULL,		ch_timezone)
 varstr (VAR_alert_attr,	"alert_attr",	"Br",		ch_attr)
 vartime(VAR_alert_time,	"alert_time",	5,0,		NULL)
+varflag(VAR_ansi_log,	"ansi_log",	FALSE,		NULL)
 #if 0
 varflag(VAR_auto_fg,	"auto_fg",	FALSE,		NULL)
 #endif
@@ -87,9 +88,8 @@ varflag(VAR_keepalive,	"keepalive",	TRUE,		tog_keepalive)
 varflag(VAR_keypad,	"keypad",	FALSE,		tog_keypad)
 varstr (VAR_kprefix,	"kprefix",	NULL,		NULL)
 varflag(VAR_login,	"login",	TRUE,		NULL)
-#ifdef LOG_PREFIX
-varstr (VAR_log_prefix, "log_prefix",	"%H:%M:%S ",	NULL)
-#endif
+varstr (VAR_log_prefix,"log_prefix",	"%t # ",	NULL)
+varstr (VAR_log_time_format,"log_time_format",	"%H:%M:%S",	NULL)
 varflag(VAR_lp,		"lp",		FALSE,		tog_lp)
 varflag(VAR_lpquote,	"lpquote",	FALSE,		ch_lpquote)
 vartime(VAR_maildelay,	"maildelay",	60,0,		ch_maildelay)
