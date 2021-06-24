@@ -1,4 +1,3 @@
-# $Id: vars.mak.in,v 35004.13 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
 #  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
@@ -11,13 +10,12 @@
 ########################################################################
 
 # @configure_input@
-
-prefix      = @prefix@
-exec_prefix = @exec_prefix@
-bindir      = @bindir@
-datadir     = @datadir@
-mandir      = @mandir@
-datarootdir = @datarootdir@
+prefix     = @prefix@
+exec_prefix= @exec_prefix@
+bindir     = @bindir@
+datadir    = @datadir@
+mandir     = @mandir@
+datarootdir= @datarootdir@
 
 TFVERSION  = @TFVERSION@
 X          = @EXEEXT@
@@ -29,14 +27,14 @@ TF         = ${bindir}/@EXENAME@${X}
 # already exist in the environment.
 TF_LIBDIR  = ${datadir}/@LIBNAME@
 SYMLINK    = @SYMLINK@
-# MANPAGE    = ${mandir}/man1/tf.1
-# MANTYPE    = @MANTYPE@
+MANPAGE    = ${mandir}/man1/tf.1
+MANTYPE    = @MANTYPE@
 MODE       = @MODE@
 CC         = @CC@
-CFLAGS     = @CFLAGS@ @CPPFLAGS@
+CFLAGS     = @CFLAGS@ @CPPFLAGS@ @ICU_CFLAGS@
 LDFLAGS    = @LDFLAGS@
-STD_C      = @STD_C@
 STRIP      = @STRIP@
 RANLIB     = @RANLIB@
-LIBS       = @LIBS@
+LIBS       = @LIBS@ @ICU_LIBS@
 OTHER_OBJS = @OTHER_OBJS@
+

@@ -8,6 +8,9 @@ Unicode notes:
   if unencodeable bytes are in the input box.
   I will gladly accept pull requests.
 
+  Setting your terminal to send ^H instead of ^? for backspace mitigates
+  some, but not all of the backspace issues.
+
   For servers that don't negotiate charsets, /set default_charset=NAME
   before defining a world with /addworld or /test addworld(). I recommend
   putting /set default_charset=Latin-1 at the top of your worlds.tf.
@@ -30,7 +33,7 @@ Unicode notes:
 
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 =======
 

@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: globals.h,v 35000.78 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
@@ -158,6 +157,7 @@ enum Vars {
 #define TFMAILPATH	getstdvar(VAR_TFMAILPATH)
 #define alert_attr	getattrvar(VAR_alert_attr)
 #define alert_time	gettimevar(VAR_alert_time)
+#define	ansi_log	getintvar(VAR_ansi_log)
 #define auto_fg		getintvar(VAR_auto_fg)
 #define background	getintvar(VAR_background)
 #define backslash	getintvar(VAR_backslash)
@@ -199,6 +199,8 @@ enum Vars {
 #define keypad		getintvar(VAR_keypad)
 #define kprefix		getstrvar(VAR_kprefix)
 #define login		getintvar(VAR_login)
+#define log_prefix	getstrvar(VAR_log_prefix)
+#define log_time_format	getstrvar(VAR_log_time_format)
 #define lpflag		getintvar(VAR_lp)
 #define lpquote		getintvar(VAR_lpquote)
 #define maildelay	gettimevar(VAR_maildelay)
@@ -265,10 +267,6 @@ enum Vars {
 #define visual		((long)(getintvar(VAR_visual) > 0))
 
 extern Var special_var[];
-
-#if HAVE_SETLOCALE
-static char *lang = NULL;
-#endif
 
 #define reset_kbnum()	unsetvar(&special_var[VAR_kbnum])
 

@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: world.c,v 35004.77 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /********************************************************
@@ -147,7 +146,7 @@ World *new_world(const char *name, const char *type,
     if (name) {
         result->name = STRDUP(name);
     } else {
-        sprintf(buffer, "(unnamed%d)", unnamed++);
+        sprintf(buffer, "unnamed%d", unnamed++);
         result->name = STRDUP(buffer);
     }
 

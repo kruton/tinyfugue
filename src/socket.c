@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /***************************************************************
@@ -35,8 +34,12 @@ static const char RCSid[] = "$Id: socket.c,v 35004.288 2007/01/13 23:12:39 kkeys
 #endif
 
 #if HAVE_SSL
-# include <openssl/ssl.h>
-# include <openssl/err.h>
+# if HAVE_GNUTLS_OPENSSL_H
+#  include <gnutls/openssl.h>
+# else
+#  include <openssl/ssl.h>
+#  include <openssl/err.h>
+# endif
     SSL_CTX *ssl_ctx;
 #endif
 
@@ -112,7 +115,9 @@ struct sockaddr_in {
 # endif
 #endif
 
-#include NETDB_H
+#ifdef NETDB_H
+  #include NETDB_H
+#endif
 
 #if !HAVE_GAI_STRERROR || !defined(AI_NUMERICHOST) || !defined(EAI_SERVICE)
   /* System's implementation is incomplete.  Avoid it. */
@@ -547,9 +552,11 @@ static void ssl_io_err(Sock *sock, int ret, int hook)
     case SSL_ERROR_WANT_WRITE:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_WRITE");
 	break;
+#ifdef SSL_ERROR_WANT_CONNECT
     case SSL_ERROR_WANT_CONNECT:
 	ssl_io_err_hook("SSL", "SSL_ERROR_WANT_CONNECT");
 	break;
+#endif
     case SSL_ERROR_SYSCALL:
 	if (ret == 0) {
 	    ssl_io_err_hook("SSL/system", "invalid EOF");
@@ -2490,10 +2497,12 @@ int handle_fake_recv_function(conString *string, const char *world,
         eprintf("no open world %s", world ? world : "");
 	return 0;
     }
-    if (raw)
+    if (raw) {
 	handle_socket_input(string->data, string->len, NULL);
-    else
+    } else {
 	queue_socket_line(sock, string, string->len, 0);
+	flushxsock();
+    }
     return 1;
 }
 
@@ -2689,7 +2698,9 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-	    incoming_text = line;
+        // XXX: This should be cleaner. Adding cast to avoid warning,
+        // But really we should have a copy function or something, right?
+	    incoming_text = (String *) line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}
@@ -2877,7 +2888,6 @@ static void test_prompt(void)
 
 static void telnet_subnegotiation(void)
 {
-    unsigned int i;
     char *p;
     const char *end;
     char temp_buff[255]; /* Same length as whole subnegotiation line. */
@@ -2944,7 +2954,7 @@ static void telnet_subnegotiation(void)
 	      newconverter = ucnv_open(temp_buff, &newconvertererr);
 	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
 	      if (newconverter != NULL) {
-		  p = end; /* Prefer the first valid charset! */
+		  p = (char *) end; /* Prefer the first valid charset! */
 	      }
 	   }
 	   if (newconverter != NULL) {
@@ -3079,7 +3089,7 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
-    char rawchar, localchar, inbuffer[BUFFSIZE];
+    char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
     char mccpbuffer[BUFFSIZE];
@@ -3091,7 +3101,6 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     String *incomingposttelnet;
     UConverter *incomingFSM = NULL;
     UErrorCode incomingERR;
-    int shiftby;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3123,9 +3132,12 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 #if HAVE_SSL
 	    if (xsock->ssl) {
 		count = SSL_read(xsock->ssl, inbuffer, sizeof(inbuffer));
-		if (count == 0 &&
-		    SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
-		    ERR_peek_error() == 0)
+		if (count == 0
+# if HAVE_ERR_PEEK_ERROR
+		    && SSL_get_error(xsock->ssl, 0) == SSL_ERROR_SYSCALL &&
+		    ERR_peek_error() == 0
+# endif
+		    )
 		{
 		    /* Treat a count of 0 with no errors as a normal EOF */
 		    goto eof;
@@ -3535,7 +3547,6 @@ non_telnet:
 STATIC_BUFFER(nextline); /* Static for speed */
 static void handle_socket_input_queue_lines(Sock *sock)
 {
-    String *debug = sock->buffer;
     char *place;
     char *bufferend = sock->buffer->data + sock->buffer->len;
     char rawchar, localchar;

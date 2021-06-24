@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: history.c,v 35004.114 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /****************************************************************
@@ -127,11 +126,38 @@ static void save_to_hist(History *hist, conString *line)
 
 static void save_to_log(History *hist, const conString *str)
 {
+   int i_s = 0;
+   STATIC_BUFFER(log_buffer);
+
+   //set time to string
+   Stringtrunc(log_buffer, 0);
+
+   //create prefix
+   if (log_prefix) {
+       for (i_s = 0; i_s < log_prefix->len; i_s++)
+       {
+           if (log_prefix->data[i_s] != '%') {
+             SStringoncat(log_buffer, log_prefix, i_s, 1);
+           } else {
+             ++i_s;
+             if (log_prefix->data[i_s] == 't')
+               tftime(log_buffer, log_time_format, &str->time);
+             else
+               SStringoncat(log_buffer, log_prefix, i_s-1, 2);
+            }
+        }
+    }
+
+    if (ansi_log)
+        SStringcat(log_buffer, encode_ansi(str, 0));
+    else
+        SStringcat(log_buffer, str);
+
     if (wraplog) {
         /* ugly, but some people want it */
-	const char *p = str->data;
-        int i = 0, first = TRUE, len, remaining = str->len;
-        do { /* must loop at least once, to handle empty string case */
+            const char *p = log_buffer->data;
+            int i = 0, first = TRUE, len, remaining = log_buffer->len; 
+	    do { /* must loop at least once, to handle empty string case */
             if (!first && wrapflag)
                 for (i = wrapspace; i; i--) tfputc(' ', hist->logfile);
             len = wraplen(p, remaining, !first);
@@ -142,6 +168,7 @@ static void save_to_log(History *hist, const conString *str)
         } while (remaining);
     } else {
         tfputs(str->data, hist->logfile);
+	tfputs(log_buffer->data, hist->logfile);
     }
     tfflush(hist->logfile);
 }
