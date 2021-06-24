@@ -722,7 +722,6 @@ with_inclibpfx
 with_incdir
 with_libdir
 with_inclibdir
-enable_logprefix
 enable_manpage
 enable_development
 enable_dmalloc
@@ -2512,13 +2511,6 @@ if test "${with_inclibdir+set}" = set; then :
   withval=$with_inclibdir;
 fi
 
-# Check whether --enable-logprefix was given.
-if test "${enable_logprefix+set}" = set; then :
-  enableval=$enable_logprefix;
-else
-  enable_logprefix=no
-fi
-
 # Check whether --enable-manpage was given.
 if test "${enable_manpage+set}" = set; then :
   enableval=$enable_manpage;
@@ -2526,11 +2518,6 @@ else
   enable_manpage=no
 fi
 
-
-if test "$enable_logprefix" = "yes"; then
-     $as_echo "#define LOG_PREFIX 1" >>confdefs.h
-
-fi
 
 # Developer options
 # --enable-development implies --enable-core --disable-symlink

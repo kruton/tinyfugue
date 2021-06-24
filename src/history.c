@@ -126,11 +126,36 @@ static void save_to_hist(History *hist, conString *line)
 
 static void save_to_log(History *hist, const conString *str)
 {
+   int i_s = 0;
+   STATIC_BUFFER(log_buffer);
+
+   //set time to string
+   Stringtrunc(log_buffer, 0);
+
+   //create prefix
+   for (i_s = 0; i_s < log_prefix->len; i_s++)
+   {
+       if (log_prefix->data[i_s] != '%') {
+         SStringoncat(log_buffer, log_prefix, i_s, 1);
+       } else {
+         ++i_s;
+         if (log_prefix->data[i_s] == 't')
+           tftime(log_buffer, log_time_format, &str->time);
+         else
+           SStringoncat(log_buffer, log_prefix, i_s-1, 2);
+        }
+    }
+
+    if (ansi_log)
+        SStringcat(log_buffer, encode_ansi(str, 0));
+    else
+        SStringcat(log_buffer, str);
+
     if (wraplog) {
         /* ugly, but some people want it */
-	const char *p = str->data;
-        int i = 0, first = TRUE, len, remaining = str->len;
-        do { /* must loop at least once, to handle empty string case */
+            const char *p = log_buffer->data;
+            int i = 0, first = TRUE, len, remaining = log_buffer->len; 
+	    do { /* must loop at least once, to handle empty string case */
             if (!first && wrapflag)
                 for (i = wrapspace; i; i--) tfputc(' ', hist->logfile);
             len = wraplen(p, remaining, !first);
@@ -140,27 +165,8 @@ static void save_to_log(History *hist, const conString *str)
 	    remaining -= len;
         } while (remaining);
     } else {
-#ifdef LOG_PREFIX
-       if (log_prefix->len) {
-               time_t t;
-               struct tm *tm_;
-               int len;
-               String *buffer = NULL;
-
-               buffer = Stringnew(NULL, 256 + str->len, 0);
-               buffer->links++;
-               tftime(buffer, log_prefix, &str->time);
-               Stringcat(buffer, str->data);
-
-               tfputs(buffer->data, hist->logfile);
-
-               Stringfree(buffer);
-       } else {
-           tfputs(str->data, hist->logfile);
-       }
-#else
-       tfputs(str->data, hist->logfile);
-#endif
+        tfputs(str->data, hist->logfile);
+	tfputs(log_buffer->data, hist->logfile);
     }
     tfflush(hist->logfile);
 }
