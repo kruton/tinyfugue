@@ -133,16 +133,18 @@ static void save_to_log(History *hist, const conString *str)
    Stringtrunc(log_buffer, 0);
 
    //create prefix
-   for (i_s = 0; i_s < log_prefix->len; i_s++)
-   {
-       if (log_prefix->data[i_s] != '%') {
-         SStringoncat(log_buffer, log_prefix, i_s, 1);
-       } else {
-         ++i_s;
-         if (log_prefix->data[i_s] == 't')
-           tftime(log_buffer, log_time_format, &str->time);
-         else
-           SStringoncat(log_buffer, log_prefix, i_s-1, 2);
+   if (log_prefix) {
+       for (i_s = 0; i_s < log_prefix->len; i_s++)
+       {
+           if (log_prefix->data[i_s] != '%') {
+             SStringoncat(log_buffer, log_prefix, i_s, 1);
+           } else {
+             ++i_s;
+             if (log_prefix->data[i_s] == 't')
+               tftime(log_buffer, log_time_format, &str->time);
+             else
+               SStringoncat(log_buffer, log_prefix, i_s-1, 2);
+            }
         }
     }
 
