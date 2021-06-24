@@ -152,12 +152,12 @@ static void save_to_log(History *hist, const conString *str)
         SStringcat(log_buffer, (conString *) encode_ansi(str, 0));
     else
         SStringcat(log_buffer, str);
-
+  
     if (wraplog) {
         /* ugly, but some people want it */
-            const char *p = log_buffer->data;
-            int i = 0, first = TRUE, len, remaining = log_buffer->len; 
-	    do { /* must loop at least once, to handle empty string case */
+	const char *p = str->data;
+        int i = 0, first = TRUE, len, remaining = str->len;
+        do { /* must loop at least once, to handle empty string case */
             if (!first && wrapflag)
                 for (i = wrapspace; i; i--) tfputc(' ', hist->logfile);
             len = wraplen(p, remaining, !first);
@@ -167,7 +167,7 @@ static void save_to_log(History *hist, const conString *str)
 	    remaining -= len;
         } while (remaining);
     } else {
-	tfputs(log_buffer->data, hist->logfile);
+      	tfputs(log_buffer->data, hist->logfile);
     }
     tfflush(hist->logfile);
 }
