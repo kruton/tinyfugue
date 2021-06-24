@@ -4438,9 +4438,14 @@ $as_echo "yes" >&6; }
 	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 	fi
-	ac_fn_c_check_header_mongrel "$LINENO" "openssl/ssl.h" "ac_cv_header_openssl_ssl_h" "$ac_includes_default"
+	for ac_header in openssl/ssl.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "openssl/ssl.h" "ac_cv_header_openssl_ssl_h" "$ac_includes_default"
 if test "x$ac_cv_header_openssl_ssl_h" = xyes; then :
-  ok=1
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_OPENSSL_SSL_H 1
+_ACEOF
+ ok=1
 else
   for ac_header in gnutls/openssl.h
 do :
@@ -4456,6 +4461,7 @@ done
 
 fi
 
+done
 
 	if test "$ok" = "1"; then
 	    $as_echo "#define HAVE_SSL 1" >>confdefs.h
@@ -4827,14 +4833,17 @@ $as_echo "$ICU_LIBS" >&6; }
 
 
 
+
 $as_echo "#define WIDECHAR 1" >>confdefs.h
 
+
   else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libicuuc not found.. disabling widechar support." >&5
-$as_echo "$as_me: WARNING: libicuuc not found.. disabling widechar support." >&2;}
+     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libicuuc not found. disabling widechar support." >&5
+$as_echo "$as_me: WARNING: libicuuc not found. disabling widechar support." >&2;}
   fi
 
-    for ac_header in wchar.h wctype.h
+    if test "$ok" = "1"; then
+        for ac_header in wchar.h wctype.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -4843,57 +4852,111 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
+else
+  as_fn_error $? "header files wchar.h and wctype.h are required for widechar support." "$LINENO" 5
 fi
 
 done
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -licuuc" >&5
-$as_echo_n "checking for main in -licuuc... " >&6; }
-if ${ac_cv_lib_icuuc_main+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-licuuc  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
+        for ac_header in unicode/ubrk.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/ubrk.h" "ac_cv_header_unicode_ubrk_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_ubrk_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UBRK_H 1
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_icuuc_main=yes
-else
-  ac_cv_lib_icuuc_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_icuuc_main" >&5
-$as_echo "$ac_cv_lib_icuuc_main" >&6; }
-if test "x$ac_cv_lib_icuuc_main" = xyes; then :
-
-$as_echo "#define WIDECHAR 1" >>confdefs.h
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libicuuc not found.. disabling widechar support." >&5
-$as_echo "$as_me: WARNING: libicuuc not found.. disabling widechar support." >&2;}
+  as_fn_error $? "header file <unicode/ubrk.h> is required for widechar support." "$LINENO" 5
 fi
 
-    ac_fn_c_check_header_mongrel "$LINENO" "unicode/utypes.h" "ac_cv_header_unicode_utypes_h" "$ac_includes_default"
+done
+
+        for ac_header in unicode/uchar.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/uchar.h" "ac_cv_header_unicode_uchar_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_uchar_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UCHAR_H 1
+_ACEOF
+
+else
+  as_fn_error $? "header file <unicode/uchar.h> is required for widechar support." "$LINENO" 5
+fi
+
+done
+
+        for ac_header in unicode/ucnv.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/ucnv.h" "ac_cv_header_unicode_ucnv_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_ucnv_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UCNV_H 1
+_ACEOF
+
+else
+  as_fn_error $? "header file <unicode/ucnv.h> is required for widechar support." "$LINENO" 5
+fi
+
+done
+
+        for ac_header in unicode/ustring.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/ustring.h" "ac_cv_header_unicode_ustring_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_ustring_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_USTRING_H 1
+_ACEOF
+
+else
+  as_fn_error $? "header file <unicode/ustring.h> is required for widechar support." "$LINENO" 5
+fi
+
+done
+
+        for ac_header in unicode/utext.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/utext.h" "ac_cv_header_unicode_utext_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_utext_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UTEXT_H 1
+_ACEOF
+
+else
+  as_fn_error $? "header file <unicode/utext.h> is required for widechar support." "$LINENO" 5
+fi
+
+done
+
+        for ac_header in unicode/utypes.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/utypes.h" "ac_cv_header_unicode_utypes_h" "$ac_includes_default"
 if test "x$ac_cv_header_unicode_utypes_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UTYPES_H 1
+_ACEOF
 
 else
-  as_fn_error $? "header file <unicode/utypes.h> is required for ICU" "$LINENO" 5
+  as_fn_error $? "header file <unicode/utypes.h> is required for widechar support." "$LINENO" 5
 fi
 
+done
 
+        for ac_header in unicode/utf8.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "unicode/utf8.h" "ac_cv_header_unicode_utf8_h" "$ac_includes_default"
+if test "x$ac_cv_header_unicode_utf8_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UNICODE_UTF8_H 1
+_ACEOF
+
+else
+  as_fn_error $? "header file <unicode/utf8.h> is required for widechar support." "$LINENO" 5
+fi
+
+done
+
+    fi
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for inflate in -lz" >&5
@@ -4989,7 +5052,7 @@ fi
 
 
 
-for ac_header in unistd.h memory.h sys/select.h
+for ac_header in lunistd.h memory.h sys/select.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

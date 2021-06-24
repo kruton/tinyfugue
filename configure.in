@@ -305,7 +305,7 @@ if test "$enable_ssl" = "yes"; then
 	else
 	    AC_MSG_RESULT([no])
 	fi
-	AC_CHECK_HEADER(openssl/ssl.h, ok=1,
+	AC_CHECK_HEADERS([openssl/ssl.h], ok=1,
 	    [AC_CHECK_HEADERS([gnutls/openssl.h], [ok=1])])
 	if test "$ok" = "1"; then
 	    AC_DEFINE(HAVE_SSL)
@@ -363,10 +363,28 @@ if test "$enable_float" = "yes"; then
 fi
 
 if test "$enable_widechar" = "yes"; then
-    AX_CHECK_ICU(1, AC_DEFINE([WIDECHAR], [1], [widechar enabled]), AC_MSG_WARN([libicuuc not found.. disabling widechar support.]))
-    AC_CHECK_HEADERS(wchar.h wctype.h)
-    AC_CHECK_LIB(icuuc, main, AC_DEFINE([WIDECHAR], [1], [widechar enabled]), AC_MSG_WARN([libicuuc not found.. disabling widechar support.]))
-    AC_CHECK_HEADER(unicode/utypes.h, [], [AC_MSG_ERROR([header file <unicode/utypes.h> is required for ICU])])
+    AX_CHECK_ICU(1,[
+                   AC_DEFINE([WIDECHAR], [1], [widechar enabled])
+        ],
+        AC_MSG_WARN([libicuuc not found. disabling widechar support.]))
+    if test "$ok" = "1"; then
+        AC_CHECK_HEADERS([wchar.h wctype.h], [],
+            AC_MSG_ERROR([header files wchar.h and wctype.h are required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/ubrk.h], [],
+            AC_MSG_ERROR([header file <unicode/ubrk.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/uchar.h], [],
+            AC_MSG_ERROR([header file <unicode/uchar.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/ucnv.h], [],
+            AC_MSG_ERROR([header file <unicode/ucnv.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/ustring.h], [],
+            AC_MSG_ERROR([header file <unicode/ustring.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/utext.h], [],
+            AC_MSG_ERROR([header file <unicode/utext.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/utypes.h], [],
+            AC_MSG_ERROR([header file <unicode/utypes.h> is required for widechar support.]))
+        AC_CHECK_HEADERS([unicode/utf8.h], [],
+            AC_MSG_ERROR([header file <unicode/utf8.h> is required for widechar support.]))
+    fi
 fi
 
 AC_CHECK_LIB(z, inflate)
@@ -375,15 +393,15 @@ AC_CHECK_LIB(pcre, pcre_compile)
 
 dnl ########### headers ############
 
-AC_CHECK_HEADERS(unistd.h memory.h sys/select.h)
+AC_CHECK_HEADERS([lunistd.h memory.h sys/select.h])
 AC_HEADER_SYS_WAIT
 
 dnl ### For optional language support.
-AC_CHECK_HEADERS(locale.h, ,
+AC_CHECK_HEADERS([locale.h], ,
     AC_MSG_WARN([Locales will not be supported.]))
 
 dnl ### Find pwd.h
-AC_CHECK_HEADERS(pwd.h, ,
+AC_CHECK_HEADERS([pwd.h], ,
 AC_MSG_WARN([Filename '~user' expansion will not be supported.]))
 
 dnl ### Find zlib.h
@@ -410,17 +428,17 @@ AC_DEFUN(TF_SEARCH_HEADERS, [
 ])
 
 dnl ### Find internet structure header
-TF_SEARCH_HEADERS(NETINET_IN_H, netinet/in.h sys/in.h sys/netinet/in.h, ,
+TF_SEARCH_HEADERS(NETINET_IN_H, [netinet/in.h sys/in.h sys/netinet/in.h], ,
     AC_MSG_WARN([I will use my own internet structures.  Good luck.]))
 
 dnl ### Find internet address header
-TF_SEARCH_HEADERS(ARPA_INET_H, arpa/inet.h sys/inet.h)
+TF_SEARCH_HEADERS(ARPA_INET_H, [arpa/inet.h sys/inet.h])
 
 dnl ### Find nameser header
 dnl TF_SEARCH_HEADERS(NAMESER_H, arpa/nameser.h nameser.h)
 
 dnl ### Find netdb header
-TF_SEARCH_HEADERS(NETDB_H, netdb.h sys/netdb.h, ,
+TF_SEARCH_HEADERS(NETDB_H, [netdb.h sys/netdb.h], ,
     AC_MSG_ERROR([can't find netdb.h]))
 
 AC_CACHE_CHECK([whether struct sockaddr has sa_len], tf_cv_sa_len,
@@ -435,10 +453,10 @@ fi
 
 dnl ### Figure out which terminal driver to use.
 
-AC_CHECK_HEADERS(termios.h termio.h sgtty.h, break)
+AC_CHECK_HEADERS([termios.h termio.h sgtty.h], break)
 
 dnl # Some brain damaged systems (Xenix) need <sys/ptem.h> for struct winsize.
-AC_EGREP_HEADER([struct winsize], sys/ptem.h, AC_DEFINE(NEED_PTEM_H))
+AC_EGREP_HEADER(struct winsize, sys/ptem.h, AC_DEFINE(NEED_PTEM_H))
 
 dnl ########### functions ############
 
