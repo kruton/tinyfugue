@@ -1,4 +1,4 @@
-.TH TF 1 "201-06-23" "TinyFugue 5.0" "TinyFugue"
+.TH TF 1 "2021-06-23" "TinyFugue 5.0" "TinyFugue"
 .SH NAME
 tf \- TinyFugue, a MUD client
 .SH SYNOPSIS
@@ -27,7 +27,7 @@ any one function is relatively easy.
 .PP
 Because I am continually adding new features and changing the code,
 \fITF\fR sometimes becomes less stable in a new release.
-Versions labled "alpha" are generally not as well tested as "beta" versions,
+Versions labeled "alpha" are generally not as well tested as "beta" versions,
 so they have the potential for more bugs.
 For this reason, I leave some older versions at the site where I distribute
 \fITF\fR, which do not have all the current
@@ -151,7 +151,7 @@ and maintenance of \fITF\fR in July 1991, and continues to make improvements
 in features and performance.
 .PP
 The code size of \fITF\fR has surpassed 300K (unstripped),
-and is signifigantly larger than \fITinytalk\fR.
+and is significantly larger than \fITinytalk\fR.
 It is, in fact, more than three times the size of a number of existing servers.
 As of version 3.0, it has 66 builtin commands and 57 library commands,
 each documented in the helpfile.
@@ -188,7 +188,7 @@ General Public License.  See the file "COPYING" for details.
 \fITF\fR is currently supported by Ken Keys, who may be contacted by e-mail at
 kenkeys@users.sourceforge.net or kkeys@ucsd.edu.
 
-.SH BACKWARD INCOMPATIBILTIES
+.SH BACKWARD INCOMPATIBILITIES
 .PP
 VERSION 3.2
 .PP

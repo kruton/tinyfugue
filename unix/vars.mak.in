@@ -18,6 +18,7 @@ mandir     = @mandir@
 datarootdir= @datarootdir@
 
 TFVERSION  = @TFVERSION@
+TFVER      = @TFVER@
 X          = @EXEEXT@
 O          = @OBJEXT@
 @SET_MAKE@
