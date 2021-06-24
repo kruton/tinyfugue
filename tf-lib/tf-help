@@ -2312,7 +2312,7 @@ list commands
     [1m/log[22;0m -g on
 
   will send input from the keyboard and output from the world TT to the file 
-  "tt.log", and also send all (global) output to the file named by the [1mLOGFILE[22;0m 
+  "tt.log", and also send all (global) output to the file named by th [1mLOGFILE[22;0m e
   macro.  
 
   This example logs the [1mcurrent[22;0m world's output to a file whose name contains 
@@ -2325,7 +2325,16 @@ list commands
   with [1m/log[22;0m -i.  
 
   Wrapping will be done in the log file only if the [1m%{wraplog}[22;0m [1mvariable[22;0m is 
-  "on".  
+  "on".
+
+  ANSI sequences will be recorded in the log file only if the [1m%{ansi_log}[22;0m [1mvariable[22;0m
+  is "on".
+
+  A line can be prepended to the beginning of each logged line using [1m$%{log_prefix}[22;0m,
+  but is disabled by default.
+
+  The default value of [1m%{log_time_format}[22;0m, is
+  "%H:%M:%S"
 
   Logging is disabled by default.  The default value of [1m${LOGFILE}[22;0m is 
   "tiny.log".  
@@ -2333,7 +2342,9 @@ list commands
   Note: the natural logarithm function was renamed from log() to ln() in 
   version 5.0, to avoid confusion with /log.  
 
-  See: [1m%wraplog[22;0m, [1mhistory[22;0m, [1mnlog()[22;0m [1mfwrite()[22;0m 
+  See: [1m%ansi_log[22;0m, [1m%log_prefix[22;0m, [1m%log_time_format[22;0m, [1m%wraplog[22;0m,
+  [1mhistory[22;0m, [1mnlog()[22;0m [1mfwrite()[22;0m
+  
 
 &/logme
 
@@ -8931,7 +8942,13 @@ Special global variables
 #%alert_time
   [1malert_time[22m=5.0 
           (dtime) The number of seconds that [1malert[22;0m text is displayed on the 
-          [1mstatus line[22;0m.  See [1mtfio[22;0m.  
+          [1mstatus line[22;0m.  See [1mtfio[22;0m.
+
+#ansi_log
+#%ansi_log
+  [1mansi_log[22m=off 
+          (flag) Enable ANSI sequences in log files.
+          See also: [1m/log[22;0m.  
 
 #background
 #%background
@@ -9016,6 +9033,13 @@ Special global variables
           Default is "nonblocking" on platforms that support it.  Nonblocking 
           allows you to continue doing other things while TF tries to 
           establish a new connection.  See also [1m%gethostbyname[22;0m.  
+
+#default_charset
+#%default_charset
+  [1mdefault_charset[22m=US-ASCII 
+          Set the default character set for newly created [1mworlds[22;0m. For use with 
+          MUDs that do not negotiate the character set they use. Changing 
+          this does not alter the character sets of any worlds.  
 
 #defcompile
 #%defcompile
@@ -9193,13 +9217,27 @@ Special global variables
 #kprefix
 #%kprefix
   [1mkprefix[22m= 
-          Prefix prepended to lines echoed by [1m%{kecho}[22;0m.  
+          Prefix prepended to lines echoed by [1m%{kecho}[22;0m.
 
 #%login
   [1mlogin[22m=on 
-          (flag) Enable [1mautomatic login[22;0m [1mhook[22;0m.  (See: [1mautomatic login[22;0m, [1mhooks[22;0m, 
-          [1m/world[22;0m) 
+          (flag) Enable [1mautomatic login[22;0m [1mhook[22;0m. (See: [1mautomatic login[22;0m, [1mhooks[22;0m,  
+          [1m/world[22;0m
 
+#log_prefix
+#%log_prefix
+  [1mlog_prefix[22m= 
+          Prefix prepended to all logged lines.
+          The current time can be referenced with %t and will be formatted
+          according to what is set in [1m%{log_time_format}[22;0m.
+          See: [1m/log[22;0m [1mlog_time_format[22;0m 
+
+#log_time_format
+#%log_time_format
+  [1mlog_time_format[22m=%H:%M:%S
+          Format for current time when referenced by  [1m%{log_prefix}[22;0m. 
+          See: [1m/log[22;0m, [1mlog_prefix[22;0m [1mftime[22;0m
+ 
 #lp
 #%lp
   [1mlp[22m=off  (flag) Displays partial lines as [1mprompts[22;0m, after a short timeout.  

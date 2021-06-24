@@ -1,8 +1,23 @@
+Unicode notes:
+  "Release" is the branch you want.
+  On Debian or Ubuntu, make sure you apt-get libicu-dev before running
+  ./configure.
+  There is a known and easily triggered bug: The backspace, delete, and
+  arrow keys move by bytes, not by characters. For now, editing a line
+  with multibyte characters will send XML hexadecimal escape codes
+  if unencodeable bytes are in the input box.
+  I will gladly accept pull requests.
+
+  Setting your terminal to send ^H instead of ^? for backspace mitigates
+  some, but not all of the backspace issues.
+
+  For servers that don't negotiate charsets, /set default_charset=NAME
+  before defining a world with /addworld or /test addworld(). I recommend
+  putting /set default_charset=Latin-1 at the top of your worlds.tf.
+
+======
 
   TinyFugue is Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys.
-
-  PCRE regexp package is Copyright 1997-1999 University of Cambridge.
-  See src/pcre-2.08/LICENCE for details.
 
 =======
 
@@ -18,7 +33,7 @@
 
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 =======
 

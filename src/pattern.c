@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: pattern.c,v 35004.4 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*
@@ -157,7 +156,7 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
 	    emsg ? emsg : "unknown error");
 	goto tf_reg_compile_error;
     }
-    n = pcre_info(ri->re, NULL, NULL);
+    pcre_fullinfo(ri->re, NULL, PCRE_INFO_CAPTURECOUNT, &n);
     if (n < 0) goto tf_reg_compile_error;
     ri->ovecsize = 3 * (n + 1);
     ri->ovector = dmalloc(NULL, sizeof(int) * ri->ovecsize, file, line);

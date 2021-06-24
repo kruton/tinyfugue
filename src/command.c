@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: command.c,v 35004.141 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*****************************************************************
@@ -406,7 +405,7 @@ struct Value *handle_limit_command(String *args, int offset)
 {
     int mflag = matching;
     int got_opts = 0;
-    int result, had_filter, has_new_pat;
+    int result, has_new_pat;
     char c;
     const char *ptr;
     Screen *screen = display_screen;
@@ -442,7 +441,6 @@ struct Value *handle_limit_command(String *args, int offset)
 	    goto end;
 	}
     }
-    had_filter = screen_has_filter(screen);
     clear_screen_filter(screen);
     set_screen_filter(screen, has_new_pat ? &pat : NULL, attr_flag, sense);
 
@@ -605,7 +603,7 @@ int do_file_load(const char *args, int tinytalk)
 		!user_result->u.ival && !warned)
 	    {
 		eprintf("(This line was implicitly treated as an /addworld "
-		    "because it occured before the first '/' line and did not "
+		    "because it occurred before the first '/' line and did not "
 		    "start with a '/', ';', or '#'.)");
 		warned = 1;
 	    }

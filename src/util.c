@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: util.c,v 35004.150 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*
@@ -35,6 +34,10 @@ static const char RCSid[] = "$Id: util.c,v 35004.150 2007/01/13 23:12:39 kkeys E
 #include "signals.h"	/* core() */
 #include "variable.h"
 #include "parse.h"	/* for expression in nextopt() numeric option */
+
+#if HAVE_SETLOCALE
+static char *lang = NULL;
+#endif
 
 typedef struct mail_info_s {	/* mail file information */
     char *name;			/* file name */
@@ -557,7 +560,6 @@ int ch_timezone(Var *var)
 int ch_locale(Var *var)
 {
 #if HAVE_SETLOCALE
-    const char *lang;
 
 #define tf_setlocale(cat, name, value) \
     do { \

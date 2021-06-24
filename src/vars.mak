@@ -1,4 +1,3 @@
-# $Id: vars.mak,v 1.58 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #  TinyFugue - programmable mud client
 #  Copyright (C) 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
@@ -19,11 +18,8 @@
 TFVER=50b8
 
 SOURCE = attr.c command.c dstring.c expand.c expr.c help.c history.c \
-  keyboard.c macro.c main.c malloc.c output.c process.c search.c \
+  keyboard.c macro.c main.c malloc.c output.c pattern.c process.c search.c \
   signals.c socket.c tfio.c tty.c util.c variable.c world.c
 
-OBJS = attr.$O command.$O dstring.$O expand.$O expr.$O help.$O history.$O \
-  keyboard.$O macro.$O main.$O malloc.$O output.$O pattern.$O process.$O \
-  search.$O signals.$O socket.$O tfio.$O tty.$O util.$O variable.$O world.$O \
-  $(OTHER_OBJS)
+OBJS = $(subst .c,.$O,$(SOURCE)) $(OTHER_OBJS)
 

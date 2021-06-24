@@ -5,12 +5,11 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: pattern.h,v 35004.3 2007/01/13 23:12:39 kkeys Exp $ */
 
 #ifndef PATTERN_H
 #define PATTERN_H
 
-#include "pcre-2.08/pcre.h"
+#include <pcre.h>
 
 typedef struct RegInfo {
     pcre *re;

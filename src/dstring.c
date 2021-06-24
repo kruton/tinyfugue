@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: dstring.c,v 35004.49 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /*********************************************************************
@@ -248,6 +247,28 @@ String *dStrunc(String *str, int len, const char *file, int line)
     return str;
 }
 
+/* Make the position 'start' the beginning of the string.
+ * Another way to think about it is it removes the first 'start'
+ * number of bytes from the string, shifting it over.
+ * Tight error-checking, because we're in a critical section.
+ */
+String *dSshift(String *str, int start, const char *file, int line)
+{
+    if (start < 0)
+        core("dSshift: start==%ld (<0)", file, line, (long)start);
+    if (start > str->len)
+        core("dSshift: start==%ld (>str->len)", file, line, (long)start);
+/*    if (start == str->len)
+        return dStrunc(str, 0, file, line); */
+    if (start == 0)
+        return str;
+    str->len = str->len - start;
+    lcheck(str, file, line); /* Don't really need this... */
+    memmove(str->data, str->data + start, str->len + 1);
+    return str;
+}
+
+
 String *dScpy(String *dest, const char *src, const char *file, int line)
 {
     dest->len = strlen(src);
@@ -305,6 +326,8 @@ String *dScat(String *dest, const char *src, const char *file, int line)
     return dest;
 }
 
+/* Copy a specified chunk of src to the end of dst */
+/* if len is negative, copy from 'start' to src->len */
 String *dSSoncat(String *dest, const conString *src, int start, int len,
     const char *file, int line)
 {
@@ -316,7 +339,8 @@ String *dSSoncat(String *dest, const conString *src, int start, int len,
         len = src->len - start;
     dest->len += len;
     lcheck(dest, file, line);
-    memcpy(dest->data + oldlen, src->data ? src->data + start: "", len);
+    /* memcpy(dest->data + oldlen, src->data ? src->data + start: "", len); */
+    memcpy(dest->data + oldlen, src->data + start, len);
     dest->data[dest->len] = '\0';
 
     if (src->charattrs || dest->charattrs || src->attrs != dest->attrs) {

@@ -1,4 +1,3 @@
-# $Id: Makefile,v 35000.39 2007/01/13 23:12:39 kkeys Exp $
 ########################################################################
 #
 #  TinyFugue - programmable mud client
@@ -33,17 +32,17 @@ configure: configure.in
 reconfigure:  unconfigure install
 
 unconfigure:
-	rm -f src/Makefile src/config.h
+	rm -f src/Makefile src/config.h src tfdefs.h
 
 clean:
-	cd ./src; rm -f *.o Makefile core* *.core config.h typescript*
-	cd ./unix; rm -f vars.mak
+	cd ./src; rm -f *.o core* *.core typescript*
 
 distclean:  clean
 	rm -f Build.log
-#	cd ./tf-lib; rm -f tf-help.idx
 	cd ./src; rm -f tf makehelp tags
 	cd ./src; rm -f tf.pixie* tf.Addrs* tf.Counts*
+	cd ./src; rm -f Makefile tfconfig.h tfdefs.h
+	cd ./unix; rm -f vars.mak
 
 spotless cleanest veryclean:  distclean
 	cd ./src; rm -f tf.1.catman
@@ -62,11 +61,6 @@ help ./tf-lib/tf-help ./tf-lib/tf-help.idx: __always__
 bogus-makefile:
 	cp bogus.mak Makefile
 
-disttest: __always__
-	@{ test ! -d CVS && test "`basename \`pwd\``" = "tf-$(TFVER)"; } || \
-	    { echo '"make dist" should be run from a CVS exported directory.'; \
-	    false; }
-
 disthelp: distclean
 	ln -s help tf-$(TFVER)-help
 	tar -zcf tf-$(TFVER)-help.tar.gz tf-$(TFVER)-help/. \
@@ -77,7 +71,7 @@ disthelp: distclean
 	rm tf-$(TFVER)-help
 	mv tf-$(TFVER)-help.tar.gz ..
 
-dist: disttest srcdist distclean disthelp help bogus-makefile configure
+dist: srcdist distclean disthelp help bogus-makefile configure
 	chmod -R ugo+r .
 	cd ..; tar -zcf tf-$(TFVER).tar.gz -X tf-$(TFVER)/EXCLUDE tf-$(TFVER)
 	cd ..; zip -qlr tf-$(TFVER).zip tf-$(TFVER) \

@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-/* $Id: varlist.h,v 35000.78 2007/01/13 23:12:39 kkeys Exp $ */
 
 /* This keeps the constants and the array in the same place, so they can't
  * get out of sync.
@@ -43,6 +42,7 @@ varstr (VAR_TFPATH,	"TFPATH",	NULL,		NULL)
 varstrx(VAR_TZ,		"TZ",		NULL,		ch_timezone)
 varstr (VAR_alert_attr,	"alert_attr",	"Br",		ch_attr)
 vartime(VAR_alert_time,	"alert_time",	5,0,		NULL)
+varflag(VAR_ansi_log,	"ansi_log",	FALSE,		NULL)
 #if 0
 varflag(VAR_auto_fg,	"auto_fg",	FALSE,		NULL)
 #endif
@@ -55,6 +55,9 @@ varenum(VAR_binary_eol,	"binary_eol",	EOL_LF,		NULL,	enum_eol)
 varflag(VAR_borg,	"borg",		TRUE,		NULL)
 varenum(VAR_cecho,	"cecho",	0,		NULL,	enum_mecho)
 varstr (VAR_cecho_attr,	"cecho_attr",	"Cgreen",	ch_attr)
+#if WIDECHAR
+varstr (VAR_default_charset,"default_charset","US-ASCII",ch_default_charset)
+#endif
 varflag(VAR_cleardone,	"cleardone",	FALSE,		NULL)
 varflag(VAR_clearfull,	"clearfull",	FALSE,		NULL)
 varenum(VAR_async_conn,	"connect",	TRUE,		NULL,	enum_block)
@@ -85,6 +88,8 @@ varflag(VAR_keepalive,	"keepalive",	TRUE,		tog_keepalive)
 varflag(VAR_keypad,	"keypad",	FALSE,		tog_keypad)
 varstr (VAR_kprefix,	"kprefix",	NULL,		NULL)
 varflag(VAR_login,	"login",	TRUE,		NULL)
+varstr (VAR_log_prefix,"log_prefix",	FALSE,	NULL)
+varstr (VAR_log_time_format,"log_time_format",	"%H:%M:%S",	NULL)
 varflag(VAR_lp,		"lp",		FALSE,		tog_lp)
 varflag(VAR_lpquote,	"lpquote",	FALSE,		ch_lpquote)
 vartime(VAR_maildelay,	"maildelay",	60,0,		ch_maildelay)

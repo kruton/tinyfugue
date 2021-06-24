@@ -8,7 +8,6 @@
 
 #define MAILDIR    ""
 
-#define RETSIGTYPE void
 /* #undef pid_t */ /* ? */
 /* #undef size_t */ /* ? */
 /* #undef time_t */
@@ -87,5 +86,4 @@
 #define UNAME "OS/2"
 /* LIBDIR is defined by os2make.cmd */
 
-#define NDEBUG 1
 #include <assert.h>

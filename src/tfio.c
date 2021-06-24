@@ -5,7 +5,6 @@
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
-static const char RCSid[] = "$Id: tfio.c,v 35004.114 2007/01/13 23:12:39 kkeys Exp $";
 
 
 /***********************************
@@ -46,6 +45,7 @@ static const char RCSid[] = "$Id: tfio.c,v 35004.114 2007/01/13 23:12:39 kkeys E
 #include "keyboard.h"	/* keyboard_pos */
 #include "expand.h"	/* current_command */
 #include "cmdlist.h"
+#include "socket.h"     /* main_loop() */
 
 TFILE *loadfile = NULL; /* currently /load'ing file */
 int loadline = 0;       /* line number in /load'ing file */
@@ -87,7 +87,7 @@ void init_tfio(void)
     tfalert = tfopen("<tfalert>", "q");
     tfalert->mode = S_IWUSR;
 
-    fg_screen = default_screen = new_screen(1000/*XXX make configurable*/); 
+    fg_screen = default_screen = new_screen(1000/*XXX make configurable*/);
 }
 
 /* tfname
@@ -491,13 +491,13 @@ static void filenputs(const char *str, int n, FILE *fp)
 
 void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
 {
+    va_list local_ap;
     static smallstr spec, tempbuf;
     const char *q, *sval;
     char *specptr, quote;
     const conString *Sval;
     int len, min, max, leftjust, stars;
     attr_t attrs = buf->attrs;
-    va_list ap_copy;
 
     if (!(flags & SP_APPEND) && buf->data) Stringtrunc(buf, 0);
     while (*fmt) {
@@ -523,10 +523,26 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
         case 'x': case 'X': case 'u': case 'o':
         case 'f': case 'e': case 'E': case 'g': case 'G':
         case 'p':
-            va_copy(ap_copy, ap);
-            vsprintf(tempbuf, spec, ap_copy);
-            va_end(ap_copy);
-            Stringcat(buf, tempbuf);
+	   /* Apparently it is not ok to use the a va_list
+	    * a second time without calling va_end
+	    * then va_start or using va_copy.  This
+	    * doesn't appear to be a problem on 32 bit systems
+	    * but causes problems on 64 bit systems.
+	    * In this case, va_copy is used since I'm usure
+	    * if the program relies on ap staying constant
+	    * or not.  It appears to work fine, but YMMV.
+	    * Also there is a fallback since va_copy doesn't
+	    * appear to be defined in all cases (non-C99 compilers?).
+	    */
+	#ifdef va_copy
+		va_copy(local_ap, ap);
+		vsprintf(tempbuf, spec, local_ap);
+		va_end(local_ap);
+	#else /* assume the old behavior */
+		vsprintf(tempbuf, spec, ap);
+	#endif
+
+	    Stringcat(buf, tempbuf);
             /* eat the arguments used by vsprintf() */
             while (stars--) (void)va_arg(ap, int);
             switch (*fmt) {
