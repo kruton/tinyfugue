@@ -149,7 +149,7 @@ static void save_to_log(History *hist, const conString *str)
     }
 
     if (ansi_log)
-        SStringcat(log_buffer, encode_ansi(str, 0));
+        SStringcat(log_buffer, (conString *) encode_ansi(str, 0));
     else
         SStringcat(log_buffer, str);
 
@@ -167,7 +167,6 @@ static void save_to_log(History *hist, const conString *str)
 	    remaining -= len;
         } while (remaining);
     } else {
-        tfputs(str->data, hist->logfile);
 	tfputs(log_buffer->data, hist->logfile);
     }
     tfflush(hist->logfile);
