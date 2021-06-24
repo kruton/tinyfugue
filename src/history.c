@@ -126,6 +126,33 @@ static void save_to_hist(History *hist, conString *line)
 
 static void save_to_log(History *hist, const conString *str)
 {
+   int i_s = 0;
+   STATIC_BUFFER(log_buffer);
+
+   //set time to string
+   Stringtrunc(log_buffer, 0);
+
+   //create prefix
+   if (log_prefix) {
+       for (i_s = 0; i_s < log_prefix->len; i_s++)
+       {
+           if (log_prefix->data[i_s] != '%') {
+             SStringoncat(log_buffer, log_prefix, i_s, 1);
+           } else {
+             ++i_s;
+             if (log_prefix->data[i_s] == 't')
+               tftime(log_buffer, log_time_format, &str->time);
+             else
+               SStringoncat(log_buffer, log_prefix, i_s-1, 2);
+            }
+        }
+    }
+
+    if (ansi_log)
+        SStringcat(log_buffer, (conString *) encode_ansi(str, 0));
+    else
+        SStringcat(log_buffer, str);
+  
     if (wraplog) {
         /* ugly, but some people want it */
 	const char *p = str->data;
@@ -140,7 +167,7 @@ static void save_to_log(History *hist, const conString *str)
 	    remaining -= len;
         } while (remaining);
     } else {
-        tfputs(str->data, hist->logfile);
+      	tfputs(log_buffer->data, hist->logfile);
     }
     tfflush(hist->logfile);
 }
