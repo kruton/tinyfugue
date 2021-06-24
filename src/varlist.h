@@ -35,6 +35,11 @@ varstrx(VAR_LC_CTYPE,	"LC_CTYPE",	NULL,		ch_locale)
 varstrx(VAR_LC_TIME,	"LC_TIME",	NULL,		ch_locale)
 #endif /* HAVE_SETLOCALE */
 varstr (VAR_MAIL,	"MAIL",		NULL,		ch_mailfile)
+#if ENABLE_OPTION102
+varflag(VAR_OPTION102,  "option102",    TRUE,           NULL)
+#else
+varenum(VAR_OPTION102,  "option102",    FALSE,          NULL,   enum_off)
+#endif
 varstr (VAR_TERM,	"TERM",		NULL,		change_term)
 varstr (VAR_TFLIBDIR,	"TFLIBDIR",	DEFAULT_TFLIBD,	NULL)
 varstr (VAR_TFMAILPATH,	"TFMAILPATH",	NULL,		ch_mailfile)
@@ -43,6 +48,12 @@ varstrx(VAR_TZ,		"TZ",		NULL,		ch_timezone)
 varstr (VAR_alert_attr,	"alert_attr",	"Br",		ch_attr)
 vartime(VAR_alert_time,	"alert_time",	5,0,		NULL)
 varflag(VAR_ansi_log,	"ansi_log",	FALSE,		NULL)
+#if ENABLE_ATCP
+varflag(VAR_atcp,       "atcp",         TRUE,           NULL)
+#else
+varenum(VAR_atcp,       "atcp",         FALSE,          NULL,   enum_off)
+#endif
+varenum(VAR_async_name,	"gethostbyname",TRUE,		NULL,	enum_block)
 #if 0
 varflag(VAR_auto_fg,	"auto_fg",	FALSE,		NULL)
 #endif
@@ -67,7 +78,11 @@ varstr (VAR_error_attr,	"error_attr",	NULL,		ch_attr)
 varflag(VAR_expand_tabs,"expand_tabs",	TRUE,		NULL)
 varflag(VAR_expnonvis,	"expnonvis",	FALSE,		ch_expnonvis)
 varflag(VAR_gag,	"gag",		TRUE,		NULL)
-varenum(VAR_async_name,	"gethostbyname",TRUE,		NULL,	enum_block)
+#if ENABLE_GMCP
+varflag(VAR_gmcp,       "gmcp",         TRUE,           NULL)
+#else
+varenum(VAR_gmcp,       "gmcp",         FALSE,          NULL,   enum_off)
+#endif
 varint (VAR_gpri,	"gpri",		0,		NULL)
 varflag(VAR_hilite,	"hilite",	TRUE,		NULL)
 varstr (VAR_hiliteattr,	"hiliteattr",	"B",		ch_attr)
@@ -88,8 +103,8 @@ varflag(VAR_keepalive,	"keepalive",	TRUE,		tog_keepalive)
 varflag(VAR_keypad,	"keypad",	FALSE,		tog_keypad)
 varstr (VAR_kprefix,	"kprefix",	NULL,		NULL)
 varflag(VAR_login,	"login",	TRUE,		NULL)
-varstr (VAR_log_prefix,"log_prefix",	FALSE,	NULL)
-varstr (VAR_log_time_format,"log_time_format",	"%H:%M:%S",	NULL)
+varstr (VAR_log_prefix, "log_prefix",	FALSE,          NULL)
+varstr (VAR_log_time_format,"log_time_format","%H:%M:%S",NULL)
 varflag(VAR_lp,		"lp",		FALSE,		tog_lp)
 varflag(VAR_lpquote,	"lpquote",	FALSE,		ch_lpquote)
 vartime(VAR_maildelay,	"maildelay",	60,0,		ch_maildelay)
