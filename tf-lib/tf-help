@@ -76,7 +76,7 @@ addworld()
           [1mlp[22;0m=on.  For servers that send unterminated prompts.
 
   lpp, lpp.*
-          LP/Diku [1mlogin[22;0m format, [1mlp[22;0m=off.  For muds that use GOAHEAD or EOR
+          LP/Diku [1mlogin[22;0m format, [1mlp[22;0m=off.  For MUDs that use GOAHEAD or EOR
           [1mprompt protocol[22;0m.
 
   telnet, telnet.*
@@ -256,7 +256,7 @@ addworld()
 
   Creates a [1mmacro[22;0m that will be executed when <[4msequence[24m> is typed at the
   keyboard.  The <[4msequence[24m> may use ^<[4mkey[24m> notation for a control key, and
-  \<[4mnumber[24m> for an ascii character code in octal, hexadecimal, or decimal.
+  \<[4mnumber[24m> for an ASCII character code in octal, hexadecimal, or decimal.
   For example, the escape character can be given by any of these forms: ^[,
   \033, \0x1B, or \27.
 
@@ -1173,7 +1173,7 @@ eval()
     MCCPv2            Mud Client Compression Protocol version 2 (see: [1mmccp[22;0m)
     process           /repeat and /quote
     SOCKS             SOCKS proxy
-    ssl               Secure Sockets Layer
+    SSL               Secure Sockets Layer
     subsecond         time is measured with subsecond accuracy
     TZ                honors the [1mTZ[22;0m variable
 
@@ -1205,7 +1205,7 @@ eval()
   ->      next [1msocket[22;0m in cycle.
   -c<[4mN[24m>   Repeat the -< or -> option <[4mN[24m> times.
   -l      ignored.
-  -q      quiet: jump to the last screenful of text, instead of starting at
+  -q      quiet: jump to the last screenfull of text, instead of starting at
           the same location you were at the last time the [1msocket[22;0m was in the
           [1mforeground[22;0m.
 
@@ -2059,7 +2059,7 @@ list commands
           !       dead
           ?       hostname lookup or network connection is incomplete
           C/c     an established normal connection
-          S/s     an established connection currently in telnet subnegotiation
+          S/s     an established connection currently in telnet sub-negotiation
           X/x     an established [1mSSL[22;0m connection
           O       an open [1mconnectionless[22;0m socket
           A lowercase state character indicates the connection is using [1mMCCP[22;0m.
@@ -2188,7 +2188,7 @@ list commands
 
   "[1m/Loaded[22;0m <[4mtoken[24m>" should be the first command in a file that is designed to
   be loaded only once with [1m/require[22;0m.  <[4mToken[24m> should be a string that does not
-  contain space or [1mglob[22;0m metacharacters, and is different than the token used
+  contain space or [1mglob[22;0m meta-characters, and is different than the token used
   by any other [1m/loaded[22;0m call.  The file's full name is usually a good choice
   for <[4mtoken[24m>.
 
@@ -2424,10 +2424,10 @@ mapping
 
   Sets the value of the [1m%{more}[22;0m flag.  If the [1m%{more}[22;0m flag is ON when the
   screen or output window fills up, output will stop, and a "More" prompt will
-  be displayed.  With the default keybindings, TAB will scroll one screenful,
+  be displayed.  With the default keybindings, TAB will scroll one screenfull,
   PgDn and PgUp will scroll a half screen forward or backward, ^[^N and ^[^P
   will scroll one line forward or backward, and ^[j will Jump to the last
-  screenful.
+  screenfull.
 
   Regardless of the setting of the [1m%more[22;0m flag, you can use "[1m/dokey[22;0m pause" (^S)
   at any time to pause the screen immediately, or use any of the scrolling
@@ -2905,7 +2905,7 @@ Quoter Commands
   the output of various sources and execute them as commands, typically
   quoting them to a mud server.  These are all just shortcuts for things you
   can already do with [1m/quote[22;0m -S.  The default <[4mprefix[24m> is ":|", which will
-  perform a pose on Tiny-style muds.  The default prefix can be changed by
+  perform a pose on Tiny-style MUDs.  The default prefix can be changed by
   setting the appropriate variable: qdef_prefix, qmac_prefix, qworld_prefix,
   qtf_prefix, qsh_prefix, or qmud_prefix.  An alternate <[4mprefix[24m> can be given
   on the command line for [1m/qdef[22;0m, [1m/qmac[22;0m, [1m/qworld[22;0m, and [1m/qfile[22;0m.  Also, before any
@@ -3033,7 +3033,7 @@ Quoter Commands
   "--".
 
   If lines are received while tf is suspended (by [1m^Z[22;0m or [1m/suspend[22;0m) or in a
-  subshell (by [1m/sh[22;0m), the timestamps on the lines will correspond to the time
+  sub-shell (by [1m/sh[22;0m), the timestamps on the lines will correspond to the time
   tf resumed control, not the time they actually arrived.
 
   The return value of [1m/recall[22;0m is the number of lines that were actually
@@ -4512,7 +4512,7 @@ colors
   enable foreground or background color <[4mname[24m> is stored in a [1mvariable[22;0m called
   [1m%{start_color_<[4mname[24m>}[22;0m or [1m%{start_color_bg<[4mname[24m>}[22;0m.  The code to turn off
   colors is stored in [1m%{end_color}[22;0m.  These [1mvariables[22;0m may contain carat
-  notation and backslashed ascii codes in decimal, octal, or hexadecimal
+  notation and backslashed ASCII codes in decimal, octal, or hexadecimal
   (e.g., ESC is ^[, \27, \033, or \0x1B).
 
   The default definition of [1m%end_color[22;0m is "\033[39;49;0m", which should work
@@ -4864,7 +4864,7 @@ Operators
               nearest scope.  If not found, a new [1mvariable[22;0m is created at the
               global level, as if by [1m/set[22;0m.  If [4mv[24m is a [1mspecial variable[22;0m, the
               value of [4me[24m may need to be converted to the type of [4mv[24m, or the
-              assignment may fail altogther if the value is not legal for [4mv[24m.
+              assignment may fail altogether if the value is not legal for [4mv[24m.
               The value of the assignment expression is the new value of [4mv[24m.
   [4mv[24m += [4mn[24m      Equivalent to [4mv[24m := [4mv[24m + ([4mn[24m).
   [4mv[24m -= [4mn[24m      Equivalent to [4mv[24m := [4mv[24m - ([4mn[24m).
@@ -5384,7 +5384,7 @@ Information functions
           from the window buffer into the window from the bottom.  If <[4mi[24m> is
           negative, it reverse-scrolls abs(<[4mi[24m>) lines of text from the window
           buffer into the window from the top.  If abs(<[4mi[24m>) is larger than one
-          screenful, the actual scrolling is skipped, and only the end result
+          screenfull, the actual scrolling is skipped, and only the end result
           is displayed.  Returns the number of lines actually scrolled.
 #moresize
 #moresize()
@@ -6117,7 +6117,7 @@ Default keybindings
   character generated by typing the X key while holding the CTRL key.  Also,
   "^[" can be more easily typed just by pressing the ESC key.  [1m/Def -b[22;0m and
   [1m/bind[22;0m accept the ^X notation as well as "\<[4mnumber[24m>" notation, where <[4mnumber[24m>
-  is the octal, hexadecimal, or decimal number of the character's ascii value.
+  is the octal, hexadecimal, or decimal number of the character's ASCII value.
   For example, the escape character can be given in any of these forms: ^[,
   \033, \0x1B, or \27.
 
@@ -6149,13 +6149,13 @@ Named keys
   Delete      [1m/dokey[22;0m dch              *delete character
   Home        [1m/dokey_home[22;0m              cursor to beginning of line
   End         [1m/dokey_end[22;0m               cursor to end of line
-  PgDn        [1m/dokey_pgdn[22;0m             *scroll forward a screenful
-  PgUp        [1m/dokey_pgup[22;0m             *scroll back a screenful
-  Tab         [1m/dokey page[22;0m             *scroll forward a screenful
+  PgDn        [1m/dokey_pgdn[22;0m             *scroll forward a screenfull
+  PgUp        [1m/dokey_pgup[22;0m             *scroll back a screenfull
+  Tab         [1m/dokey page[22;0m             *scroll forward a screenfull
 
   Ctrl_Home   [1m/dokey_recallbeg[22;0m         recall first line of input
   Ctrl_End    [1m/dokey_recallend[22;0m         recall last line of input
-  Ctrl_PgDn   [1m/dokey_flush[22;0m             scroll forward to last screenful
+  Ctrl_PgDn   [1m/dokey_flush[22;0m             scroll forward to last screenfull
   Ctrl_PgUp   (reserved for future use)
 
   F1          [1m/help[22;0m                    help
@@ -6207,10 +6207,10 @@ Unnamed key sequences
   "^X^R"  [1m/load[22;0m [1m~/.tfrc[22;0m            reload personal config file
   "^X^V"  [1m/version[22;0m                 display version information
   "^X^?"  [1m/kb_backward_kill_word[22;0m  *delete backward word (punctuation-delimited)
-  "^X["   [1m/dokey[22;0m_hpageback        *scroll back a half screenful
-  "^X]"   [1m/dokey[22;0m_hpage            *scroll forward a half screenful
-  "^X{"   [1m/dokey[22;0m_pageback         *scroll back a screenful
-  "^X}"   [1m/dokey[22;0m_page             *scroll forward a screenful
+  "^X["   [1m/dokey[22;0m_hpageback        *scroll back a half screenfull
+  "^X]"   [1m/dokey[22;0m_hpage            *scroll forward a half screenfull
+  "^X{"   [1m/dokey[22;0m_pageback         *scroll back a screenfull
+  "^X}"   [1m/dokey[22;0m_page             *scroll forward a screenfull
   "^[^E"  [1m/kb_expand_line[22;0m          [1mexpand[22;0m current input line in place
   "^[^H"  [1m/kb_backward_kill_word[22;0m  *delete backward word (punctuation-delimited)
   "^[^I"  [1m/complete[22;0m                complete current word, depending on context
@@ -6239,9 +6239,9 @@ Unnamed key sequences
   "^[c"   [1m/kb_capitalize_word[22;0m     *capitalize word
   "^[d"   [1m/kb_kill_word[22;0m           *delete forward word
   "^[f"   [1m/dokey_wright[22;0m           *cursor to end of word
-  "^[h"   [1m/dokey[22;0m_hpage            *scroll forward a half screenful
+  "^[h"   [1m/dokey[22;0m_hpage            *scroll forward a half screenfull
   "^[i"   [1m/complete[22;0m input_history  complete from previously typed words
-  "^[j"   [1m/dokey[22;0m flush             jump to last screenful of text
+  "^[j"   [1m/dokey[22;0m flush             jump to last screenfull of text
   "^[l"   [1m/kb_downcase_word[22;0m       *convert word to lower case
   "^[n"   [1m/dokey[22;0m searchf          *search forward input [1mhistory[22;0m
   "^[p"   [1m/dokey[22;0m searchb          *search backward input [1mhistory[22;0m
@@ -6479,7 +6479,7 @@ Mapping character sequences to Named Keys
   and PageDown keys itself and does not send them to the application (tf).  It
   does however send Shift-PageUp and Shift-PageDown to the application, so you
   can use these to scroll in tf running inside Terminal.  You can also tell
-  Terminal to send the unshifted keys to tf by redefining them in Terminal |
+  Terminal to send the un-shifted keys to tf by redefining them in Terminal |
   Window Settings | Keyboard.
 
 #teraterm
@@ -6528,8 +6528,8 @@ Mapping character sequences to Named Keys
   yourself.  Additionally, most of the standard "/kb_*" and "[1m/dokey[22;0m" commands
   that use [1m%kbnum[22;0m are optimized to not simply repeat the command a number of
   times, but instead calculate only the end result.  For example, ESC 300 TAB
-  does not laboriously scroll 300 screenfuls of text onto the screen, but
-  figures out what the 300th screenful looks like and draws that immediately.
+  does not laboriously scroll 300 screenfulls of text onto the screen, but
+  figures out what the 300th screenfull looks like and draws that immediately.
   It does this because /dokey_page calls "[1m/test[22;0m [1mmorescroll[22;0m( [1mwinlines[22;0m() *
   (kbnum[1m?:[22;0m1))".
 
@@ -6926,7 +6926,7 @@ mail checking
   If [1m%{maildelay}[22;0m is nonzero, TF will check for mail every [1m%{maildelay}[22;0m
   seconds.  TF checks for mail in each file in the space-separated list of
   files in the [1m%{TFMAILPATH}[22;0m [1mvariable[22;0m (literal spaces in TFMAILPATH may be
-  quoted by preceeding them with a backslash).  If [1m%{TFMAILPATH}[22;0m is not set,
+  quoted by preceding them with a backslash).  If [1m%{TFMAILPATH}[22;0m is not set,
   TF will check in the single file named by the [1m%{MAIL}[22;0m [1mvariable[22;0m.
 
   TF considers a mailfile to have unread mail if the file has been written
@@ -7065,7 +7065,7 @@ options
     * Some options may take string, numeric, or time arguments.  There
       must be no space between the option and the argument.
     * String option-arguments may be delimited by a space, double quotes,
-      single quotes, or backquotes.
+      single quotes, or back quotes.
     * A literal delimiter character or '\' within a delimited string must
       be escaped by preceding it with '\'.
     * A numeric option-argument may be given as an [1mexpression[22;0m that
@@ -8358,7 +8358,7 @@ prompt protocol
 
 prompts
 
-  Most LP muds, Diku muds, telnetd, and some other types of servers send
+  Most LP MUDs, Diku MUDs, telnetd, and some other types of servers send
   unterminated [1mprompts[22;0m, that is, [1mprompts[22;0m that do not end with newline or any
   other special character.  Normally, TF will not display text until a newline
   is received, so you may not see the [1mprompt[22;0m until after you press return.
@@ -8574,7 +8574,7 @@ virtual windows
 
   Note that the line-scrolling keys may be typable as meta-ctrl-n and
   meta-ctrl-p (depending on your [1m%meta_esc[22;0m and [1mlocale[22;0m).  "Normal" scrolling is
-  a full screenful by default.  If you prefer PgUp and PgDn to scroll a half
+  a full screenfull by default.  If you prefer PgUp and PgDn to scroll a half
   screen instead, you should redefine
 
       [1m/def[22;0m key_pgdn = /dokey_hpage
@@ -8722,7 +8722,7 @@ sockets
     * By giving the world name or address on the command line when
       [1mstarting tf[22;0m.
     * By using a [1m/connect[22;0m or [1m/world[22;0m command.
-    * By "[1mbamfing[22;0m" through a portal between muds (see "[1mbamf[22;0m").
+    * By "[1mbamfing[22;0m" through a portal between MUDs (see "[1mbamf[22;0m").
 
   You can switch between [1mforeground[22;0m [1msockets[22;0m with the [1m/fg[22;0m command; the [1m/dokey[22;0m
   socketb and [1m/dokey[22;0m socketf commands, which by default are [1mbound[22;0m to ESC-left
@@ -8983,7 +8983,7 @@ Special global variables
           determines how to display output that was produced while the [1mworld[22;0m
           was in the [1mbackground[22;0m: If on, the window display resumes where it
           left off; if off, the window display jumps to the end, showing only
-          the last screenful.  Turning [1m%bg_output[22;0m off is equivalent to always
+          the last screenfull.  Turning [1m%bg_output[22;0m off is equivalent to always
           using the -q option with [1m/fg[22;0m.  The [1m%bg_output[22;0m flag has no effect on
           other processing, including [1mtriggers[22;0m and [1mhistory[22;0m.  This flag is
           ignored if the [1m%{background}[22;0m flag is off.  [1m%{background}[22;0m is tested
@@ -9167,7 +9167,7 @@ Special global variables
   [1minteractive[22m
           (flag) If off, TF will not prompt for [1m/quit[22;0m, returning from [1m/sh[22;0m,
           [1mSIGINT[22;0m (^C), or [1mSIGQUIT[22;0m (^\).  Defaults to on if standard input and
-          output are attatched to a terminal, off otherwise.
+          output are attached to a terminal, off otherwise.
 
 #isize
 #%isize
@@ -9352,7 +9352,7 @@ Special global variables
                   Convert a meta bit to ESC only if the meta bit makes the
                   character unprintable in the current [1mlocale[22;0m.
           Meta bit conversion can be prevented for a single keystroke by
-          preceeding it with the [1mLNEXT[22;0m key (^V), regardless of the state of
+          preceding it with the [1mLNEXT[22;0m key (^V), regardless of the state of
           [1m%meta_esc[22;0m.
 
 #more
@@ -10077,7 +10077,7 @@ $([4mcommand[24m)
 
           [1m/def[22;0m showver = :is using tf version $([1m/ver[22;0m)
 
-  could be used to tell other mudders what version of tf you're using.
+  could be used to tell other MUDders what version of tf you're using.
 
 #$
 #${
