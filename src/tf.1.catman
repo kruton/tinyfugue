@@ -27,7 +27,7 @@ TF(1)                                                                    TF(1)
        learning to use any one function is relatively easy.
 
        Because  I am continually adding new features and changing the code, [4mTF[0m
-       sometimes becomes less  stable  in  a  new  release.   Versions  labled
+       sometimes becomes less  stable  in  a  new  release.   Versions  labeled
        "alpha"  are  generally  not as well tested as "beta" versions, so they
        have the potential for more bugs.  For this reason, I leave some  older
        versions  at  the site where I distribute [4mTF[24m, which do not have all the
@@ -127,8 +127,8 @@ TF(1)                                                                    TF(1)
        automatically at startup.  Two of the most useful commands to use in  a
        [4mTF[24m configuration file are /addworld and /load.
 
-       For  backward compatability, [4mTF[24m will also try to read the [4mTinyTalk[24m con-
-       figuration file.  Its name  defautls  to  $HOME/.tinytalk,  or  can  be
+       For  backward compatibility, [4mTF[24m will also try to read the [4mTinyTalk[24m con-
+       figuration file.  Its name  defaults  to  $HOME/.tinytalk,  or  can  be
        defined by the TINYTALK environment variable.  This file may start with
        a list of worlds that will be defined as if with /addworld.
 
@@ -188,7 +188,7 @@ TF(1)                                                                    TF(1)
        at kenkeys@users.sourceforge.net or kkeys@ucsd.edu.
 
 
-[1mBACKWARD INCOMPATIBILTIES[0m
+[1mBACKWARD INCOMPATIBILITIES[0m
        VERSION 3.2
 
        /rand has been replaced with rand().  Color names can no longer be user

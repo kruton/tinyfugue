@@ -659,6 +659,7 @@ LDFLAGS
 CFLAGS
 CC
 UNAME
+TFVER
 TFVERSION
 target_alias
 host_alias
@@ -2378,6 +2379,7 @@ ac_config_headers="$ac_config_headers src/tfconfig.h"
 
 
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: Configuring $TFVERSION" >&5
 $as_echo "$as_me: Configuring $TFVERSION" >&6;}
 
@@ -2542,7 +2544,7 @@ fi
 if test "${enable_manpage+set}" = set; then :
   enableval=$enable_manpage;
 else
-  enable_manpage=no
+  enable_manpage=yes
 fi
 
 
