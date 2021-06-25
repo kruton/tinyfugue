@@ -1,5 +1,13 @@
-This version of TinyFugue is written, maintained, and copyrighted
+This fork of TinyFugue is currently being supported by Kruton,
+Sketch, and wstarter. It also inclues assorted patches developed
+by various community members in the years since TF saw saw it's
+final release.
+
+For a long time TinyFugue was written, maintained, and copyrighted
 by Ken Keys ("Hawkeye"), who can be reached by email at kkeys@ucsd.edu.
+His final release was 50b8 in January 2007, but he is still active
+in giving support at https://sourceforge.net/p/tinyfugue
+
 See the file "COPYING" for the full copyright and license.
 
 Support for OS/2 was contributed by Andreas Sahlbach (asa@stardiv.de).
@@ -15,4 +23,3 @@ Additional thanks to Jeff Prothero ("Cynbe"), Bruce Sterling Woodcock
 glia.biostr.washington.edu, and everyone else who tested, found bugs,
 or came up with suggestions, and to Jim Lick ("Jingoro") for providing
 tcp.com services.
-
