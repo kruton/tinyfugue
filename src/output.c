@@ -2984,7 +2984,7 @@ int clear_more(int new)
 	    nexttop(display_screen);
 	if (scrolled < new) {
 	    display_screen->paused = 0;
-	    display_screen->outcount = new - scrolled;
+            display_screen->outcount = new - scrolled;
 	    if (visual) {
 		update_status_field(NULL, STAT_MORE);
 		if (!scroll) display_screen->outcount = out_bot;
