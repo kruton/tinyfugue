@@ -14,6 +14,7 @@ OPTION 102 protocol support (--enable-option102=yes) off by default
 RFC 2066 compliance for Telnet Charset Negotiation
 PCRE unbundled and now can use system libraries
 GCC 10 and CLANG support
+64-bit crash issues resolved
 OS X compile issues resolved
 
 Plus numerous bug fixes, clean-up, and needed code base
