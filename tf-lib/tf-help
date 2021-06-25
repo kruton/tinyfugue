@@ -9112,6 +9112,12 @@ Special global variables
           Defines the [1mattributes[22;0m used by the "E" [1mattribute[22;0m.  Can be any
           combination of [1mattributes[22;0m, including color names.  See: [1mattributes[22;0m.
 
+#error_prefix
+#%errpr_prefix
+  [1merror_prefix[22m=%
+          Prefix prepended to all normal error messages.
+          By default all normal error messages will be prefixed with '%'
+
 #gag
 #%gag
   [1mgag[22m=on  (flag) Enable the [1mgag[22;0m [1mattribute[22;0m.  (See: [1m/gag[22;0m, [1m/nogag[22;0m)

@@ -1446,8 +1446,12 @@ static void setupnextconn(Sock *sock)
 {
     struct addrinfo *ai, *next = sock->addr;
 
-    if (sock->fd >= 0)
+    if (sock->fd >= 0) {
+        FD_CLR(sock->fd, &readers);
+        FD_CLR(sock->fd, &writers); 
 	close(sock->fd);
+        sock->fd = -1;
+    }
 retry:
     next = next->ai_next;
     /* if next address is a duplicate of one we've already done, skip it */

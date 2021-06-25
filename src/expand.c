@@ -1339,7 +1339,7 @@ static int list(Program *prog, int subs)
          * with multiple "/"s have the first removed, and are sent to server.
          */
 
-        if ((subs > SUB_LITERAL) && (*ip == '/') && (*++ip != '/')) {
+        if ((subs > SUB_LITERAL) && (ip[0] == '/') && (ip[1] != '/')) {
             is_a_command = TRUE;
             oldblock = block;
             if (subs >= SUB_KEYWORD) {
