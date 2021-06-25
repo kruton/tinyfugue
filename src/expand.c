@@ -1340,13 +1340,13 @@ static int list(Program *prog, int subs)
          */
 
         if ((subs > SUB_LITERAL) && (ip[0] == '/') && (ip[1] != '/')) {
+            ++ip;
             is_a_command = TRUE;
             oldblock = block;
             if (subs >= SUB_KEYWORD) {
                 stmtstart = ip;
                 is_special = block = keyword_parse(prog);
             }
-
         } else if ((subs > SUB_LITERAL) &&
             (block == IF || block == ELSEIF || block == WHILE))
         {
