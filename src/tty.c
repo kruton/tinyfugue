@@ -141,7 +141,7 @@ void init_tty(void)
      * so we'll ignore anything that isn't a control character.
      */
     if (is_cntrl(*bs)      && *bs       && *bs != '\b' && *bs != '\177')
-                                       add_ibind(bs,      "/DOKEY BSPC");
+                                        add_ibind(bs,      "/DOKEY BSPC");
     if (is_cntrl(*bword)   && *bword)   add_ibind(bword,   "/DOKEY BWORD");
 /*  if (is_cntrl(*dline)   && *dline)   add_ibind(dline,   "/DOKEY DLINE"); */
     if (is_cntrl(*refresh) && *refresh) add_ibind(refresh, "/DOKEY REFRESH");

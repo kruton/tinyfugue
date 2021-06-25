@@ -1448,8 +1448,8 @@ static void setupnextconn(Sock *sock)
 
     if (sock->fd >= 0) {
         FD_CLR(sock->fd, &readers);
-        FD_CLR(sock->fd, &writers); 
-	close(sock->fd);
+        FD_CLR(sock->fd, &writers);
+	      close(sock->fd); 
         sock->fd = -1;
     }
 retry:
