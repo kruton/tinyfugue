@@ -699,7 +699,8 @@ void Sappendf(String *buf, const char *fmt, ...)
 void eprefix(String *buffer)
 {
     extern char current_opt;
-    Stringcpy(buffer, "% ");
+    Stringcat(buffer, error_prefix);
+    Stringcat(buffer, " ");
     if (loadfile) {
         Sappendf(buffer, "%s, line", loadfile->name);
         if (loadstart == loadline)

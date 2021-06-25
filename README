@@ -5,8 +5,10 @@ UTF8 support (--enable-widechar=yes)
 HTML documentation added to the repo (not yet spell checked)
 ANSI log output (/help ansi_log) off by default
 LOGs output prefix, such as timestamp (/help log_prefix) off by default
+ERROR output prefix now adjustable (/help error_prefix) '%' by default
 UNNAMED worlds no longer wrapped in () fixing potential macro bugs
 @ALERT picks up on messages that could have been lost
+/ as a prefix to /command sends to MU, as opposed to ///command
 SSL now looks for GNU TLS
 ATCP protocol support (--enable-atcp=yes) off by default
 GMCP protocol support (--enable-gmcp=yes) off by default
@@ -15,6 +17,7 @@ RFC 2066 compliance for Telnet Charset Negotiation
 PCRE unbundled and now can use system libraries
 GCC 10 and CLANG support
 64-bit crash issues resolved
+MULTI-address hostname crash issue resolved
 OS X compile issues resolved
 
 Plus numerous bug fixes, clean-up, and needed code base
