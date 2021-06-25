@@ -715,6 +715,9 @@ enable_history
 enable_process
 enable_float
 enable_widechar
+enable_atcp
+enable_gmcp
+enable_option102
 with_incdirs
 with_libdirs
 with_inclibdirs
@@ -1376,6 +1379,9 @@ Optional Features:
   --disable-process       disable /quote and /repeat
   --disable-float         disable floating point arithmetic and functions
   --disable-widechar      disable wide character support (UTF-8)
+  --enable-atcp           enable ATCP support
+  --enable-gmcp           enable GMCP support
+  --enable-option102      enable 102 option support
 
 
 Optional Packages:
@@ -2468,6 +2474,27 @@ if test "${enable_widechar+set}" = set; then :
   enableval=$enable_widechar;
 else
   enable_widechar=yes
+fi
+
+# Check whether --enable-atcp was given.
+if test "${enable_atcp+set}" = set; then :
+  enableval=$enable_atcp;
+else
+  enable_atcp=no
+fi
+
+# Check whether --enable-gmcp was given.
+if test "${enable_gmcp+set}" = set; then :
+  enableval=$enable_gmcp;
+else
+  enable_gmcp=no
+fi
+
+# Check whether --enable-option102 was given.
+if test "${enable_option102+set}" = set; then :
+  enableval=$enable_option102;
+else
+  enable_option102=no
 fi
 
 
@@ -5584,15 +5611,21 @@ PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr
 
 
 
-if test "$enable_inet6"   = "yes"; then $as_echo "#define ENABLE_INET6 1" >>confdefs.h
+if test "$enable_inet6"     = "yes"; then $as_echo "#define ENABLE_INET6 1" >>confdefs.h
   fi
-if test "$enable_history" = "no"; then $as_echo "#define NO_HISTORY 1" >>confdefs.h
+if test "$enable_atcp"      = "yes"; then $as_echo "#define ENABLE_ATCP 1" >>confdefs.h
   fi
-if test "$enable_process" = "no"; then $as_echo "#define NO_PROCESS 1" >>confdefs.h
+if test "$enable_gmcp"      = "yes"; then $as_echo "#define ENABLE_GMCP 1" >>confdefs.h
   fi
-if test "$enable_float"   = "no"; then $as_echo "#define NO_FLOAT 1" >>confdefs.h
+if test "$enable_option102" = "yes"; then $as_echo "#define ENABLE_OPTION102 1" >>confdefs.h
+  fi
+if test "$enable_history"   = "no";  then $as_echo "#define NO_HISTORY 1" >>confdefs.h
+  fi
+if test "$enable_process"   = "no";  then $as_echo "#define NO_PROCESS 1" >>confdefs.h
+  fi
+if test "$enable_float"     = "no";  then $as_echo "#define NO_FLOAT 1" >>confdefs.h
     fi
-if test "$enable_widechar" = "yes"; then $as_echo "#define WIDECHAR 1" >>confdefs.h
+if test "$enable_widechar"  = "yes"; then $as_echo "#define WIDECHAR 1" >>confdefs.h
    fi
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
