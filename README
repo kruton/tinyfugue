@@ -1,3 +1,5 @@
+TinyFugue 50b8 with numerous patches and improvements
+
 UTF8 support (--enable-widechar=yes)
 /HELP has been spell checked, along with the manpage
 HTML documentation added to the repo (not yet spell checked)
