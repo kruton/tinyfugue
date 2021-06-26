@@ -7,7 +7,7 @@ If you have not yet read all changes since 4.0 stable 1, please do now.
   (read the CHANGES file directly, or type "/changes 5.0" in tf.)
 If you have custom code to do any of the following in older versions,
   you'll probably want to get rid of it or redesign it, since it is now
-  superceded by standard features: key bindings; text redraw (after world
+  superseded by standard features: key bindings; text redraw (after world
   switch, or resuming from sh or suspend); scrollback; status line
   customizations; ...
 
@@ -50,7 +50,7 @@ Fixed: various bad things could happen if a trigger attempted to apply a
 Fixed bugs on 64-bit platforms: /fg -c (Debian bug #327448), some variable
     assignments
 Fixed: some cases of hostname resolution failure could cause a crash
-More robust TELNET protocol handling reduces problems on noncompliant servers:
+More robust TELNET protocol handling reduces problems on non-compliant servers:
     Ignores option subnegotiation if option has not been agreed on.
     If IAC SB (0xff 0xfa) is received before any other telnet command, the
 	server is treated as a non-telnet server.
@@ -67,10 +67,10 @@ Colors:
 	extension codes.
     Added "/feature 256colors".
     Added "/load testcolor.tf" to test color functionality and appearance.
-Added "E" and "W" attributes, with corresponding defintions in %error_attr
+Added "E" and "W" attributes, with corresponding definitions in %error_attr
     and %warning_attr.
 Added encode_ansi() to generate a string with attribute control codes.
-Added test() for backward compatiblity with version 4.0.
+Added test() for backward compatibility with version 4.0.
 Added strcmpattr(), like strcmp() but also compares display attributes.
 In commands that match macros (/list, /purge, /save), a color attribute will
     match only the same color attribute, not just any color attribute.
@@ -84,7 +84,7 @@ Added -f (foreground) and -b (background) options to /world; documented -x
     (SSL) option.
 Uses system's copy of libpcre if possible.
 Redefinition of macros or keybindings does not invoke the REDEF hook if the
-    new and old defintions are identical (so file reloading is less noisy).
+    new and old definitions are identical (so file reloading is less noisy).
     If you used to gag REDEF to reduce noise, you may want to ungag it now
     that it is less noisy and more informative.
 Status bar changes:
@@ -107,7 +107,7 @@ Other screen display changes:
     Changing %wrappunct immediately rewraps everything on screen.
     Eliminated extra screen redraw when the terminal is resized.
     Fixed: under some conditions, rewrapping screen could cause entire
-	scrollback buffer to be redrawn, instead of just a screenful.  (If
+	scrollback buffer to be redrawn, instead of just a screenfull.  (If
 	%more was on, this acted like a jump to the beginning of the buffer.)
     Fixed: did not send new terminal size to server after resizing the terminal
 	in nonvisual mode.
@@ -223,7 +223,7 @@ Fixed a timing bug that may have caused many seemingly unrelated problems,
     including processes not running on time, status bar not updating, and
     keyboard or background worlds being ignored. (50a13)
 Fixed handling of case where server sends ANSI display code followed by
-    backspace (not known to ever happen in practice, but fixed nontheless).
+    backspace (not known to ever happen in practice, but fixed nonetheless).
 Fixed: in some cases, if TF already had a prompt from the server, it would
     ignore a new prompt from the server.
 Improved some error messages.
@@ -421,7 +421,7 @@ Fixed: speedwalk incorrectly matched lines containing only digits.
 ------------
 moresize() takes an optional world argument, and defaults to operating on
     current world (instead of foreground world).
-Page Up and Page Down scroll a full screenful, not a half.
+Page Up and Page Down scroll a full screenfull, not a half.
 Added ^] keybinding for /bg.
 Can wrap at punctuation other than space; %wrappunct controls it.
 Can reverse scroll until first line is at bottom of window (useful with
@@ -475,13 +475,13 @@ New screen handling.  See "/help windows".
     Half page backward (PgUp, ^X[) or forward (PgDn, ^X]),
     full page backward (^X{) or forward (^X}),
     line backward (^[^P) or forward line (^[^N).
-    /dokey_flush means jump to end, showing last screenful
-    /dokey_selflush shows last screenful of lines with attrs
+    /dokey_flush means jump to end, showing last screenfull
+    /dokey_selflush shows last screenfull of lines with attrs
   Redraw after /suspend, /sh, and changing window size, %visual, or %isize.
   Doesn't automatically leave a dead socket if the text hadn't been seen.
   WORLD hook is silent.
   A disconnected socket does not disappear automatically after displaying its
-    buffered text.  It will dissappear if you /dc it again, or /fg another.
+    buffered text.  It will disappear if you /dc it again, or /fg another.
   /dokey redraw (^L) actually redraws screen.
   Added /dokey clear (^[^L) to clear screen.
   %shpause defaults to on.
@@ -515,7 +515,7 @@ added /status_add, /status_rm, /status_edit, /clock {on|off}, %clock_format,
     %status_field_defaults.  You should not set %status_fields directly.
 Variables used in status_fields do not need to exist.
 Various keys are bound to /dokey_pg{up,dn} which in turn calls
-    /dokey_hpage{back,}.  To make keys move a whole screenful, user should
+    /dokey_hpage{back,}.  To make keys move a whole screenfull, user should
     not rebind the keys, but redefine /dokey_pg{up,dn} to call
     /dokey_page{back,}.
 Note: some emulators (NiftyTelnet, TeraTerm) incorrectly send ^[[3~ for
@@ -523,7 +523,7 @@ Note: some emulators (NiftyTelnet, TeraTerm) incorrectly send ^[[3~ for
     The PgUp key in these emulators will not work correctly in tf unless you
     (preferred) fix your emulator, or (easier) "/bind ^[[3~ = /dokey_pgup"
     (warning: may break your Delete key)
-Replaced Henry Spencer's regexp pacage with PCRE (Perl Comaptible Regular
+Replaced Henry Spencer's regexp package with PCRE (Perl Compatible Regular
   Expressions).  It is backwards compatible, with one exception:  the
   character '{' introduces a quantifier, so you must use '\{' to match a
   literal '{'.  Also, regexps containing no uppercase letters default to
@@ -534,7 +534,7 @@ regmatch() returns any positive integer for success, not necessarily 1
   (so you should write (regmatch(...)), not (regmatch(...) == 1)
 Time is measured and printed with microsecond resolution:
   %prompt_sec and %prompt_usec replaced with %prompt_wait
-  /recall:  h:m[:s[.f]] is interpeted as time-of-day, s.f as absolute time.
+  /recall:  h:m[:s[.f]] is interpreted as time-of-day, s.f as absolute time.
   ftime():  "%@" includes microseconds; added "%.", "%s", "%F", "%T" formats.
   /ps, time(), idle(), sidle() print or return values to the microsecond.
   Time values for /repeat, /quote, /at, %ptime, %maildelay can be specified
@@ -598,7 +598,7 @@ ftime() supports %E and %O if system library does.
 Added mktime().
 Added "i" argument to /repeat for infinite count.
 Optional <pid> argument to /ps.
-Improved workaround for solaris terminal driver bug that could disable
+Improved workaround for Solaris terminal driver bug that could disable
   keyboard after typing LNEXT (^V), FLUSH (^O), STOP (^S), or START (^Q);
   also, in the extremely unlikely case that it does happen, it can be fixed
   with any signal (e.g., ^Z or ^C) without quitting tf.
@@ -673,7 +673,7 @@ see above
 
 4.0 stable 1 (1999-03-06)
 ------------
-Workaround for solaris terminal driver bug that could disable keyboard after
+Workaround for Solaris terminal driver bug that could disable keyboard after
   typing LNEXT (^V) or FLUSH (^O).
 
 4.0 gamma 3 (1999-01-31)
@@ -687,12 +687,12 @@ Fixed crash caused by beep on unsupported terminals.
 Fixed crash caused by closing unconnected socket with buffered output.
 Fixed problems related to failed nonblocking hostname resolution.
 Will not busy loop if tty closes without killing tf.
-Eliminiated warnings in /color_on.
+Eliminated warnings in /color_on.
 
 4.0 gamma 2 (1998-11-15)
 -----------
 Worlds without type or mfile now use corresponding field of "default" world.
-Improved prompt detection heuristics for typeless worlds.
+Improved prompt detection heuristics for type less worlds.
 /addworld can reset fields other than host and port for "(unnamedN)" worlds.
 Clarified scope rules in "/help /for".
 Fixed fatal error when reconnecting in a DISCONNECT hook. (40g1)
@@ -1167,7 +1167,7 @@ Fixed fatal bug in handling background prompt with ansi attributes. (35a11)
 
 3.5 alpha 12 (1995-09-24)
 ------------
-Fixed fatal macro bug occuring during startup on some systems (including
+Fixed fatal macro bug occurring during startup on some systems (including
   OS/2, Linux, and IRIX). (35a11)
 Fixed minor bug in telnet NAWS when a window dimension is 255. (35a10)
 
@@ -1235,7 +1235,7 @@ Gags are applied when text arrives instead of when it is displayed, making
 Improved error and warning messages.
 Added %{gethostbyname} variable, set to "blocking" by default under unix.
 Fixed /histsize: empty history bug, and downsizing memory leak.
-Fixed fatal bug in /send -w to a nonexistant world.
+Fixed fatal bug in /send -w to a nonexistent world.
 Fixed regexp scope bugs (including a bug in the ^W keybinding). (35a4)
 Fixed bug in handling bad environment values for special variables (it would
   usually just say "Killed" and exit).
@@ -1256,7 +1256,7 @@ New /listsockets format, includes idle time and world type.
 With emulation=ansi_attr, server attributes now continue across lines.
 Supports nonblocking hostname lookup on OS/2 as well as UNIX.
 Fixed /dc. (35a4)
-Fixed bug in using /histsize on a non-existant or unused world. (34a3)
+Fixed bug in using /histsize on a non-existent or unused world. (34a3)
 Fixed select on closed pipe (35a4).
 Fixed compile-time rand()/random() problem on OS/2 (35a4).
 Fixed hostname resolution on IRIX 5 (without breaking socket stuff on other
@@ -1313,7 +1313,7 @@ Changed parsing of ambiguous special substitutions like "%Lx" to be "%{Lx}"
 
 3.4 alpha 14 (1994-12-30)
 ------------
-Fixed instalation problem on SunOS 4.1.3 (possibly others). (34a13)
+Fixed installation problem on SunOS 4.1.3 (possibly others). (34a13)
 
 3.4 alpha 13 (1994-12-28)
 ------------
@@ -1344,7 +1344,7 @@ autoconfig works with stupid linkers that return a useless exit status.
 
 3.4 alpha 10 (1994-10-09)
 ------------
-Fixed fatal bug occuring when history becomes full (34a9).
+Fixed fatal bug occurring when history becomes full (34a9).
 
 3.4 alpha 9 (1994-10-09)
 -----------
@@ -1367,7 +1367,7 @@ Fixed infinite loop in SIGQUIT (^\) handler on systems with BSD-like signals.
 Fixed fatal bug in backward-wrapping delete in visual mode on some terminals.
 Installation no longer gives the option of removing old files; it caused too
   many problems with users who answered 'y' without reading the list first.
-Porting fix: elimiated 'signed' type (34a).
+Porting fix: eliminated 'signed' type (34a).
 Better preprocessor and library testing in autoconfig.
 Improved make output and core dump messages.
 
@@ -1392,7 +1392,7 @@ Fixed bugs in prompt refresh in nonvisual mode (34a).
 Added to file-xfer.tf library: /putfile_MUCK, /putfile_LP, /putfile_UNIX,
   /getfile_MUCK, /getfile_LP, /getfile_UNIX.
 Fixed: glob pattern "{}" matches empty string (34a).
-Elminated beep in /grab (34a).
+Eliminated beep in /grab (34a).
 
 3.4 alpha 4 (1994-08-16)
 -----------
@@ -1426,18 +1426,18 @@ More useful return values for synchronous /repeats and command /quotes.
 A set high bit on an input character is converted to ESC.  See /help %istrip.
 Increased speed of macro processing, startup, etc.
 Supports nonblocking connect if used with SOCKS 4.2beta.
-/BREAK takes an optional argument specifing the number of levels to break.
+/BREAK takes an optional argument specifying the number of levels to break.
 Under linux, nonblocking connect failure now hooks CONFAIL, not DISCONNECT.
 Removed improper evaluation of $[...] in unexecuted /if and /while branches.
 Fixed bug in /BREAK followed by a nested /WHILE.
-Fixed bug in detecting new mail in a previously nonexistant mail file.
+Fixed bug in detecting new mail in a previously nonexistent mail file.
 Fixed bug: lines from background world were reversed in global history/log.
 Fixed refreshing of input in noecho mode (password entry) with visual=off.
 Fixed bug causing writing into variable argument of toupper(), tolower(),
   or builtin command called as a function.
 Fixed bugs in idea of current socket in CONFAIL hook and immediately after
   /fg and (successful or failed) /connect.
-Fixed bug in /purgeworld'ing a nonexistant "default" world.
+Fixed bug in /purgeworld'ing a nonexistent "default" world.
 Reverted to pre-33b16 parsing of '\' in option arguments (not a bug, but
   caused unexpected behavior of incorrectly written user macros).
 Improved debugging information for potential internal errors.
@@ -1575,13 +1575,13 @@ The SEND hook always prevents sending of the original text (previous versions
   of TF required a gag to do so).  Use "/send %*" in the hook body if you
   really want it to be sent.
 /def -w is equivalent to /def -w${world_name}.
-/kill can take mutiple arguments.
+/kill can take multiple arguments.
 Several improvements in display of major editing operations (visual and
   nonvisual).
 /dokey redraw (^L) now does something useful in non-visual mode.
 Increased speed of macro execution by about 15%.
 Improved visual input scroll for terminals without scroll regions.
-Improved appearace of external messages (e.g. "write") in visual mode.
+Improved appearance of external messages (e.g. "write") in visual mode.
 Fixes for bugs and portability.
 Removed %{quoted_args}.
 
@@ -1668,7 +1668,7 @@ Other portability stuff.
 3.0 beta 2 
 ----------
 Added time arithmetic in expressions.
-Bug fix: identifers in expressions can contain '_' chracters.
+Bug fix: identifiers in expressions can contain '_' characters.
 Bug fix: added -T option to /addworld to support extended /add* commands.
 Added <type> argument to WORLD and LOGIN hooks.  May break a few old macros.
 PROCESS and KILL hooks are silent by default.
@@ -1788,13 +1788,13 @@ Fixed /ps output
 
 1.5.5 beta1 
 -----------
-Autologin support for untermud cyberportals, with '/bamf unter' command
+Autologin support for UnterMUD cyberportals, with '/bamf unter' command
 Removed /listbind, /act, /reply, /nointr, /nowrap, /nostty, /nolog,
  /nologme, /nologin, /noquiet, and /qctries
 Flags /stty, /log, /logme, /login and /quiet do not turn on when called
  with no arguments.
 Expanded /ps and /listsocket output
-Imporoved effeciency of keyboard processing and macro expansion
+Improved efficiency of keyboard processing and macro expansion
 Eliminated busy-wait in /more, /shpause, and Yes/No queries
 Command quotes use pipes instead of temp files, and capture standard error
 Removed -DIRIX and -DMANUAL_SWITCH compile flags

@@ -1,5 +1,5 @@
 This fork of TinyFugue is currently being supported by Kruton,
-Sketch, and wstarter. It also inclues assorted patches developed
+Sketch, and wstarter. It also includes assorted patches developed
 by various community members in the years since TF saw saw it's
 final release.
 
@@ -15,7 +15,7 @@ Support for OS/2 was contributed by Andreas Sahlbach (asa@stardiv.de).
 TinyFugue versions 1.5.3 and earlier were written by Greg Hudson
 ("Explorer_Bob"), without whom I would have never gotten into this mess.
 
-TinyFugue was intially derived from tinytalk, a unix client written by
+TinyFugue was initially derived from tinytalk, a unix client written by
 Anton Rang ("Tarrant") and modified by Leo Plotkin ("Grod").
 
 Additional thanks to Jeff Prothero ("Cynbe"), Bruce Sterling Woodcock

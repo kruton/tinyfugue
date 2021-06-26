@@ -349,7 +349,7 @@
 
 /def -i key_ctrl_home	= /dokey_recallbeg
 /def -i key_ctrl_end	= /dokey_recallend
-/def -i key_ctrl_pgup	= /reserved_for_future_use (scroll to first screenful)
+/def -i key_ctrl_pgup	= /reserved_for_future_use (scroll to first screenfull)
 /def -i key_ctrl_pgdn	= /dokey_flush
 
 /def -i key_bspc	= /dokey_bspc

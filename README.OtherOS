@@ -7,7 +7,7 @@ Open a shell window, and follow the instructions in unix/README.
 
 TinyFugue for Win32
 
-The likely best option for running TinyFugue under Winows is to
+The likely best option for running TinyFugue under Windows is to
 get 'Windows Subsystem for Linux'. This should be straight-forward
 and give you an almost identical experience to a TinyFugue on UNIX
 like systems, but it has not yet been tested.
@@ -44,7 +44,7 @@ should be written "//c/foo/bar" in cygwin.
 
 -----------------------------------------------------------------------
 
-TiyFugue for OS/2
+TinyFugue for OS/2
 
 Theoretically this is still supported, but it seems unlikely anyone will
 still be looking for this. Since this requires additional files, it's

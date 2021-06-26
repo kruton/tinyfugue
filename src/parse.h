@@ -83,7 +83,7 @@ struct Program {
     int len;		/* length of compiled code */
     int size;		/* size of code array */
     const char *mark;	/* pointer into source code, for mecho */
-    int optimize;	/* opimization level */
+    int optimize;	/* optimization level */
 };
 
 typedef struct Arg {

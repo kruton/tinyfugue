@@ -7,7 +7,7 @@ Installing TinyFugue
 
 TinyFugue should work on any Unix-like system that has an ANSI compiler
 and BSD-style select().  This includes almost everything except some old
-SVr3-like systems which either do not have select(), or have a select()
+SVR3-like systems which either do not have select(), or have a select()
 that works only on STREAMS devices but not terminals.
 
 Installing TinyFugue is quite easy on most Unix-like systems.

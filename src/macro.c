@@ -153,9 +153,9 @@ int hookname2int(const char *name)
 	NUM_HOOKS, sizeof(hookrec_t), cstrstructcmp);
     if (hookrec)
 	return hookrec - hook_table;
-    if (cstrcmp(name, "BACKGROUND") == 0) /* backward compatability */
+    if (cstrcmp(name, "BACKGROUND") == 0) /* backward compatibility */
 	return H_BGTRIG;
-    if (cstrcmp(name, "CONNETFAIL") == 0) /* backward compatability */
+    if (cstrcmp(name, "CONNETFAIL") == 0) /* backward compatibility */
 	eprintf("invalid hook event \"%s\"; see \"/help /connect\"", name);
     else
 	eprintf("invalid hook event \"%s\"", name);

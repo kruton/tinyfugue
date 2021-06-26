@@ -716,7 +716,7 @@ struct Value *handle_load_command(String *args, int offset)
 
 /* Generic utility to split arguments into pattern and body.
  * Note: I can get away with this only because none of the functions
- * that use it are reentrant.  Be careful.
+ * that use it are re-entrant.  Be careful.
  */
 static void split_args(char *args)
 {

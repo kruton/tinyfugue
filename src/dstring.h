@@ -72,7 +72,7 @@ static inline conString *CS(String *s) { return (conString*)s; }
 /* AUTO_BUFFER: The structure is allocated automatically in a function's
  * (file's) scope; if it is used, it must be Stringfree()'d before
  * before function (program) exit, and it it safe to Stringfree() even if
- * it wasn't used.  Its data may be modifed and resized.
+ * it wasn't used.  Its data may be modified and resized.
  */
 # define AUTO_BUFFER(name) \
      Stringp (name) = {{ NULL, 0, 0, 1, 0,0,1,1, \
@@ -81,7 +81,7 @@ static inline conString *CS(String *s) { return (conString*)s; }
 /* STATIC_BUFFER: The structure has static storage, and its data is allocated
  * the first time it's needed, but not freed, and reused after that to save
  * time.  It never needs to be Stringfree()'d.  Its data may be
- * modified and resized.  Not reentrant-safe.
+ * modified and resized.  Not re-entrant-safe.
  */
 #define STATIC_BUFFER_INIT \
     {{ NULL, 0, 0, 1, 1,0,1,1, 0, NULL, { -1,-1 }, MD_INIT __FILE__, __LINE__ }}

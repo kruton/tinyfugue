@@ -75,6 +75,8 @@ install_TF $(TF): tf$(X) $(BUILDERS)
 SYMLINK $(SYMLINK): $(DESTDIR)$(TF)
 	test -z "$(SYMLINK)" || { rm -f $(SYMLINK) && ln -s $(TF) $(SYMLINK); }
 
+# There's a lot of unecessary steps below here.
+
 LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Creating library directory...'
 #	@# Overly simplified shell commands, to avoid problems on ultrix

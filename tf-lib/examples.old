@@ -8,7 +8,7 @@ used, and as a tutorial in the use of these features.
 
 The examples given here are intended to be used with /load.  When a
 file is read with /load, lines beginning with ';' are ignored, and
-lines ending with '\' will have the following line appened to it after
+lines ending with '\' will have the following line append to it after
 leading spaces are stripped.
 
 For reference, OUTPUTPREFIX and OUTPUTSUFFIX are MUD commands that set
@@ -19,7 +19,7 @@ it only functions once.  (This is the "-1" switch.)
 
 A note: The OUTPUTPREFIX and OUTPUTSUFFIX commands are not supported on
 all MUDs.  There are other, somewhat less reliable methods for
-prefixing and sufixing commands that may be utilized by the reader.
+prefixing and suffixing commands that may be utilized by the reader.
 
 The priority numbers used in here have no special meaning; a 
 priority of 50 is used for triggers that continually exist (this is 
@@ -56,7 +56,7 @@ First, TF substitutes for newlines.  Every sequences "%;" is changed
 into a newline.  The %%; sequences are left alone.  Thus the two
 commands "/def watch_%1..." and "/repeat..."  are processed separately.
 
-Second, TF checks for reentrant commands.  Both lines contain commands,
+Second, TF checks for re-entrant commands.  Both lines contain commands,
 so these are all processed.  Before they are processed, two things
 occur: first, all multiple "/" sequences are compressed by one, and
 second, argument substitution is done.  The "%1"s are substituted with
@@ -100,7 +100,7 @@ After all substitutions, TF comes up with the following commands:
      /def -p101 -ag -t"chup *" watch_tmp2_chup = /echo <!> chup is connected.
      /def -p101 -1 -ag -t"<!suf>" = /purgedef watch_tmp?_chup
 
-Control is then returned to the main progam.  All following lines are
+Control is then returned to the main program.  All following lines are
 gagged, so the user does not see the WHO list.  Any line beginning with
 "chup *" will set off the command /echo <!> chup is connected., informing
 you that he is online.   The line "<!suf>" marks the end of the WHO list,
@@ -219,7 +219,7 @@ This is one way to set up a "silent" autoreturn.  It can't be
 spoofed by people who don't know what the room you live in is.  
 (Note that since the "<!pre>" and "<!suf>" triggers remain on all 
 the time, it may be best to change these to something secret in 
-odrer to keep people from being able to spoof you into gagging 
+order to keep people from being able to spoof you into gagging 
 everything.)  When killed, you see only the lines "<person> killed 
 you!" and "<!> Returned."
 
@@ -248,7 +248,7 @@ This macro, assuming you have the /pmcmd macro set up properly and
 the triggers to gag command output (the last two lines from the 
 autoreturn example) will allow you to move around within a MUD 
 without seeing the resulting output.  This is useful for 
-commonly-travelled paths.  While the macro looks very simple, it 
+commonly-traveled paths.  While the macro looks very simple, it 
 actually nests several levels.
 
 

@@ -88,10 +88,10 @@ defopcode(JUMP     ,'3', JUMP, INT,  0)
 /* STRP defaults to buffer. */
 defopcode(SEND     ,'a', CTRL, STRP, 0)     /* send string to server */
 defopcode(EXECUTE  ,'b', CTRL, STRP, 0)     /* execute arbitrary cmd line */
-defopcode(BUILTIN  ,'c', CTRL, CMDP, 0)     /* execute a resovled builtin */
-defopcode(NBUILTIN ,'c', CTRL, CMDP, NEG)   /* execute a resovled builtin */
-defopcode(COMMAND  ,'d', CTRL, CMDP, 0)     /* execute a resovled command */
-defopcode(NCOMMAND ,'d', CTRL, CMDP, NEG)   /* execute a resovled command */
+defopcode(BUILTIN  ,'c', CTRL, CMDP, 0)     /* execute a resolved builtin */
+defopcode(NBUILTIN ,'c', CTRL, CMDP, NEG)   /* execute a resolved builtin */
+defopcode(COMMAND  ,'d', CTRL, CMDP, 0)     /* execute a resolved command */
+defopcode(NCOMMAND ,'d', CTRL, CMDP, NEG)   /* execute a resolved command */
 defopcode(MACRO    ,'e', CTRL, VALP, 0)     /* execute a macro cmd line */
 defopcode(NMACRO   ,'e', CTRL, VALP, NEG)   /* execute a macro cmd line */
 defopcode(ARG      ,'f', CTRL, STRP, 0)     /* arg for BUILTIN, COMMAND, SET */
