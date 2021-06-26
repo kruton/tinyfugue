@@ -19,6 +19,7 @@ GCC 10 and CLANG support
 64-bit crash issues resolved
 MULTI-address hostname crash issue resolved
 OS X compile issues resolved
+TF-LIB being maintaine as well.
 
 Plus numerous bug fixes, clean-up, and needed code base
 clean-up and modernization.
