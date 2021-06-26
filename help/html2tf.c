@@ -41,6 +41,7 @@
  * All other character entities are errors.
  */
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
