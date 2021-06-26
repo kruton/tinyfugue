@@ -37,6 +37,7 @@
 #include "expand.h"
 #include "expr.h"
 #include "process.h"
+#include "tfdefs.h"     /* UNAME   */
 
 const char sysname[] = UNAME;
 
