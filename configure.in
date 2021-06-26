@@ -141,6 +141,8 @@ if test "$enable_development" = "yes"; then
     if test "$enable_symlink" = "default"; then
 	enable_symlink=no
     fi
+else
+    AC_DEFINE([NDEBUG], [1], [debug disabled])
 fi
 
 if test "$enable_core" = "yes"; then
@@ -148,22 +150,20 @@ if test "$enable_core" = "yes"; then
     CFLAGS="${CFLAGS} -g"
     STRIP=":"
 else
-    AC_DEFINE(DISABLE_CORE)
+    AC_DEFINE([DISABLE_CORE], [1], [core dumps disabled])
 fi
 
 if test "$enable_dmalloc" = "yes"; then
     AC_MSG_NOTICE([Debug malloc enabled.])
     OTHER_OBJS="$OTHER_OBJS dmalloc.o"
-    AC_DEFINE(USE_DMALLOC)
+    AC_DEFINE([USE_DMALLOC], [1], [dmalloc enabled])
 fi
 
 if test "$enable_mmalloc" = "yes"; then
     AC_MSG_NOTICE([GNU malloc enabled.])
     CPPFLAGS="${CPPFLAGS} -DUSE_MMALLOC"
-    AC_DEFINE(USE_MMALLOC)
+    AC_DEFINE([USE_MMALLOC], [1], [GNU malloc enabled])
 fi
-
-AC_MSG_NOTICE([])
 
 dnl XXX option: TTYDRIVER
 
@@ -314,7 +314,7 @@ if test "$enable_ssl" = "yes"; then
 	AC_CHECK_HEADERS([openssl/ssl.h], ok=1,
 	    [AC_CHECK_HEADERS([gnutls/openssl.h], [ok=1])])
 	if test "$ok" = "1"; then
-	    AC_DEFINE(HAVE_SSL)
+	    AC_DEFINE([HAVE_SSL], [1], [SSL enabled])
             AC_CHECK_FUNCS(ERR_peek_error)
 	fi
 	break
@@ -340,14 +340,13 @@ if test "$enable_termcap" = "default"; then
 fi
 
 if test "$enable_termcap" = "no"; then
-    AC_DEFINE_UNQUOTED(HARDCODE, $terminal_hardcode)
+    AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap disabled - hardcoding terminal])
 else
     if test "$enable_termcap" = "yes"; then enable_termcap=""; fi
     AC_SEARCH_LIBS(tgetent, $enable_termcap termcap ncurses curses,
-	AC_DEFINE(TERMCAP)
-    ,
-	AC_DEFINE_UNQUOTED(HARDCODE, $terminal_hardcode)
-	AC_MSG_WARN([Hardcoding terminal codes.]))
+	AC_DEFINE([TERMCAP], [1], [termcap enabled]))
+    AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap enabled - hardcoding terminal])
+    AC_MSG_WARN([Hardcoding terminal codes.]))
 fi
 
 
@@ -371,11 +370,11 @@ dnl esac
 
 dnl # override a few values
 if test "$CYGWIN" = "yes"; then
-    AC_DEFINE(HAVE_H_ERRNO, [0  /* h_errno is broken in cygwin32 b18. */])
+    AC_DEFINE([HAVE_H_ERRNO], [0], [cygwin h_errno broken])
 fi
 
 if test "$enable_256colors" = "yes"; then
-    AC_DEFINE(NCOLORS, 256)
+    AC_DEFINE([NCOLORS], [256], [256 color mode enabled])
 fi
 
 if test "$enable_float" = "yes"; then
@@ -384,7 +383,7 @@ fi
 
 if test "$enable_widechar" = "yes"; then
     AX_CHECK_ICU(1,[
-                   AC_DEFINE([WIDECHAR], [1], [widechar enabled])
+                   AC_DEFINE([WIDECHAR], [1], [widechar unicode enabled])
         ],
         AC_MSG_WARN([libicuuc not found. disabling widechar support.]))
     if test "$ok" = "1"; then
@@ -435,7 +434,7 @@ AC_DEFUN(TF_SEARCH_HEADERS, [
     found=0;
     for f in $2; do
 	AC_CHECK_HEADERS([$f],
-            AC_DEFINE_UNQUOTED($1, <$f>)
+            AC_DEFINE_UNQUOTED([$1], [<$f>], [$1 defined])
             found=1
             break)
 	if test $found -eq 1; then break; fi
@@ -466,14 +465,14 @@ AC_CACHE_CHECK([whether struct sockaddr has sa_len], tf_cv_sa_len,
         sa.sa_len;]])],[tf_cv_sa_len=yes],[tf_cv_sa_len=no]))
 
 if test "${tf_cv_sa_len}" = "yes"; then
-    AC_DEFINE(HAVE_SOCKADDR_SA_LEN)
+    AC_DEFINE([HAVE_SOCKADDR_SA_LEN], [1], [struct sockaddr has sa_len])
 fi
 
 dnl ### Figure out which terminal driver to use.
 AC_CHECK_HEADERS([termios.h termio.h sgtty.h], break)
 
 dnl # Some brain damaged systems (Xenix) need <sys/ptem.h> for struct winsize.
-AC_EGREP_HEADER(struct winsize, sys/ptem.h, AC_DEFINE(NEED_PTEM_H))
+AC_EGREP_HEADER(struct winsize, sys/ptem.h, AC_DEFINE([NEED_PTEM_H], [1], [ptem.h needed]))
 
 
 dnl ########### functions ############
@@ -526,7 +525,7 @@ if test "$enable_inet6" = "yes"; then
 # error AF_INET6 not defined
 #endif
 	    struct ${type} foo;
-	    ]])],[AC_DEFINE_UNQUOTED(IN6_ADDR, $type, IN6_ADDR defined)
+	    ]])],[AC_DEFINE_UNQUOTED([IN6_ADDR], [$type], [IN6_ADDR defined])
 	    AC_MSG_RESULT($type)
 	    break],[])
     done
@@ -561,7 +560,7 @@ else
     MAILDIR="$enable_mailcheck"
 fi
 if test -n "$MAILDIR"; then
-    AC_DEFINE_UNQUOTED(MAILDIR, "$MAILDIR")
+    AC_DEFINE_UNQUOTED([MAILDIR], ["$MAILDIR"], [mail enabled])
 fi
 
 
@@ -670,14 +669,27 @@ PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr
 
 dnl ### write variables
 
-if test "$enable_inet6"     = "yes"; then AC_DEFINE(ENABLE_INET6)      fi
-if test "$enable_atcp"      = "yes"; then AC_DEFINE(ENABLE_ATCP)       fi
-if test "$enable_gmcp"      = "yes"; then AC_DEFINE(ENABLE_GMCP)       fi
-if test "$enable_option102" = "yes"; then AC_DEFINE(ENABLE_OPTION102)  fi
-if test "$enable_history"   = "no";  then AC_DEFINE(NO_HISTORY)        fi
-if test "$enable_process"   = "no";  then AC_DEFINE(NO_PROCESS)        fi
-if test "$enable_float"     = "no";  then AC_DEFINE(NO_FLOAT)          fi
-if test "$enable_widechar"  = "yes"; then AC_DEFINE(WIDECHAR)          fi
+if test "$enable_inet6"     = "yes"; then
+    AC_DEFINE([ENABLE_INET6], [1], [IPV6 networking enabled])
+fi
+if test "$enable_atcp"      = "yes"; then
+    AC_DEFINE([ENABLE_ATCP], [1], [ATCP protcol enabled])
+fi
+if test "$enable_gmcp"      = "yes";
+then AC_DEFINE([ENABLE_GMCP], [1], [GMCP protocol enabled])
+fi
+if test "$enable_option102" = "yes";
+then AC_DEFINE([ENABLE_OPTION102], [1], [OPTION102 protocol enabled])
+fi
+if test "$enable_history"   = "no";
+then AC_DEFINE([NO_HISTORY], [1], [history and recall disabled])
+fi
+if test "$enable_process"   = "no";
+then AC_DEFINE([NO_PROCESS], [1], [quote and repeat disabled])
+fi
+if test "$enable_float"     = "no";
+then AC_DEFINE([NO_FLOAT], [1], [floating point disabled])
+fi
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 AC_SUBST(CFLAGS)
@@ -685,19 +697,15 @@ AC_SUBST(CPPFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(OTHER_OBJS)
 
+### Create src/Makefile from pieces.
 AC_CONFIG_FILES([Makefile unix/vars.mak src/tfdefs.h])
 AC_CONFIG_COMMANDS([default],[
-
-
-### Create src/Makefile from pieces.
-
 cat >src/Makefile <<END
 #### DO NOT EDIT THIS FILE.
 #### This src/Makefile was automatically generated by configure.  The correct
 #### installation precedure is to run ./configure in the top directory.  You
 #### should not edit this file; all configuration changes should be made
 #### via arguments to configure.
-
 END
 cat unix/vars.mak src/vars.mak unix/unix.mak src/rules.mak >> src/Makefile
 ],[])

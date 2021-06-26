@@ -10,12 +10,12 @@
 ########################################################################
 
 # @configure_input@
-prefix     = @prefix@
-exec_prefix= @exec_prefix@
-bindir     = @bindir@
-datadir    = @datadir@
-mandir     = @mandir@
-datarootdir= @datarootdir@
+prefix     = ${DESTDIR}@prefix@
+exec_prefix= ${DESTDIR}@exec_prefix@
+bindir     = ${DESTDIR}@bindir@
+datadir    = ${DESTDIR}@datadir@
+mandir     = ${DESTDIR}@mandir@
+datarootdir= ${DESTDIR}@datarootdir@
 
 TFVERSION  = @TFVERSION@
 TFVER      = @TFVER@

@@ -108,5 +108,6 @@
 
 #include "tfdefs.h"
 
+#undef NDEBUG
 #include <assert.h>
 

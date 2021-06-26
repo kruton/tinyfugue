@@ -743,8 +743,8 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
     switch (promoted_type) {
     case TYPE_INT:
         switch (op & ~OPF_SIDE) {
-        case '>':       return resint(valint(val[0]) > valint(val[1]));
-        case '<':       return resint(valint(val[0]) < valint(val[1]));
+        case '>':       return resint(valint(val[0]) >  valint(val[1]));
+        case '<':       return resint(valint(val[0]) <  valint(val[1]));
         case OP_EQUAL:  return resint(valint(val[0]) == valint(val[1]));
         case OP_NOTEQ:  return resint(valint(val[0]) != valint(val[1]));
         case OP_GTE:    return resint(valint(val[0]) >= valint(val[1]));
@@ -794,8 +794,8 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
     case TYPE_FLOAT:
 	f = valfloat(val[0]);
 	switch (op & ~OPF_SIDE) {
-	case '>':       return resint(f > valfloat(val[1]));
-	case '<':       return resint(f < valfloat(val[1]));
+	case '>':       return resint(f >  valfloat(val[1]));
+	case '<':       return resint(f <  valfloat(val[1]));
 	case OP_EQUAL:  return resint(f == valfloat(val[1]));
 	case OP_NOTEQ:  return resint(f != valfloat(val[1]));
 	case OP_GTE:    return resint(f >= valfloat(val[1]));
@@ -1225,13 +1225,13 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	    {
 		struct tm tm;
 		time_t t;
-		unsigned int usec = 0;
-		tm.tm_sec  = 0;
-		tm.tm_min  = 0;
-		tm.tm_hour = 0;
-		tm.tm_mday = 1;
-		tm.tm_mon  = 0;
-		tm.tm_year = 0;
+		int usec = 0;
+		tm.tm_sec   = 0;
+		tm.tm_min   = 0;
+		tm.tm_hour  = 0;
+		tm.tm_mday  = 1;
+		tm.tm_mon   = 0;
+		tm.tm_year  = 0;
 		tm.tm_isdst = -1;
 		switch (n) {
 		    case 7: usec       = opdint(n-6);

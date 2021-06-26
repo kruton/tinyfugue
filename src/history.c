@@ -36,9 +36,9 @@
 const int feature_history = !(NO_HISTORY - 0);
 #if !NO_HISTORY
 
-#define GLOBALSIZE    1000	/* global history size */
-#define LOCALSIZE      100	/* local history size */
-#define INPUTSIZE      100	/* command history buffer size */
+#define GLOBALSIZE    5000	/* global history size */
+#define LOCALSIZE     1000	/* local history size */
+#define INPUTSIZE      500	/* command history buffer size */
 
 typedef struct History {	/* circular list of lines, and logfile */
     CQueue cq;
