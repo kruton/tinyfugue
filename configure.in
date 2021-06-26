@@ -106,9 +106,9 @@ AC_ARG_WITH(inclibdirs,
 [  --with-inclibdirs=DIRS  same as --with-incdirs=DIRS --with-libdirs=DIRS])
 AC_ARG_WITH(inclibpfx,
 [  --with-inclibpfx=DIRS   same, but appends '/include' and '/lib'])
-AC_ARG_WITH(incdir) dnl because I never remember if it's singular or plural
-AC_ARG_WITH(libdir) dnl because I never remember if it's singular or plural
-AC_ARG_WITH(inclibdir) dnl because I never remember if it's singular or plural
+AC_ARG_WITH(incdir)       dnl because I never remember if it's singular or plural
+AC_ARG_WITH(libdir)       dnl because I never remember if it's singular or plural
+AC_ARG_WITH(inclibdir)    dnl because I never remember if it's singular or plural
 
 AC_ARG_ENABLE(manpage, , , enable_manpage=yes)
 
@@ -171,13 +171,6 @@ UNAME=`{ uname -s && uname -v && uname -r || uname -a; } 2>/dev/null`
 UNAME=`echo $UNAME`  # remove newlines
 AC_SUBST(UNAME)
 
-dnl AC_CANONICAL_HOST
-dnl case $host_os in
-dnl  *cygwin* ) CYGWIN=yes;;
-dnl	 * ) CYGWIN=no;;
-dnl esac
-
-
 
 dnl ########### compiler characteristics ############
 
@@ -195,6 +188,7 @@ AC_CHECK_SIZEOF(long)
 AC_EXEEXT
 AC_OBJEXT
 
+
 dnl ########### programs ############
 
 AC_PROG_MAKE_SET
@@ -206,6 +200,7 @@ AC_SUBST(STRIP)
 
 AC_CHECK_PROG(RANLIB, ranlib, ranlib, :)
 
+
 dnl ########### libraries ############
 
 dnl ### Library testing.
@@ -213,7 +208,6 @@ dnl # If libfoo.a make references to libbar.a, the order must be "-lfoo -lbar".
 dnl # So we test incrementally, building the list from right to left.
 dnl # Dynix/ptx needs: -lsocket -linet -lnsl
 dnl # SysV needs: -lsocket -lnsl
-
 
 dnl TF_DIRS(src, dst[, prefix[, suffix]])
 AC_DEFUN(TF_DIRS, [
@@ -224,25 +218,24 @@ AC_DEFUN(TF_DIRS, [
     fi
 ])
 
-TF_DIRS(with_incdirs, CPPFLAGS, -I)
-TF_DIRS(with_incdir, CPPFLAGS, -I)
+TF_DIRS(with_incdirs,    CPPFLAGS, -I)
+TF_DIRS(with_incdir,     CPPFLAGS, -I)
 TF_DIRS(with_inclibdirs, CPPFLAGS, -I)
-TF_DIRS(with_inclibdir, CPPFLAGS, -I)
-TF_DIRS(with_inclibpfx, CPPFLAGS, -I, /include)
+TF_DIRS(with_inclibdir,  CPPFLAGS, -I)
+TF_DIRS(with_inclibpfx,  CPPFLAGS, -I, /include)
 
 LIBDIRS=""
-TF_DIRS(with_libdirs, LIBDIRS, -L)
-TF_DIRS(with_libdir, LIBDIRS, -L)
+TF_DIRS(with_libdirs,    LIBDIRS, -L)
+TF_DIRS(with_libdir,     LIBDIRS, -L)
 TF_DIRS(with_inclibdirs, LIBDIRS, -L)
-TF_DIRS(with_inclibdir, LIBDIRS, -L)
-TF_DIRS(with_inclibpfx, LIBDIRS, -L, /lib)
+TF_DIRS(with_inclibdir,  LIBDIRS, -L)
+TF_DIRS(with_inclibpfx,  LIBDIRS, -L, /lib)
 
 dnl Must append LIBDIRS to LDFLAGS now so it's present for AC_CHECK_LIB.
 dnl (LIBDIRS will not work in the OTHER-LIBRARIES argument of AC_CHECK_LIB
 dnl on all platforms since it will _follow_ the -l option for the library
 dnl being tested.)
 LDFLAGS="$LDFLAGS $LIBDIRS"
-
 
 dnl This is needed to compile when usinc GCC 10
 dnl This check isn't working properly and reports GCC
@@ -271,7 +264,6 @@ dnl ## If we haven't found connect(), look for -lsocket.
 dnl ## Note: on IRIX 5, -lsocket exists, but we mustn't use its gethostbyname().
 AC_SEARCH_LIBS(connect, socket)
 
-
 dnl XXX --enable-socks
 dnl if test "$enable_socks" != "no" ; then
 dnl     # SOCKS uses res_init(), so we need -lresolv if there is one.
@@ -284,7 +276,6 @@ dnl     if test -n "$SOCKS_NONBLOCK" ; then
 dnl         echo "#define SOCKS_NONBLOCK" >&4
 dnl     fi
 dnl fi
-
 
 dnl ### I'm guessing setlocale() is in libintl on some systems, if not in libc.
 AC_SEARCH_LIBS(setlocale, intl, ,
@@ -336,20 +327,13 @@ if test "$enable_ssl" = "yes"; then
     fi
 fi
 
+dnl ########### terminal ############
+
 dnl ### test termcap.
 dnl # At least one system (Red Hat Linux) has a broken ncurses and a working
 dnl # termcap, so we try termcap before ncurses.
 
 terminal_hardcode="TERM_vt100";
-
-dnl # Cygwin may not have termcap at all, but it only supports ANSI emulation
-dnl # anyway, so we hardcode that (unless it was overridden).
-if test "$CYGWIN" = "yes"; then
-    terminal_hardcode="TERM_ansi";
-    if test "$enable_termcap" = "default"; then
-	enable_termcap="no";
-    fi
-fi
 
 if test "$enable_termcap" = "default"; then
     enable_termcap="yes";
@@ -365,13 +349,34 @@ else
 	AC_DEFINE_UNQUOTED(HARDCODE, $terminal_hardcode)
 	AC_MSG_WARN([Hardcoding terminal codes.]))
 fi
-dnl XXX check for debian linux's broken termcap
 
+
+dnl ########### cygwin ############
+
+dnl XXX check for debian linux's broken termcap
+dnl # Cygwin may not have termcap at all, but it only supports ANSI emulation
+dnl # anyway, so we hardcode that (unless it was overridden).
+if test "$CYGWIN" = "yes"; then
+    terminal_hardcode="TERM_ansi";
+    if test "$enable_termcap" = "default"; then
+	enable_termcap="no";
+    fi
+fi
+
+dnl AC_CANONICAL_HOST
+dnl case $host_os in
+dnl  *cygwin* ) CYGWIN=yes;;
+dnl	 * ) CYGWIN=no;;
+dnl esac
+
+dnl # override a few values
+if test "$CYGWIN" = "yes"; then
+    AC_DEFINE(HAVE_H_ERRNO, [0  /* h_errno is broken in cygwin32 b18. */])
+fi
 
 if test "$enable_256colors" = "yes"; then
     AC_DEFINE(NCOLORS, 256)
 fi
-
 
 if test "$enable_float" = "yes"; then
     AC_SEARCH_LIBS(sqrt, m)
@@ -405,6 +410,7 @@ fi
 AC_CHECK_LIB(z, inflate)
 
 AC_CHECK_LIB(pcre, pcre_compile)
+
 
 dnl ########### headers ############
 
@@ -449,9 +455,6 @@ TF_SEARCH_HEADERS(NETINET_IN_H, [netinet/in.h sys/in.h sys/netinet/in.h], ,
 dnl ### Find internet address header
 TF_SEARCH_HEADERS(ARPA_INET_H, [arpa/inet.h sys/inet.h])
 
-dnl ### Find nameser header
-dnl TF_SEARCH_HEADERS(NAMESER_H, arpa/nameser.h nameser.h)
-
 dnl ### Find netdb header
 TF_SEARCH_HEADERS(NETDB_H, [netdb.h sys/netdb.h], ,
     AC_MSG_ERROR([can't find netdb.h]))
@@ -467,11 +470,11 @@ if test "${tf_cv_sa_len}" = "yes"; then
 fi
 
 dnl ### Figure out which terminal driver to use.
-
 AC_CHECK_HEADERS([termios.h termio.h sgtty.h], break)
 
 dnl # Some brain damaged systems (Xenix) need <sys/ptem.h> for struct winsize.
 AC_EGREP_HEADER(struct winsize, sys/ptem.h, AC_DEFINE(NEED_PTEM_H))
+
 
 dnl ########### functions ############
 
@@ -489,6 +492,13 @@ dnl # optional functions
 AC_CHECK_FUNCS(bcopy bzero connect fileno getcwd \
     gethostname gethostbyname getipnodebyname \
     getpwnam gettimeofday getwd hstrerror index inet_aton)
+dnl # uncommented functions, presumably all optional
+AC_CHECK_FUNCS(kill memcpy memset raise setlocale \
+    setrlimit sigaction srand srandom strcasecmp strchr \
+    strcmpi strcspn strerror stricmp strtod tzset waitpid)
+
+
+dnl ########### networking ############
 
 if test "$enable_getaddrinfo" = "default"; then
     if test `uname -s` = 'Darwin'; then
@@ -502,15 +512,6 @@ if test "$enable_getaddrinfo" = "no"; then
     enable_inet6=no
 else
     AC_CHECK_FUNCS(getaddrinfo gai_strerror)
-fi
-
-AC_CHECK_FUNCS(kill memcpy memset raise setlocale setrlimit sigaction \
-    srand srandom \
-    strcasecmp strchr strcmpi strcspn strerror stricmp strtod tzset waitpid)
-
-dnl # override a few values
-if test "$CYGWIN" = "yes"; then
-    AC_DEFINE(HAVE_H_ERRNO, [0  /* h_errno is broken in cygwin32 b18. */])
 fi
 
 if test "$enable_inet6" = "yes"; then
@@ -533,7 +534,6 @@ fi
 
 
 dnl ########### system services ############
-
 
 dnl ### Find mail directory by looking at $MAIL, then in the usual places.
 if test "$enable_mailcheck" = "no"; then
@@ -595,7 +595,6 @@ AC_SUBST(PROGNAME)
 AC_SUBST(LIBNAME)
 AC_SUBST(SYMLINK)
 
-
 ### man page
 
 if test "$enable_manpage" = "yes"; then
@@ -607,13 +606,6 @@ else
 fi
 AC_SUBST(MANPAGE)
 AC_SUBST(MANTYPE) dnl XXX
-
-
-dnl ########### output ############
-
-
-dnl ########### end ############
-
 
 dnl # XXX
 dnl ### Sanity check for filenames (some people do pretty stupid things)
@@ -651,7 +643,7 @@ dnl #   echo "${DIR2}/" | egrep "^${BUILDTREE}/" >/dev/null 2>&1 ||
 dnl #   echo "${DIR3}/" | egrep "^${BUILDTREE}/" >/dev/null 2>&1
 dnl #then
 dnl #    echo
-dnl #    echo 'You can not install files in the build tree,'
+dnl #    echo 'You can not install files in the build tree,  '
 dnl #    echo "${BUILDTREE}."
 dnl #    echo 'Edit unix/Config and try again.'
 dnl #    exit 2
@@ -666,12 +658,8 @@ dnl #    echo 'different name for the executable.'
 dnl #    exit 1
 dnl #fi
 
-
 MODE=755
 AC_SUBST(MODE)
-
-
-
 
 dnl ### Make sure the PATH is sane.
 dnl # Ideally, this should be done before the compiler check.  But a compiler
@@ -680,17 +668,16 @@ dnl # won't inherit this PATH.
 PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr/new:/usr/new/bin:/usr/nbin:/usr/ccs/bin"
 
 
-
 dnl ### write variables
 
-if test "$enable_inet6"     = "yes"; then AC_DEFINE(ENABLE_INET6)  fi
-if test "$enable_atcp"      = "yes"; then AC_DEFINE(ENABLE_ATCP)  fi
-if test "$enable_gmcp"      = "yes"; then AC_DEFINE(ENABLE_GMCP)  fi
+if test "$enable_inet6"     = "yes"; then AC_DEFINE(ENABLE_INET6)      fi
+if test "$enable_atcp"      = "yes"; then AC_DEFINE(ENABLE_ATCP)       fi
+if test "$enable_gmcp"      = "yes"; then AC_DEFINE(ENABLE_GMCP)       fi
 if test "$enable_option102" = "yes"; then AC_DEFINE(ENABLE_OPTION102)  fi
-if test "$enable_history"   = "no";  then AC_DEFINE(NO_HISTORY)  fi
-if test "$enable_process"   = "no";  then AC_DEFINE(NO_PROCESS)  fi
-if test "$enable_float"     = "no";  then AC_DEFINE(NO_FLOAT)    fi
-if test "$enable_widechar"  = "yes"; then AC_DEFINE(WIDECHAR)   fi
+if test "$enable_history"   = "no";  then AC_DEFINE(NO_HISTORY)        fi
+if test "$enable_process"   = "no";  then AC_DEFINE(NO_PROCESS)        fi
+if test "$enable_float"     = "no";  then AC_DEFINE(NO_FLOAT)          fi
+if test "$enable_widechar"  = "yes"; then AC_DEFINE(WIDECHAR)          fi
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 AC_SUBST(CFLAGS)
@@ -700,6 +687,7 @@ AC_SUBST(OTHER_OBJS)
 
 AC_CONFIG_FILES([Makefile unix/vars.mak src/tfdefs.h])
 AC_CONFIG_COMMANDS([default],[
+
 
 ### Create src/Makefile from pieces.
 

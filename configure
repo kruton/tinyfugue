@@ -2634,8 +2634,6 @@ UNAME=`echo $UNAME`  # remove newlines
 
 
 
-
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3850,6 +3848,7 @@ _ACEOF
 
 
 
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 $as_echo_n "checking whether ${MAKE-make} sets \$(MAKE)... " >&6; }
 set x ${MAKE-make}
@@ -4042,7 +4041,6 @@ LIBDIRS=""
 
 
 LDFLAGS="$LDFLAGS $LIBDIRS"
-
 
 if test "$ax_cv_c_compiler_vendor" = "gnu"; then
     LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
@@ -4305,8 +4303,6 @@ fi
 
 
 
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing setlocale" >&5
 $as_echo_n "checking for library containing setlocale... " >&6; }
 if ${ac_cv_search_setlocale+:} false; then :
@@ -4520,14 +4516,8 @@ $as_echo "ssl support will not be enabled." >&6; }
 fi
 
 
-terminal_hardcode="TERM_vt100";
 
-if test "$CYGWIN" = "yes"; then
-    terminal_hardcode="TERM_ansi";
-    if test "$enable_termcap" = "default"; then
-	enable_termcap="no";
-    fi
-fi
+terminal_hardcode="TERM_vt100";
 
 if test "$enable_termcap" = "default"; then
     enable_termcap="yes";
@@ -4608,11 +4598,24 @@ fi
 fi
 
 
+
+if test "$CYGWIN" = "yes"; then
+    terminal_hardcode="TERM_ansi";
+    if test "$enable_termcap" = "default"; then
+	enable_termcap="no";
+    fi
+fi
+
+
+if test "$CYGWIN" = "yes"; then
+    $as_echo "#define HAVE_H_ERRNO 0  /* h_errno is broken in cygwin32 b18. */" >>confdefs.h
+
+fi
+
 if test "$enable_256colors" = "yes"; then
     $as_echo "#define NCOLORS 256" >>confdefs.h
 
 fi
-
 
 if test "$enable_float" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing sqrt" >&5
@@ -5082,6 +5085,7 @@ fi
 
 
 
+
 for ac_header in lunistd.h memory.h sys/select.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -5248,7 +5252,6 @@ done
 
 
 
-
     found=0;
     for f in netdb.h sys/netdb.h; do
 	for ac_header in $f
@@ -5313,7 +5316,6 @@ if test "${tf_cv_sa_len}" = "yes"; then
 
 fi
 
-
 for ac_header in termios.h termio.h sgtty.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -5339,6 +5341,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 
 fi
 rm -f conftest*
+
 
 
 
@@ -5438,6 +5441,22 @@ _ACEOF
 fi
 done
 
+for ac_func in kill memcpy memset raise setlocale \
+    setrlimit sigaction srand srandom strcasecmp strchr \
+    strcmpi strcspn strerror stricmp strtod tzset waitpid
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+
 
 if test "$enable_getaddrinfo" = "default"; then
     if test `uname -s` = 'Darwin'; then
@@ -5462,26 +5481,6 @@ _ACEOF
 
 fi
 done
-
-fi
-
-for ac_func in kill memcpy memset raise setlocale setrlimit sigaction \
-    srand srandom \
-    strcasecmp strchr strcmpi strcspn strerror stricmp strtod tzset waitpid
-do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
-  cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
-_ACEOF
-
-fi
-done
-
-
-if test "$CYGWIN" = "yes"; then
-    $as_echo "#define HAVE_H_ERRNO 0  /* h_errno is broken in cygwin32 b18. */" >>confdefs.h
 
 fi
 
@@ -5522,7 +5521,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
     done
 fi
-
 
 
 
@@ -5584,7 +5582,6 @@ fi
 
 
 
-
 ### man page
 
 if test "$enable_manpage" = "yes"; then
@@ -5597,39 +5594,29 @@ fi
 
 
 
-
-
-
-
-
-
 MODE=755
-
-
-
 
 
 PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr/new:/usr/new/bin:/usr/nbin:/usr/ccs/bin"
 
 
 
-
 if test "$enable_inet6"     = "yes"; then $as_echo "#define ENABLE_INET6 1" >>confdefs.h
-  fi
+      fi
 if test "$enable_atcp"      = "yes"; then $as_echo "#define ENABLE_ATCP 1" >>confdefs.h
-  fi
+       fi
 if test "$enable_gmcp"      = "yes"; then $as_echo "#define ENABLE_GMCP 1" >>confdefs.h
-  fi
+       fi
 if test "$enable_option102" = "yes"; then $as_echo "#define ENABLE_OPTION102 1" >>confdefs.h
   fi
 if test "$enable_history"   = "no";  then $as_echo "#define NO_HISTORY 1" >>confdefs.h
-  fi
+        fi
 if test "$enable_process"   = "no";  then $as_echo "#define NO_PROCESS 1" >>confdefs.h
-  fi
+        fi
 if test "$enable_float"     = "no";  then $as_echo "#define NO_FLOAT 1" >>confdefs.h
-    fi
+          fi
 if test "$enable_widechar"  = "yes"; then $as_echo "#define WIDECHAR 1" >>confdefs.h
-   fi
+          fi
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 
@@ -6890,6 +6877,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "default":C)
+
 
 ### Create src/Makefile from pieces.
 
