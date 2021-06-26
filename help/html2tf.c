@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
                 } else if (strcasecmp(tag, "a") == 0) {
                     if (precmp(attr, "href=\"") == 0) {
                         if (attr[attrlen-1] != '"') {
-                            fprintf(stderr, "%s, %d: missing \"\n",
+                            fprintf(stderr, "%s, %ld: missing \"\n",
                                 argv[0], line);
                             exit(1);
                         }
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
                 } else if (tag[0] == '#') {
                     addc(atoi(tag+1));
                 } else {
-                    fprintf(stderr, "%s, %d: Unknown token &%s;\n",
+                    fprintf(stderr, "%s, %ld: Unknown token &%s;\n",
                         argv[0], line, tag);
                     exit(1);
                 }
