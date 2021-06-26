@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "help.h"
 
 #define addc(c)			(word[wordvis++,wordlen++] = c)
 #define precmp(str, literal)	strncasecmp(str, literal, sizeof(literal) - 1)
