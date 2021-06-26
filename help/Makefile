@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-O2
+CFLAGS=-O2 -I../src
 
 # Help files were being maintained as html and then converting, which
 # is a PITA to maintain. For now, we're preventing the html2tf from

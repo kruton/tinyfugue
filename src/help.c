@@ -24,10 +24,9 @@
 #include "tfio.h"
 #include "cmdlist.h"
 #include "variable.h"
+#include "help.h"
 
 STATIC_BUFFER(indexfname);
-
-#define HELPLEN  (240+1)	/* maximum length of lines in help file */
 
 struct Value *handle_help_command(String *args, int offset)
 {
