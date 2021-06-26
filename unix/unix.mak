@@ -124,7 +124,10 @@ __always__:
 
 ../tf-lib/tf-help: __always__
 	if test -d ../help; then cd ../help; $(MAKE) tf-help; fi
-	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
+# Skip this step for now.
+# Currently the HTML documents are the least up to date, so they
+# shouldn't be blowing away the most up to date documents.
+#	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
 
 ../tf-lib/tf-help.idx: ../tf-lib/tf-help makehelp
 	$(MAKE) -f ../unix/unix.mak CC='$(CC)' CFLAGS='$(CFLAGS)' makehelp

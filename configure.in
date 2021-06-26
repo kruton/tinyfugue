@@ -243,7 +243,12 @@ dnl on all platforms since it will _follow_ the -l option for the library
 dnl being tested.)
 LDFLAGS="$LDFLAGS $LIBDIRS"
 
+
 dnl This is needed to compile when usinc GCC 10
+dnl This check isn't working properly and reports GCC
+dnl even when using clang. This doesn't cause any
+dnl issues, but still should be fixed at some point
+dnl in case this is needed for something more.
 if test "$ax_cv_c_compiler_vendor" = "gnu"; then
     LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
 fi
@@ -562,7 +567,7 @@ fi
 
 dnl ### Figure out names of executable, library directory, and symlink.
 
-if test "$enable_version" != "no" && test "$program_suffix" = "NONE"; then
+if test "$enable_version" != "no" && test "$program_suffix" == "NONE"; then
     program_suffix="-${TFVER}"
 fi
 
