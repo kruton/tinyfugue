@@ -13,6 +13,7 @@ SSL now looks for GNU TLS
 ATCP protocol support (--enable-atcp=yes) off by default
 GMCP protocol support (--enable-gmcp=yes) off by default
 OPTION 102 protocol support (--enable-option102=yes) off by default
+MCCP protocol lockup issue resolved
 RFC 2066 compliance for Telnet Charset Negotiation
 PCRE unbundled and now can use system libraries
 GCC 10 and CLANG support
