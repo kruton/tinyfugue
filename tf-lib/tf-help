@@ -9380,6 +9380,11 @@ Special global variables
           only slashes at the beginning of a body are handled specially.  You
           are encouraged to turn this off.  (See: [1mevaluation[22;0m)
 
+#oldunnamed
+#%oldunnamed
+  [1moldunnamed[22m=off
+          (flag) If on, unnamed worlds will have their names wrappe in parentheses.
+
 #%pi
   [1mpi[22m=3.141592654...
           The ratio of a circle's circumference to its diameter.
