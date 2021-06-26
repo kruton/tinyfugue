@@ -29,7 +29,7 @@ install all files tf: default
 configure: configure.in
 	autoconf
 
-reconfigure:  unconfigure install
+reconfigure: unconfigure install
 
 unconfigure:
 	rm -f src/Makefile src/config.h src tfdefs.h
@@ -37,20 +37,20 @@ unconfigure:
 clean:
 	cd ./src; rm -f *.o core* *.core typescript*
 
-distclean:  clean
+distclean: clean
 	rm -f Build.log
 	cd ./src; rm -f tf makehelp tags
 	cd ./src; rm -f tf.pixie* tf.Addrs* tf.Counts*
 	cd ./src; rm -f Makefile tfconfig.h tfdefs.h
 	cd ./unix; rm -f vars.mak
 
-spotless cleanest veryclean:  distclean
+spotless cleanest veryclean: distclean
 	cd ./src; rm -f tf.1.catman
 
 uninstall:
 	cd ./src; $(MAKE) uninstall
 
-./src/tf.1.catman:  ./src/tf.1.nroffman
+./src/tf.1.catman: ./src/tf.1.nroffman
 	TERM=vt100; nroff -man ./src/tf.1.nroffman > ./src/tf.1.catman
 
 srcdist: ./src/tf.1.catman

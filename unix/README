@@ -23,24 +23,30 @@ option, be sure to read the rest of this file.
 In addition to the usual GNU configure options, TinyFugue's configure script
 has these options:
 
-  --enable-version        insert version number into name of tf executable
-                          and library directory (implies --enable-symlink)
-  --enable-symlink[=NAME] make a symlink NAME to the executable [PREFIX/bin/tf]
+
+  --enable-version        insert version number into names of installed files
+                          (equivalent to --program-suffix=\"-${TFVER}\")
+  --enable-symlink=NAME make a symlink NAME to the executable
+                          NAME=BINDIR/tf
+  --enable-core           enable debugging core files
   --disable-ssl           disable SSL support
-  --enable-inet6          enable IPv6 support (may be broken)
-  --disable-netdb         disable hostname resolution
+  --enable-getaddrinfo    enable getaddrinfo() (if configure complains)
+  --disable-getaddrinfo   disable getaddrinfo() (implies --disable-inet6)
+  --disable-inet6         disable IPv6 support
   --disable-termcap       use hardcoded vt100 codes instead of termcap
-  --enable-termcap=LIB    enable termcap with library LIB (e.g., ncurses)
+  --enable-termcap=LIB    enable termcap with library LIB (e.g., "ncurses")
                           (needed only if configure guesses incorrectly)
+  --disable-256colors     disable 256 color support (may reduce memory use)
   --disable-mailcheck     disable mail checking
   --enable-mailcheck=DIR  enable checking for mail in directory DIR
                           (needed only if configure guesses incorrectly)
-  --enable-strip          strip debugging symbols from executable
-  --enable-core           enable core files, enable debugging symbols in the
-                          executable (-g), and disable optimization (-O)
   --disable-history       disable /recall and other history features
   --disable-process       disable /quote and /repeat
   --disable-float         disable floating point arithmetic and functions
+  --disable-widechar      disable wide character support (UTF-8)
+  --enable-atcp           enable ATCP support
+  --enable-gmcp           enable GMCP support
+  --enable-option102      enable 102 option support
   --with-incdirs=DIRS     search for include files in DIRS
   --with-libdirs=DIRS     search for libraries in DIRS
   --with-inclibdirs=DIRS  same as --with-incdirs=DIRS --with-libdirs=DIRS

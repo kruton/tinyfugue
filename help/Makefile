@@ -23,4 +23,6 @@ tf-help: html2tf commands/*.html topics/*.html
 clean:
 	rm -f html2tf tf-help
 
+# The next line is a hack to get around a bug in BSD/386 make.
+make:
 

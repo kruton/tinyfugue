@@ -49,14 +49,14 @@ all files:  _all
 	@echo '##    library:   $(TF_LIBDIR)'
 	@echo '##    manpage:   $(MANPAGE)'
 
-_all:  tf$(X) ../tf-lib/tf-help.idx
+_all: tf$(X) ../tf-lib/tf-help.idx
 
 _failmsg:
 	@echo '#####################################################'
 	@echo '## TinyFugue installation FAILED.'
 	@echo '## See README for help.'
 
-TF tf$(X):     $(OBJS) $(BUILDERS)
+TF tf$(X): $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre
 #	@# Some stupid linkers return ok status even if they fail.
 	@test -f "tf$(X)"
