@@ -121,6 +121,7 @@ varenum(VAR_meta_esc,	"meta_esc",	META_NONPRINT,	NULL,	enum_meta)
 varflag(VAR_more,	"more",		FALSE,		tog_more)
 varstr (VAR_mprefix,	"mprefix",	"+",		NULL)
 varflag(VAR_oldslash,	"oldslash",	TRUE,		NULL)
+varflag(VAR_oldunnamed,	"oldunnamed",	FALSE,		NULL)
 varflag(VAR_optimize,	"optimize",	TRUE,		NULL)
 #if ENABLE_OPTION102
 varflag(VAR_option102,  "option102",    TRUE,           NULL)

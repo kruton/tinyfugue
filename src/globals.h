@@ -220,6 +220,7 @@ enum Vars {
 #define more		getintvar(VAR_more)
 #define mprefix		getstrvar(VAR_mprefix)
 #define oldslash	getintvar(VAR_oldslash)
+#define oldunnamed      getintvar(VAR_oldunnamed)
 #define optimize_user	getintvar(VAR_optimize)
 #define option102	getintvar(VAR_option102)
 #define pedantic	getintvar(VAR_pedantic)
