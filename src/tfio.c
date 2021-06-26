@@ -528,7 +528,7 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
 	    * then va_start or using va_copy.  This
 	    * doesn't appear to be a problem on 32 bit systems
 	    * but causes problems on 64 bit systems.
-	    * In this case, va_copy is used since I'm usure
+	    * In this case, va_copy is used since I'm unsure
 	    * if the program relies on ap staying constant
 	    * or not.  It appears to work fine, but YMMV.
 	    * Also there is a fallback since va_copy doesn't
@@ -794,7 +794,7 @@ char igetchar(void)
 int tfreadable(TFILE *file)
 {
     if (!file) {
-        return 1; /* tfread will imeediately return error */
+        return 1; /* tfread will immediately return error */
 
     } else if (file == tfkeyboard) {
 	return 0; /* tfread will not return immediately */

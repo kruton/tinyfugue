@@ -48,7 +48,7 @@ int regmatch_in_scope(Value *val, const char *pattern, String *str)
 	if (!(reginfo = tf_reg_compile(pattern, 0)))
 	    return 0;
     } else if (val->type & TYPE_REGEX) {
-	/* use precompiled regexp */
+	/* use pre-compiled regexp */
 	(reginfo = val->u.ri)->links++;
     } else {
 	/* compile regexp, and store it on val for future reuse */

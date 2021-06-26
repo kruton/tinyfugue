@@ -226,10 +226,10 @@
         /set hilite=0%;\
     /endif
 
-;; macro existance test.
+;; macro existence test.
 /def -i ismacro = /test tfclose("o")%; /@list -s -i %{*-@}
 
-;; variable existance test.
+;; variable existence test.
 /def -i isvar = /test tfclose("o")%; /listvar -msimple -- %*
 
 

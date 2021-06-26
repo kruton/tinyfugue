@@ -1169,7 +1169,7 @@ static void vcode_add(Program *prog, opcode_t op, int use_mark, va_list ap)
 		inst[-1].op == OP_APPEND && inst[-1].arg.str)
 	    {
 		/* e.g. {APPEND string; MACRO NULL;} to {MACRO string;} */
-		/* but only if not preceeded by other append operators */
+		/* but only if not preceded by other append operators */
 		if (prog->len > 2 &&
 		   (inst[-2].op == OP_APPEND /* could be {APPEND NULL;} */ ||
 		   (op_type_is(inst[-2].op, SUB) && op_is_append(inst[-2].op))))
@@ -1335,7 +1335,7 @@ static int list(Program *prog, int subs)
 
         is_special = is_a_command = is_a_condition = FALSE;
 
-        /* Lines begining with one "/" are tf commands.  Lines beginning
+        /* Lines beginning with one "/" are tf commands.  Lines beginning
          * with multiple "/"s have the first removed, and are sent to server.
          */
 

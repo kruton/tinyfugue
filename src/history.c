@@ -63,8 +63,8 @@ struct History globalhist_buf, localhist_buf;
 struct History * const globalhist = &globalhist_buf;
 struct History * const localhist = &localhist_buf;
 int log_count = 0;
-int nohistory = 0;	/* supress history (but not log) recording */
-int nolog = 0;		/* supress log (but not history) recording */
+int nohistory = 0;	/* suppress history (but not log) recording */
+int nolog = 0;		/* suppress log (but not history) recording */
 
 #define histline(hist, i) \
     ((String*)(hist)->cq.data[nmod(i, (hist)->cq.maxsize)])
@@ -661,7 +661,7 @@ static void listlog(World *world)
 /* Parse "ligw:" history options.  If another option is found, it is returned,
  * so the caller can parse it.  If end of options is reached, 0 is returned.
  * '?' is returned for error.  *histp will contain a pointer to the history
- * selected by the "ligw:" options.  *histp will be unchanged if no relavant
+ * selected by the "ligw:" options.  *histp will be unchanged if no relevant
  * options are given; the caller should assign a default before calling.
  */
 static int next_hist_opt(const char **ptr, int *offsetp, History **histp,

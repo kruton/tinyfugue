@@ -1,8 +1,8 @@
 TinyFugue 50b8 with numerous patches and improvements
 
 UTF8 support (--enable-widechar=yes)
-/HELP has been spell checked, along with the manpage
-HTML documentation added to the repo (not yet spell checked)
+/HELP has been spell checked, along with everything else
+HTML documentation and html2tf found and returned to repo
 ANSI log output (/help ansi_log) off by default
 LOGs output prefix, such as timestamp (/help log_prefix) off by default
 ERROR output prefix now adjustable (/help error_prefix) '%' by default
@@ -144,7 +144,7 @@ Compression
 If you are short on disk space, you can compress the helpfile and
 library files (except stdlib.tf).  Make sure the COMPRESS_SUFFIX
 and COMPRESS_READ macros are set correctly; set them in the
-%{TFLIBDIR}/local.tf file if needed.  Note that compresion can not
+%{TFLIBDIR}/local.tf file if needed.  Note that compression can not
 be used if /restrict is used.
 
 
@@ -187,6 +187,6 @@ Amiga, so I don't plan on porting to them.  However, I am willing to
 work with someone who wants to try and is willing to follow my
 guidelines (this is how the OS/2 version was created, and why it is an
 official version which continues to grow).  Basically, this means
-keeping the platform-specific code seperate and to a minimum, and not
+keeping the platform-specific code separate and to a minimum, and not
 adding new features.
 

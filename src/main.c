@@ -40,7 +40,7 @@
 
 const char sysname[] = UNAME;
 
-/* For customized versions, please add a unique identifer (e.g., your initials)
+/* For customized versions, please add a unique identifier (e.g., your initials)
  * to the version number, and put a brief description of the modifications
  * in the mods[] string.
  */

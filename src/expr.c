@@ -1281,7 +1281,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	  {
 	    Value *val;
             (Sstr = opdstrdup(1))->links++;	/* XXX not needed if no match */
-	    /* test for type ==, not &; it must not have other extentions */
+	    /* test for type ==, not &; it must not have other extensions */
             i = regmatch_in_scope(opd(2)->type == TYPE_STR ? opd(2) : NULL,
 		opdstd(2), Sstr);
 	    Stringfree(Sstr);

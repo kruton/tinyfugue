@@ -24,7 +24,7 @@ static ListEntry *nodepool = NULL;		/* freelist */
 /* trie */
 /********/
 
-/* Find the datum in trie assosiated with the key. */
+/* Find the datum in trie associated with the key. */
 void *trie_find(TrieNode *root, const unsigned char *key)
 {
     TrieNode *n;

@@ -17,7 +17,7 @@
 # Predefined variables:
 #   SYS          - required system type (unix, os2)
 #   O            - required object suffix (e.g., "o" or "obj")
-#   BUILDERS     - optional list of system-specific dependancies
+#   BUILDERS     - optional list of system-specific dependencies
 
 attr.$(O): attr.c tfconfig.h tfdefs.h port.h tf.h malloc.h dstring.h \
   globals.h varlist.h enumlist.h hooklist.h util.h pattern.h \

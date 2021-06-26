@@ -810,7 +810,7 @@ void main_loop(void)
          *   descriptor write:	nonblocking connect()
          *   timeout:		time for runall() or do_refresh()
          * Note: if the same descriptor appears in more than one fd_set, some
-         * systems count it only once, some count it once for each occurance.
+         * systems count it only once, some count it once for each occurrence.
          */
         active = readers;
         connected = writers;
@@ -2468,12 +2468,12 @@ int handle_send_function(conString *string, const char *world,
 
     for (p = flags; *p; p++) {
 	switch (*p) {
-	case 'o': /* for backward compatability */
+	case 'o': /* for backward compatibility */
 	    break;
-	case '1': case 'n': /* for backward compatability */
+	case '1': case 'n': /* for backward compatibility */
 	    eol_flag = 1; break;
 	case 'u': /* fall through */
-	case '0': case 'f': /* for backward compatability */
+	case '0': case 'f': /* for backward compatibility */
 	    eol_flag = 0; break;
 	case 'h':
 	    hook_flag = 1; break;
@@ -3280,7 +3280,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    count = (char*)xsock->zstream->next_out - mccpbuffer;
                     if(count > 0)
 		        received += handle_socket_input(mccpbuffer, count, NULL);
-		    /* prepare to handle noncompressed stuff after stream end */
+		    /* prepare to handle non-compressed stuff after stream end */
 		    incoming = (char*)xsock->zstream->next_in;
 		    count = xsock->zstream->avail_in;
 		    /* clean up zstream */
@@ -3334,7 +3334,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 case TN_SB:
 		    if (!(xsock->flags & SOCKTELNET)) {
 			/* Telnet subnegotiation can't happen without a
-			 * previous telnet option negotation, so treat the
+			 * previous telnet option negotiation, so treat the
 			 * IAC SB as non-telnet, and disable telnet. */
 			xsock->flags &= ~SOCKMAYTELNET;
 			place--;
@@ -3680,7 +3680,7 @@ static void handle_socket_input_queue_lines(Sock *sock)
             Stringtrunc(nextline, 0);
             place = sock->buffer->data - 1;
             bufferend = sock->buffer->data + sock->buffer->len;
-            /* other occurances of '\b' are handled by decode_ansi(), so
+            /* other occurrences of '\b' are handled by decode_ansi(), so
             * ansi codes aren't clobbered before they're interpreted */
 
         } else {

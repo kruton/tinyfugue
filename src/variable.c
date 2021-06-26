@@ -202,7 +202,7 @@ void init_variables(void)
             set_special_var(var, &value, 0, 0);
             /* We do NOT call the var->func here, because the modules they
              * reference have not been initialized yet.  The init_*() calls
-             * in main.c should call the funcs in the appropraite order.
+             * in main.c should call the funcs in the appropriate order.
              */
 	} else {
 	    /* Shouldn't happen unless environment contained same name twice */
@@ -795,7 +795,7 @@ void freevar(Var *var)
 
 /*********/
 
-/* Set a special variable, with proper coersion of the value. */
+/* Set a special variable, with proper coercion of the value. */
 static int set_special_var(Var *var, Value *value, int funcflag,
     int exportflag)
 {
