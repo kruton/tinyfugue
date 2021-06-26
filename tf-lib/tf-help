@@ -5735,11 +5735,11 @@ history
   Search backward/forward keys ([1mSEARCHB[22;0m/[1mSEARCHF[22;0m, default ^[p and ^[n)
 
   TinyFugue stores lines in 4 different types of [1mhistory[22;0m lists.  Input [1mhistory[22;0m
-  records the last 100 non-repeated commands from the keyboard, including the
-  current line.  Each world has a world [1mhistory[22;0m, which stores 1000 lines of
-  output from that world.  Local history stores 100 lines of output generated
+  records the last 500 non-repeated commands from the keyboard, including the
+  current line.  Each world has a world [1mhistory[22;0m, which stores 500 lines of
+  output from that world.  Local history stores 1000 lines of output generated
   by TF, i.e.  anything that didn't come from a world.  Global [1mhistory[22;0m is an
-  integrated list of 1000 lines from TF and every world.  The [1mhistory[22;0m sizes
+  integrated list of 5000 lines from TF and every world.  The [1mhistory[22;0m sizes
   can be changed with the [1m/histsize[22;0m command and the [1m%{histsize}[22;0m [1mvariable[22;0m.
 
   [1m/recall[22;0m is used to display text from any of the [1mhistory[22;0m lists.  The [1m/quote[22;0m
@@ -9152,7 +9152,7 @@ Special global variables
 
 #histsize
 #%histsize
-  [1mhistsize[22m=1000
+  [1mhistsize[22m=5000
           When a new world [1mhistory[22;0m is created, it will have space for
           [1m%{histsize}[22;0m lines.  A world [1mhistory[22;0m is created the first time text
           is sent to it.  (See also: [1m/histsize[22;0m)
