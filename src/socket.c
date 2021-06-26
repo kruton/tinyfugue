@@ -43,6 +43,12 @@
     SSL_CTX *ssl_ctx;
 #endif
 
+/* Receive buffer before deciding server is misbehaving.
+ * This was previously 1024, but that's quite low for
+ * current servers. It should be fairly safe to modify
+ * this up or down as needed. */
+#define RECEIVELIMIT ((32 * 1024) -1)
+
 #ifdef NETINET_IN_H
 # include NETINET_IN_H
 #else
@@ -3393,11 +3399,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 continue;  /* avoid non-telnet processing */
 
             } else if (xsock->fsastate == TN_SB) {
-		/* NOTE: This can potentially be significantly raised, investigate.
-		 * Some have this set at 30*1023
-		 * With that significant of a change, should be investigated
-		 * thoroughly before any change is made */
-		if (xsock->subbuffer->len > 1023) {
+		if (xsock->subbuffer->len > RECEIVELIMIT) {
 		    /* It shouldn't take this long; server is broken.  Abort. */
 #if WIDECHAR
 		    SStringcat(incomingposttelnet, CS(xsock->subbuffer));
