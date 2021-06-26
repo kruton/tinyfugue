@@ -178,14 +178,14 @@ TF(1)                                                                    TF(1)
 
 
 [1mCOPYRIGHT[0m
-       Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2006-2007
-       Ken Keys
+       Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 
        [4mTinyFugue[24m  (aka  "[4mtf[24m")  is protected under the terms of the GNU General
        Public License.  See the file "COPYING" for details.
 
-       [4mTF[24m is currently supported by Ken Keys, who may be contacted  by  e-mail
-       at kenkeys@users.sourceforge.net or kkeys@ucsd.edu.
+       [4mTF[24m was formerly developed by Ken Keys, and he may never fully
+       understand just how much we appreciate his work. We hope in taking up the
+       TinyFugue torch that we will honor his legacy.
 
 
 [1mBACKWARD INCOMPATIBILITIES[0m

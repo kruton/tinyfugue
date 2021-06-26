@@ -1,6 +1,6 @@
 /*
  * html2tf.c - convert limited html format to tf helpfile format.
- * Copyright 1996, 1997, 1998, 1999, 2002, 2003, 2005, 2006-2007 Ken Keys
+ * Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  * Usage: html2tf FILE...
  * Converts each FILE and prints the result on stdout. 

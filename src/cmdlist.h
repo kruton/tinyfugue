@@ -1,3 +1,12 @@
+/*************************************************************************
+ *  TinyFugue - programmable mud client
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
+ *
+ *  TinyFugue (aka "tf") is protected under the terms of the GNU
+ *  General Public License.  See the file "COPYING" for details.
+ ************************************************************************/
+
+
 /* command list
  * defcmd and defvarcmd each define a command.
  * The "var" indicates that the function needs to be able to write into the

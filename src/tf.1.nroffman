@@ -180,13 +180,13 @@ Post all refused to comment.
 
 .SH COPYRIGHT
 
-Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2006-2007 Ken Keys
+Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 .sp
 \fITinyFugue\fR (aka "\fItf\fR") is protected under the terms of the GNU
 General Public License.  See the file "COPYING" for details.
 .sp
-\fITF\fR is currently supported by Ken Keys, who may be contacted by e-mail at
-kenkeys@users.sourceforge.net or kkeys@ucsd.edu.
+\fITF\fR was formerly developed by Ken Keys, whom we all owe a debt of gratitude.
+Hopefully the continuation of his project will bring honor to his legacy.
 
 .SH BACKWARD INCOMPATIBILITIES
 .PP
