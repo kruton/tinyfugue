@@ -633,14 +633,21 @@
   /def -ip2 -ah -mregexp -t'^[^ ]* whispers,? ".*" (to [^ ]*)?$$' ~hilite_whisper1
 
 /def -i hilite_page	= \
-  /def -ip2 -ah -mglob -t'{*} pages from *[,:] *' ~hilite_page1%;\
-  /def -ip2 -ah -mglob -t'You sense that {*} is looking for you in *' ~hilite_page2%;\
-  /def -ip2 -ah -mglob -t'The message was: *' ~hilite_page3%;\
-  /def -ip2 -ah -mglob -t'{*} pages[,:] *' ~hilite_page4%;\
-  /def -ip2 -ah -mglob -t'In a page-pose*' ~hilite_page5
+  /def -ip2 -ah -mregexp -t'^(.+ pages? from .+[:,] .+' ~hilite_page1%; \
+; Not actually a page, but being kept in for now for compatibility.
+  /def -ip2 -ah -mregexp -t'^(You sense that .+ is looking for you in) .+' ~hilite_page2%; \
+  /def -ip2 -ah -mregexp -t'^(The message was:) .+ ' ~hilite_page3%; \
+  /def -ip2 -ah -mregexp -t'^(.+ pages[:,]) .+' ~hilite_page4%; \
+  /def -ip2 -ah -mregexp -t'^(In a page-pose).+' ~hilite_page5%; \
+  /def -ip2 -ah -mregexp -t'^(You paged,) .+' ~hilite_page6%; \
+  /def -ip2 -ah -mregexp -t'^(You paged .+ with) .+' ~hilite_page7%; \
+  /def -ip2 -ah -mregexp -t'^(From afar,) .+' ~hilite_page9%; \
+  /def -ip2 -ah -mregexp -t'^(Long distance to) .+' ~hilite_page10%; \
+  /def -ip2 -ah -mregexp -t'^(To \(.+\), .+ pages:) .+' ~hilite_page11%; \
+  /def -ip2 -ah -mregexp -t'^(To \(.+\) From Afar:, .+ pages:) .+' ~hilite_page12
 
-/def -i nohilite_whisper	= /purge -mglob -I ~hilite_whisper[1-9]
-/def -i nohilite_page		= /purge -mglob -I ~hilite_page[1-9]
+/def -i nohilite_whisper	= /purge -mregexp -I ~hilite_whisper[1-12]
+/def -i nohilite_page		= /purge -mregexp -I ~hilite_page[1-12]
 
 
 ;;; backward compatible commands
