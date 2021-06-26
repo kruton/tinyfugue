@@ -4043,6 +4043,7 @@ LIBDIRS=""
 
 LDFLAGS="$LDFLAGS $LIBDIRS"
 
+
 if test "$ax_cv_c_compiler_vendor" = "gnu"; then
     LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
 fi
@@ -5558,7 +5559,7 @@ fi
 
 
 
-if test "$enable_version" != "no" && test "$program_suffix" = "NONE"; then
+if test "$enable_version" != "no" && test "$program_suffix" == "NONE"; then
     program_suffix="-${TFVER}"
 fi
 
