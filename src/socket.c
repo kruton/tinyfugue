@@ -1415,8 +1415,17 @@ static void setupnextconn(Sock *sock)
 {
     struct addrinfo *ai, *next = sock->addr;
 
+<<<<<<< HEAD
     if (sock->fd >= 0)
 	close(sock->fd);
+=======
+    if (sock->fd >= 0) {
+        FD_CLR(sock->fd, &readers);
+        FD_CLR(sock->fd, &writers);
+        close(sock->fd); 
+        sock->fd = -1;
+    }
+>>>>>>> 5682782... spacing issue from github merge
 retry:
     next = next->ai_next;
     /* if next address is a duplicate of one we've already done, skip it */
