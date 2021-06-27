@@ -111,6 +111,7 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	rm -f factorial.tf;    ln -s  factoral.tf  factorial.tf;    \
 	rm -f file-xfer.tf;    ln -s  filexfer.tf  file-xfer.tf;    \
 	rm -f local.tf.sample; ln -s  local-eg.tf  local.tf.sample; \
+	rm -f mylib.tf;        ln -s  utilities.tf mylib.tf;        \
 	rm -f pref-shell.tf;   ln -s  psh.tf       pref-shell.tf;   \
 	rm -f space_page.tf;   ln -s  spc-page.tf  space_page.tf;   \
 	rm -f speedwalk.tf;    ln -s  spedwalk.tf  speedwalk.tf;    \
