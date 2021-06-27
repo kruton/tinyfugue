@@ -1245,7 +1245,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 		    case 1: tm.tm_year = opdint(n-0) - 1900;
 		}
 		t = mktime(&tm);
-		if (t == -1 || usec > 999999)
+		if (t == -1 || usec < 0 || usec > 999999)
 		    return newatime(-1, 0);
 		if (t < 0 && usec > 0) {
 		    t += 1;
