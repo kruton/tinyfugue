@@ -2596,6 +2596,10 @@ if test "$enable_development" = "yes"; then
     if test "$enable_symlink" = "default"; then
 	enable_symlink=no
     fi
+else
+
+$as_echo "#define NDEBUG 1" >>confdefs.h
+
 fi
 
 if test "$enable_core" = "yes"; then
@@ -2604,7 +2608,8 @@ $as_echo "$as_me: Core dumps enabled." >&6;}
     CFLAGS="${CFLAGS} -g"
     STRIP=":"
 else
-    $as_echo "#define DISABLE_CORE 1" >>confdefs.h
+
+$as_echo "#define DISABLE_CORE 1" >>confdefs.h
 
 fi
 
@@ -2612,7 +2617,8 @@ if test "$enable_dmalloc" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: Debug malloc enabled." >&5
 $as_echo "$as_me: Debug malloc enabled." >&6;}
     OTHER_OBJS="$OTHER_OBJS dmalloc.o"
-    $as_echo "#define USE_DMALLOC 1" >>confdefs.h
+
+$as_echo "#define USE_DMALLOC 1" >>confdefs.h
 
 fi
 
@@ -2620,12 +2626,10 @@ if test "$enable_mmalloc" = "yes"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: GNU malloc enabled." >&5
 $as_echo "$as_me: GNU malloc enabled." >&6;}
     CPPFLAGS="${CPPFLAGS} -DUSE_MMALLOC"
-    $as_echo "#define USE_MMALLOC 1" >>confdefs.h
+
+$as_echo "#define USE_MMALLOC 1" >>confdefs.h
 
 fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
-$as_echo "$as_me: " >&6;}
 
 
 UNAME=`{ uname -s && uname -v && uname -r || uname -a; } 2>/dev/null`
@@ -4490,7 +4494,8 @@ fi
 done
 
 	if test "$ok" = "1"; then
-	    $as_echo "#define HAVE_SSL 1" >>confdefs.h
+
+$as_echo "#define HAVE_SSL 1" >>confdefs.h
 
             for ac_func in ERR_peek_error
 do :
@@ -4524,7 +4529,8 @@ if test "$enable_termcap" = "default"; then
 fi
 
 if test "$enable_termcap" = "no"; then
-    cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define HARDCODE $terminal_hardcode
 _ACEOF
 
@@ -4583,18 +4589,18 @@ $as_echo "$ac_cv_search_tgetent" >&6; }
 ac_res=$ac_cv_search_tgetent
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  $as_echo "#define TERMCAP 1" >>confdefs.h
+
+$as_echo "#define TERMCAP 1" >>confdefs.h
+
+fi
 
 
-else
-  cat >>confdefs.h <<_ACEOF
+cat >>confdefs.h <<_ACEOF
 #define HARDCODE $terminal_hardcode
 _ACEOF
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Hardcoding terminal codes." >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Hardcoding terminal codes." >&5
 $as_echo "$as_me: WARNING: Hardcoding terminal codes." >&2;}
-fi
-
 fi
 
 
@@ -4608,12 +4614,14 @@ fi
 
 
 if test "$CYGWIN" = "yes"; then
-    $as_echo "#define HAVE_H_ERRNO 0  /* h_errno is broken in cygwin32 b18. */" >>confdefs.h
+
+$as_echo "#define HAVE_H_ERRNO 0" >>confdefs.h
 
 fi
 
 if test "$enable_256colors" = "yes"; then
-    $as_echo "#define NCOLORS 256" >>confdefs.h
+
+$as_echo "#define NCOLORS 256" >>confdefs.h
 
 fi
 
@@ -5199,7 +5207,8 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define NETINET_IN_H <$f>
 _ACEOF
 
@@ -5231,7 +5240,8 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define ARPA_INET_H <$f>
 _ACEOF
 
@@ -5262,7 +5272,8 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define NETDB_H <$f>
 _ACEOF
 
@@ -5312,7 +5323,8 @@ fi
 $as_echo "$tf_cv_sa_len" >&6; }
 
 if test "${tf_cv_sa_len}" = "yes"; then
-    $as_echo "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
+
+$as_echo "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
 
 fi
 
@@ -5337,7 +5349,8 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
   $EGREP "struct winsize" >/dev/null 2>&1; then :
-  $as_echo "#define NEED_PTEM_H 1" >>confdefs.h
+
+$as_echo "#define NEED_PTEM_H 1" >>confdefs.h
 
 fi
 rm -f conftest*
@@ -5549,7 +5562,8 @@ else
     MAILDIR="$enable_mailcheck"
 fi
 if test -n "$MAILDIR"; then
-    cat >>confdefs.h <<_ACEOF
+
+cat >>confdefs.h <<_ACEOF
 #define MAILDIR "$MAILDIR"
 _ACEOF
 
@@ -5594,6 +5608,7 @@ fi
 
 
 
+
 MODE=755
 
 
@@ -5601,22 +5616,41 @@ PATH="$PATH:/bin:/usr/bin:/usr/local/bin:/usr/ucb:/usr/local:/usr/lbin:/etc:/usr
 
 
 
-if test "$enable_inet6"     = "yes"; then $as_echo "#define ENABLE_INET6 1" >>confdefs.h
-      fi
-if test "$enable_atcp"      = "yes"; then $as_echo "#define ENABLE_ATCP 1" >>confdefs.h
-       fi
-if test "$enable_gmcp"      = "yes"; then $as_echo "#define ENABLE_GMCP 1" >>confdefs.h
-       fi
-if test "$enable_option102" = "yes"; then $as_echo "#define ENABLE_OPTION102 1" >>confdefs.h
-  fi
-if test "$enable_history"   = "no";  then $as_echo "#define NO_HISTORY 1" >>confdefs.h
-        fi
-if test "$enable_process"   = "no";  then $as_echo "#define NO_PROCESS 1" >>confdefs.h
-        fi
-if test "$enable_float"     = "no";  then $as_echo "#define NO_FLOAT 1" >>confdefs.h
-          fi
-if test "$enable_widechar"  = "yes"; then $as_echo "#define WIDECHAR 1" >>confdefs.h
-          fi
+if test "$enable_inet6"     = "yes"; then
+
+$as_echo "#define ENABLE_INET6 1" >>confdefs.h
+
+fi
+if test "$enable_atcp"      = "yes"; then
+
+$as_echo "#define ENABLE_ATCP 1" >>confdefs.h
+
+fi
+if test "$enable_gmcp"      = "yes";
+then
+$as_echo "#define ENABLE_GMCP 1" >>confdefs.h
+
+fi
+if test "$enable_option102" = "yes";
+then
+$as_echo "#define ENABLE_OPTION102 1" >>confdefs.h
+
+fi
+if test "$enable_history"   = "no";
+then
+$as_echo "#define NO_HISTORY 1" >>confdefs.h
+
+fi
+if test "$enable_process"   = "no";
+then
+$as_echo "#define NO_PROCESS 1" >>confdefs.h
+
+fi
+if test "$enable_float"     = "no";
+then
+$as_echo "#define NO_FLOAT 1" >>confdefs.h
+
+fi
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 
@@ -5624,6 +5658,7 @@ CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 
 
 
+### Create src/Makefile from pieces.
 ac_config_files="$ac_config_files Makefile unix/vars.mak src/tfdefs.h"
 
 ac_config_commands="$ac_config_commands default"
@@ -6877,17 +6912,12 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
   case $ac_file$ac_mode in
     "default":C)
-
-
-### Create src/Makefile from pieces.
-
 cat >src/Makefile <<END
 #### DO NOT EDIT THIS FILE.
 #### This src/Makefile was automatically generated by configure.  The correct
 #### installation precedure is to run ./configure in the top directory.  You
 #### should not edit this file; all configuration changes should be made
 #### via arguments to configure.
-
 END
 cat unix/vars.mak src/vars.mak unix/unix.mak src/rules.mak >> src/Makefile
  ;;

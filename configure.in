@@ -346,7 +346,7 @@ else
     AC_SEARCH_LIBS(tgetent, $enable_termcap termcap ncurses curses,
 	AC_DEFINE([TERMCAP], [1], [termcap enabled]))
     AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap enabled - hardcoding terminal])
-    AC_MSG_WARN([Hardcoding terminal codes.]))
+    AC_MSG_WARN([Hardcoding terminal codes.])
 fi
 
 
@@ -422,7 +422,7 @@ AC_CHECK_HEADERS([locale.h], ,
 
 dnl ### Find pwd.h
 AC_CHECK_HEADERS([pwd.h], ,
-AC_MSG_WARN([Filename '~user' expansion will not be supported.]))
+    AC_MSG_WARN([Filename '~user' expansion will not be supported.]))
 
 dnl ### Find zlib.h
 AC_CHECK_HEADERS([zlib.h])
@@ -604,7 +604,7 @@ else
     MANTYPE=''
 fi
 AC_SUBST(MANPAGE)
-AC_SUBST(MANTYPE) dnl XXX
+AC_SUBST(MANTYPE)
 
 dnl # XXX
 dnl ### Sanity check for filenames (some people do pretty stupid things)
