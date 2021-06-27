@@ -6,3 +6,8 @@ programming techniques.  Any of the *.tf files can be loaded directly
 with /load.  Read the comments at the top of each file for specific
 instructions.
 
+=============================================================================
+
+Newly added:
+
+    utilities.tf - The TF Mailing List's library of missing functions.
