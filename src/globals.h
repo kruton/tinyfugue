@@ -179,7 +179,7 @@ enum Vars {
 #define defcompile	getintvar(VAR_defcompile)
 #define emulation 	getintvar(VAR_emulation)
 #define error_attr	getattrvar(VAR_error_attr)
-#define error_prefix    getstdvar(VAR_error_prefix)
+#define error_prefix	getstdvar(VAR_error_prefix)
 #define expand_tabs 	getintvar(VAR_expand_tabs)
 #define expnonvis 	getintvar(VAR_expnonvis)
 #define gag		getintvar(VAR_gag)
