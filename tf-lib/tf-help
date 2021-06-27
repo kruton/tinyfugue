@@ -4563,7 +4563,7 @@ colors
 copyright
 
   TinyFugue - programmable mud client
-  Copyright (C) 1993-2007 [1mKen Keys[22;0m (kenkeys@users.sourceforge.net)
+  Cpyright (C) 1993-2007 [1mKen Keys[22;0m (kenkeys@users.sourceforge.net)
 
 
   PCRE regexp package is Copyright (C) 1997-1999 University of Cambridge
@@ -9383,7 +9383,7 @@ Special global variables
 #oldunnamed
 #%oldunnamed
   [1moldunnamed[22m=off
-          (flag) If on, unnamed worlds will have their names wrappe in parentheses.
+          (flag) If on, unnamed worlds will have their names wrapped in parentheses.
 
 #%pi
   [1mpi[22m=3.141592654...
