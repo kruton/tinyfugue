@@ -343,12 +343,17 @@ if test "$enable_termcap" = "no"; then
     AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap disabled - hardcoding terminal])
 else
     if test "$enable_termcap" = "yes"; then enable_termcap=""; fi
+dnl    AC_SEARCH_LIBS(tgetent, $enable_termcap termcap ncurses curses,
+dnl	AC_DEFINE([TERMCAP], [1], [termcap enabled]))
+dnl    AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap enabled - hardcoding terminal])
+dnl    AC_MSG_WARN([Hardcoding terminal codes.])
     AC_SEARCH_LIBS(tgetent, $enable_termcap termcap ncurses curses,
-	AC_DEFINE([TERMCAP], [1], [termcap enabled]))
-    AC_DEFINE_UNQUOTED([HARDCODE], [$terminal_hardcode], [termcap enabled - hardcoding terminal])
-    AC_MSG_WARN([Hardcoding terminal codes.])
+        AC_DEFINE(TERMCAP)
+    ,
+        AC_DEFINE_UNQUOTED(HARDCODE, $terminal_hardcode)
+        AC_MSG_WARN([Hardcoding terminal codes.]))
 fi
-
+dnl XXX check for debian linux's broken termcap
 
 dnl ########### cygwin ############
 

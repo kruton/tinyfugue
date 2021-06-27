@@ -1338,10 +1338,9 @@ static int list(Program *prog, int subs)
         /* Lines beginning with one "/" are tf commands.  Lines beginning
          * with multiple "/"s have the first removed, and are sent to server.
          */
-
         if ((subs > SUB_LITERAL) && (ip[0] == '/') && (ip[1] != '/')) {
             ++ip;
-            is_a_command = TRUE;
+	    is_a_command = TRUE;
             oldblock = block;
             if (subs >= SUB_KEYWORD) {
                 stmtstart = ip;

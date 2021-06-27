@@ -25,6 +25,7 @@
 #include "search.h"	/* for tfio.h */
 #include "tfio.h"
 
+
 static RegInfo *reginfo = NULL;
 static const unsigned char *re_tables = NULL;
 

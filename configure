@@ -4589,20 +4589,19 @@ $as_echo "$ac_cv_search_tgetent" >&6; }
 ac_res=$ac_cv_search_tgetent
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-$as_echo "#define TERMCAP 1" >>confdefs.h
-
-fi
+  $as_echo "#define TERMCAP 1" >>confdefs.h
 
 
-cat >>confdefs.h <<_ACEOF
+else
+  cat >>confdefs.h <<_ACEOF
 #define HARDCODE $terminal_hardcode
 _ACEOF
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Hardcoding terminal codes." >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Hardcoding terminal codes." >&5
 $as_echo "$as_me: WARNING: Hardcoding terminal codes." >&2;}
 fi
 
+fi
 
 
 if test "$CYGWIN" = "yes"; then
