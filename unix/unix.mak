@@ -80,12 +80,12 @@ SYMLINK $(SYMLINK): $(TF)
 LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Creating library directory...'
 #	@# Overly simplified shell commands, to avoid problems on ultrix
-	-@test -n $(TF_LIBDIR) || echo "TF_LIBDIR is undefined."
-	test -n $(TF_LIBDIR)
-	test -d $(TF_LIBDIR) || mkdir -p $(TF_LIBDIR)
-	-@test -d $(TF_LIBDIR) || echo "Can't make $(TF_LIBDIR) directory.  See if"
-	-@test -d $(TF_LIBDIR) || echo "there is already a file with that name."
-	test -d $(TF_LIBDIR)
+	-@test -n "$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
+	test -n "$(TF_LIBDIR)"
+	test -d "$(TF_LIBDIR)" || mkdir -p $(TF_LIBDIR)
+	-@test -d "$(TF_LIBDIR)" || echo "Can't make $(TF_LIBDIR) directory.  See if"
+	-@test -d "$(TF_LIBDIR)" || echo "there is already a file with that name."
+	test -d "$(TF_LIBDIR)"
 #	@#rm -f $(TF_LIBDIR)/*;  # wrong: this would remove local.tf, etc.
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
