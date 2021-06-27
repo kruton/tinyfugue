@@ -15,6 +15,10 @@
 ;;; I recommend this unless you have old macros containing multiple slashes.
 /set oldslash=off
 
+;;; Unnamed worlds used to be wrapped in () which could cause problems with
+;;; macros. If for some reason you want the () back, uncomment the next line.
+;/set oldunnamed=on
+
 ;;; Enter the directory where you keep your tf files.
 /cd ~/tf-dir
 
