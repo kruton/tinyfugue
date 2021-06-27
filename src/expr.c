@@ -926,7 +926,7 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 		constr = CS(i ? decode_attr(opdstr(n), 0, 0) :
 		    Stringdup(opdstr(n)));
 		if (!constr)
-		return shareval(val_blank);
+		    return shareval(val_blank);
 		constr->attrs = adj_attr(constr->attrs, attr);
 		return newSstr(constr);
             }
