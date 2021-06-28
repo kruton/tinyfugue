@@ -25,6 +25,12 @@
 #include "search.h"	/* for tfio.h */
 #include "tfio.h"
 
+int pcre_info(const pcre *argument_re, int *optptr, int *first_byte) {
+    int n = 0;
+    pcre_fullinfo(argument_re, NULL, 2, &n);
+    return n;
+}
+
 static RegInfo *reginfo = NULL;
 static const unsigned char *re_tables = NULL;
 
@@ -477,4 +483,3 @@ void free_patterns(void)
     }
 }
 #endif
-

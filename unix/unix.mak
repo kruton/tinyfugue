@@ -68,11 +68,11 @@ PREFIXDIRS:
 	test -d "$(datadir)" || mkdir -p $(datadir)
 
 install_TF $(TF): tf$(X) $(BUILDERS)
-	-@rm -f $(TF)
-	cp tf$(X) $(TF)
-	chmod $(MODE) $(TF)
+	-@rm -f $(DESTDIR)$(TF)
+	cp tf$(X) $(DESTDIR)$(TF)
+	chmod $(MODE) $(DESTDIR)$(TF)
 
-SYMLINK $(SYMLINK): $(TF)
+SYMLINK $(SYMLINK): $(DESTDIR)$(TF)
 	test -z "$(SYMLINK)" || { rm -f $(SYMLINK) && ln -s $(TF) $(SYMLINK); }
 
 # There's a lot of unecessary steps below here.
@@ -90,21 +90,21 @@ LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
 	for f in *; do test -f $$f && files="$$files $$f"; done; \
-	( cd $(TF_LIBDIR); rm -f $$files tf.help tf.help.index; ); \
-	cp $$files $(TF_LIBDIR); \
-	cd $(TF_LIBDIR); \
+	( cd $(DESTDIR)$(TF_LIBDIR); rm -f $$files tf.help tf.help.index; ); \
+	cp $$files $(DESTDIR)$(TF_LIBDIR); \
+	cd $(DESTDIR)$(TF_LIBDIR); \
 	chmod $(MODE) $$files; chmod ugo-wx $$files
-	-rm -f $(TF_LIBDIR)/CHANGES 
-	cp ../CHANGES $(TF_LIBDIR)
-	chmod $(MODE) $(TF_LIBDIR)/CHANGES; chmod ugo-wx $(TF_LIBDIR)/CHANGES
-	chmod $(MODE) $(TF_LIBDIR)
-	-@cd $(TF_LIBDIR); old=`ls replace.tf 2>/dev/null`; \
+	-rm -f $(DESTDIR)$(TF_LIBDIR)/CHANGES 
+	cp ../CHANGES $(DESTDIR)$(TF_LIBDIR)
+	chmod $(MODE) $(DESTDIR)$(TF_LIBDIR)/CHANGES; chmod ugo-wx $(DESTDIR)$(TF_LIBDIR)/CHANGES
+	chmod $(MODE) $(DESTDIR)$(TF_LIBDIR)
+	-@cd $(DESTDIR)$(TF_LIBDIR); old=`ls replace.tf 2>/dev/null`; \
 	if [ -n "$$old" ]; then \
-	    echo "## WARNING: Obsolete files found in $(TF_LIBDIR): $$old"; \
+	    echo "## WARNING: Obsolete files found in $(DESTDIR)$(TF_LIBDIR): $$old"; \
 	fi
 	@echo '## Creating links so old library names still work...'
 #	@# note: ln -sf isn't portable.
-	@cd $(TF_LIBDIR); \
+	@cd $(DESTDIR)$(TF_LIBDIR); \
 	rm -f bind-bash.tf;    ln -s  kb-bash.tf   bind-bash.tf;    \
 	rm -f bind-emacs.tf;   ln -s  kb-emacs.tf  bind-emacs.tf;   \
 	rm -f completion.tf;   ln -s  complete.tf  completion.tf;   \

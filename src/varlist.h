@@ -35,6 +35,11 @@ varstrx(VAR_LC_CTYPE,	"LC_CTYPE",	NULL,		ch_locale)
 varstrx(VAR_LC_TIME,	"LC_TIME",	NULL,		ch_locale)
 #endif /* HAVE_SETLOCALE */
 varstr (VAR_MAIL,	"MAIL",		NULL,		ch_mailfile)
+#if ENABLE_OPTION102
+varflag(VAR_OPTION102,  "option102",    TRUE,           NULL)
+#else
+varenum(VAR_OPTION102,  "option102",    FALSE,          NULL,   enum_off)
+#endif
 varstr (VAR_TERM,	"TERM",		NULL,		change_term)
 varstr (VAR_TFLIBDIR,	"TFLIBDIR",	DEFAULT_TFLIBD,	NULL)
 varstr (VAR_TFMAILPATH,	"TFMAILPATH",	NULL,		ch_mailfile)

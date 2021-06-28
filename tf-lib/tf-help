@@ -4865,6 +4865,7 @@ Operators
               global level, as if by [1m/set[22;0m.  If [4mv[24m is a [1mspecial variable[22;0m, the
               value of [4me[24m may need to be converted to the type of [4mv[24m, or the
               assignment may fail altogether if the value is not legal for [4mv[24m.
+              
               The value of the assignment expression is the new value of [4mv[24m.
   [4mv[24m += [4mn[24m      Equivalent to [4mv[24m := [4mv[24m + ([4mn[24m).
   [4mv[24m -= [4mn[24m      Equivalent to [4mv[24m := [4mv[24m - ([4mn[24m).
@@ -6118,6 +6119,7 @@ Default keybindings
   "^[" can be more easily typed just by pressing the ESC key.  [1m/Def -b[22;0m and
   [1m/bind[22;0m accept the ^X notation as well as "\<[4mnumber[24m>" notation, where <[4mnumber[24m>
   is the octal, hexadecimal, or decimal number of the character's ASCII value.
+
   For example, the escape character can be given in any of these forms: ^[,
   \033, \0x1B, or \27.
 
@@ -6480,6 +6482,7 @@ Mapping character sequences to Named Keys
   does however send Shift-PageUp and Shift-PageDown to the application, so you
   can use these to scroll in tf running inside Terminal.  You can also tell
   Terminal to send the un-shifted keys to tf by redefining them in Terminal |
+  the unshifted keys to tf by redefining them in Terminal |
   Window Settings | Keyboard.
 
 #teraterm
@@ -6530,6 +6533,7 @@ Mapping character sequences to Named Keys
   times, but instead calculate only the end result.  For example, ESC 300 TAB
   does not laboriously scroll 300 screenfulls of text onto the screen, but
   figures out what the 300th screenfull looks like and draws that immediately.
+
   It does this because /dokey_page calls "[1m/test[22;0m [1mmorescroll[22;0m( [1mwinlines[22;0m() *
   (kbnum[1m?:[22;0m1))".
 
@@ -6927,6 +6931,7 @@ mail checking
   seconds.  TF checks for mail in each file in the space-separated list of
   files in the [1m%{TFMAILPATH}[22;0m [1mvariable[22;0m (literal spaces in TFMAILPATH may be
   quoted by preceding them with a backslash).  If [1m%{TFMAILPATH}[22;0m is not set,
+
   TF will check in the single file named by the [1m%{MAIL}[22;0m [1mvariable[22;0m.
 
   TF considers a mailfile to have unread mail if the file has been written
@@ -7066,6 +7071,7 @@ options
       must be no space between the option and the argument.
     * String option-arguments may be delimited by a space, double quotes,
       single quotes, or back quotes.
+
     * A literal delimiter character or '\' within a delimited string must
       be escaped by preceding it with '\'.
     * A numeric option-argument may be given as an [1mexpression[22;0m that
@@ -8359,6 +8365,7 @@ prompt protocol
 prompts
 
   Most LP MUDs, Diku MUDs, telnetd, and some other types of servers send
+
   unterminated [1mprompts[22;0m, that is, [1mprompts[22;0m that do not end with newline or any
   other special character.  Normally, TF will not display text until a newline
   is received, so you may not see the [1mprompt[22;0m until after you press return.
@@ -8984,6 +8991,7 @@ Special global variables
           was in the [1mbackground[22;0m: If on, the window display resumes where it
           left off; if off, the window display jumps to the end, showing only
           the last screenfull.  Turning [1m%bg_output[22;0m off is equivalent to always
+
           using the -q option with [1m/fg[22;0m.  The [1m%bg_output[22;0m flag has no effect on
           other processing, including [1mtriggers[22;0m and [1mhistory[22;0m.  This flag is
           ignored if the [1m%{background}[22;0m flag is off.  [1m%{background}[22;0m is tested
@@ -9153,6 +9161,7 @@ Special global variables
 #histsize
 #%histsize
   [1mhistsize[22m=5000
+
           When a new world [1mhistory[22;0m is created, it will have space for
           [1m%{histsize}[22;0m lines.  A world [1mhistory[22;0m is created the first time text
           is sent to it.  (See also: [1m/histsize[22;0m)
@@ -9174,6 +9183,7 @@ Special global variables
           (flag) If off, TF will not prompt for [1m/quit[22;0m, returning from [1m/sh[22;0m,
           [1mSIGINT[22;0m (^C), or [1mSIGQUIT[22;0m (^\).  Defaults to on if standard input and
           output are attached to a terminal, off otherwise.
+
 
 #isize
 #%isize

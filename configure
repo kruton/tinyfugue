@@ -2383,6 +2383,7 @@ ac_config_headers="$ac_config_headers src/tfconfig.h"
 { $as_echo "$as_me:${as_lineno-$LINENO}: Configuring $TFVERSION" >&5
 $as_echo "$as_me: Configuring $TFVERSION" >&6;}
 
+
 # User installation options
 # Check whether --enable-version was given.
 if test "${enable_version+set}" = set; then :
@@ -2499,13 +2500,15 @@ else
   enable_option102=no
 fi
 
-
-
 # Check whether --with-incdirs was given.
 if test "${with_incdirs+set}" = set; then :
   withval=$with_incdirs;
 fi
 
+# Check whether --with-incdirs was given.
+if test "${with_incdirs+set}" = set; then :
+  withval=$with_incdirs;
+fi
 
 # Check whether --with-libdirs was given.
 if test "${with_libdirs+set}" = set; then :
@@ -2545,6 +2548,7 @@ if test "${enable_manpage+set}" = set; then :
   enableval=$enable_manpage;
 else
   enable_manpage=yes
+
 fi
 
 
@@ -2640,11 +2644,13 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 if test -n "$ac_tool_prefix"; then
   for ac_prog in clang gcc cc
   do
@@ -2801,6 +2807,7 @@ ac_files="a.out conftest.exe conftest a.exe a_out.exe b.out conftest.*"
 
 ac_rmfiles=
 for ac_file in $ac_files
+
 do
   case $ac_file in
     *.$ac_ext | *.xcoff | *.tds | *.d | *.pdb | *.xSYM | *.bb | *.bbg | *.map | *.inf | *.dSYM | *.o | *.obj ) ;;
@@ -2829,6 +2836,7 @@ for ac_file in $ac_files ''
 do
   test -f "$ac_file" || continue
   case $ac_file in
+
     *.$ac_ext | *.xcoff | *.tds | *.d | *.pdb | *.xSYM | *.bb | *.bbg | *.map | *.inf | *.dSYM | *.o | *.obj )
 	;;
     [ab].out )
@@ -3124,6 +3132,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
    ac_c_werror_flag=$ac_save_c_werror_flag
 fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_prog_cc_g" >&5
 $as_echo "$ac_cv_prog_cc_g" >&6; }
 if test "$ac_test_CFLAGS" = set; then
@@ -4216,6 +4225,251 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
+=======
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_RANLIB="ranlib"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_RANLIB" && ac_cv_prog_RANLIB=":"
+fi
+fi
+RANLIB=$ac_cv_prog_RANLIB
+if test -n "$RANLIB"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RANLIB" >&5
+$as_echo "$RANLIB" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+
+
+
+
+
+
+    if test "${with_incdirs}" != "no" && test "${with_incdirs}" != ""; then
+        for dir in ${with_incdirs}; do
+            CPPFLAGS="${CPPFLAGS} -I${dir}"
+        done
+    fi
+
+
+    if test "${with_incdir}" != "no" && test "${with_incdir}" != ""; then
+        for dir in ${with_incdir}; do
+            CPPFLAGS="${CPPFLAGS} -I${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibdirs}" != "no" && test "${with_inclibdirs}" != ""; then
+        for dir in ${with_inclibdirs}; do
+            CPPFLAGS="${CPPFLAGS} -I${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibdir}" != "no" && test "${with_inclibdir}" != ""; then
+        for dir in ${with_inclibdir}; do
+            CPPFLAGS="${CPPFLAGS} -I${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibpfx}" != "no" && test "${with_inclibpfx}" != ""; then
+        for dir in ${with_inclibpfx}; do
+            CPPFLAGS="${CPPFLAGS} -I${dir}/include"
+        done
+    fi
+
+
+LIBDIRS=""
+
+    if test "${with_libdirs}" != "no" && test "${with_libdirs}" != ""; then
+        for dir in ${with_libdirs}; do
+            LIBDIRS="${LIBDIRS} -L${dir}"
+        done
+    fi
+
+
+    if test "${with_libdir}" != "no" && test "${with_libdir}" != ""; then
+        for dir in ${with_libdir}; do
+            LIBDIRS="${LIBDIRS} -L${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibdirs}" != "no" && test "${with_inclibdirs}" != ""; then
+        for dir in ${with_inclibdirs}; do
+            LIBDIRS="${LIBDIRS} -L${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibdir}" != "no" && test "${with_inclibdir}" != ""; then
+        for dir in ${with_inclibdir}; do
+            LIBDIRS="${LIBDIRS} -L${dir}"
+        done
+    fi
+
+
+    if test "${with_inclibpfx}" != "no" && test "${with_inclibpfx}" != ""; then
+        for dir in ${with_inclibpfx}; do
+            LIBDIRS="${LIBDIRS} -L${dir}/lib"
+        done
+    fi
+
+
+LDFLAGS="$LDFLAGS $LIBDIRS"
+
+if test "$ax_cv_c_compiler_vendor" = "gnu"; then
+    LDFLAGS="-Wl,--allow-multiple-definition $LDFLAGS"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing select" >&5
+$as_echo_n "checking for library containing select... " >&6; }
+if ${ac_cv_search_select+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char select ();
+int
+main ()
+{
+return select ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' bsd; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_select=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_select+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_select+:} false; then :
+
+else
+  ac_cv_search_select=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_select" >&5
+$as_echo "$ac_cv_search_select" >&6; }
+ac_res=$ac_cv_search_select
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  as_fn_error $? "TF can not work without select()." "$LINENO" 5
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing gethostbyname" >&5
+$as_echo_n "checking for library containing gethostbyname... " >&6; }
+if ${ac_cv_search_gethostbyname+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gethostbyname ();
+int
+main ()
+{
+return gethostbyname ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' bsd nsl_s nsl resolv socket; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_gethostbyname=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_gethostbyname+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_gethostbyname+:} false; then :
+
+else
+  ac_cv_search_gethostbyname=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_gethostbyname" >&5
+$as_echo "$ac_cv_search_gethostbyname" >&6; }
+ac_res=$ac_cv_search_gethostbyname
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Host name resolution will not be available." >&5
+$as_echo "$as_me: WARNING: Host name resolution will not be available." >&2;}
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -linet" >&5
+$as_echo_n "checking for main in -linet... " >&6; }
+if ${ac_cv_lib_inet_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-linet  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
 int
 main ()
 {
@@ -4228,6 +4482,7 @@ if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_net_main=yes
 else
   ac_cv_lib_net_main=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
@@ -4241,6 +4496,7 @@ if test "x$ac_cv_lib_net_main" = xyes; then :
 _ACEOF
 
   LIBS="-lnet $LIBS"
+
 
 fi
 
@@ -4299,6 +4555,7 @@ ac_res=$ac_cv_search_connect
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+
 fi
 
 
@@ -4306,6 +4563,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing setlocale" >&5
 $as_echo_n "checking for library containing setlocale... " >&6; }
 if ${ac_cv_search_setlocale+:} false; then :
+
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -4323,11 +4581,13 @@ int
 main ()
 {
 return setlocale ();
+
   ;
   return 0;
 }
 _ACEOF
 for ac_lib in '' intl; do
+
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -4347,6 +4607,7 @@ if ${ac_cv_search_setlocale+:} false; then :
 
 else
   ac_cv_search_setlocale=no
+
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
@@ -4361,6 +4622,7 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Locales will not be supported." >&5
 $as_echo "$as_me: WARNING: Locales will not be supported." >&2;}
 fi
+
 
 
 if test "$enable_ssl" = "yes"; then
@@ -4397,6 +4659,7 @@ else
   CFLAGS="$CFLAGS -L/usr/local/ssl/lib";
 	    CPPFLAGS="-I/usr/local/ssl/include $CPPFLAGS";
 	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -4481,9 +4744,39 @@ if test "x$ac_cv_header_gnutls_openssl_h" = xyes; then :
 #define HAVE_GNUTLS_OPENSSL_H 1
 _ACEOF
  ok=1
+=======
+for ac_lib in '' intl; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_setlocale=$ac_res
 fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_setlocale+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_setlocale+:} false; then :
+
+else
+  ac_cv_search_setlocale=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_setlocale" >&5
+$as_echo "$ac_cv_search_setlocale" >&6; }
+ac_res=$ac_cv_search_setlocale
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 done
+
 
 fi
 
@@ -4537,6 +4830,7 @@ if ${ac_cv_search_tgetent+:} false; then :
 else
   ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
 /* end confdefs.h.  */
 
 /* Override any GCC internal prototype to avoid an error.
@@ -4591,6 +4885,7 @@ else
 #define HARDCODE $terminal_hardcode
 _ACEOF
 
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Hardcoding terminal codes." >&5
 $as_echo "$as_me: WARNING: Hardcoding terminal codes." >&2;}
 fi
@@ -4598,6 +4893,18 @@ fi
 fi
 
 
+done
+
+	if test "$ok" = "1"; then
+	    $as_echo "#define HAVE_SSL 1" >>confdefs.h
+
+            for ac_func in ERR_peek_error
+do :
+  ac_fn_c_check_func "$LINENO" "ERR_peek_error" "ac_cv_func_ERR_peek_error"
+if test "x$ac_cv_func_ERR_peek_error" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ERR_PEEK_ERROR 1
+_ACEOF
 
 if test "$CYGWIN" = "yes"; then
     terminal_hardcode="TERM_ansi";
@@ -4623,6 +4930,7 @@ $as_echo_n "checking for library containing sqrt... " >&6; }
 if ${ac_cv_search_sqrt+:} false; then :
   $as_echo_n "(cached) " >&6
 else
+
   ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -4638,11 +4946,13 @@ int
 main ()
 {
 return sqrt ();
+
   ;
   return 0;
 }
 _ACEOF
 for ac_lib in '' m; do
+
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -4677,6 +4987,7 @@ fi
 fi
 
 if test "$enable_widechar" = "yes"; then
+
 
   succeeded=no
 
@@ -4722,6 +5033,7 @@ $as_echo "no" >&6; }
 fi
 
 
+
   fi
 
   if test -z "$PKG_CONFIG"; then
@@ -4764,6 +5076,7 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
 
 
   fi
@@ -4866,6 +5179,8 @@ $as_echo "$ICU_LIBS" >&6; }
 
 
 
+done
+
 
 $as_echo "#define WIDECHAR 1" >>confdefs.h
 
@@ -4887,6 +5202,7 @@ _ACEOF
 
 else
   as_fn_error $? "header files wchar.h and wctype.h are required for widechar support." "$LINENO" 5
+
 fi
 
 done
@@ -4901,6 +5217,7 @@ _ACEOF
 
 else
   as_fn_error $? "header file <unicode/ubrk.h> is required for widechar support." "$LINENO" 5
+
 fi
 
 done
@@ -4915,6 +5232,7 @@ _ACEOF
 
 else
   as_fn_error $? "header file <unicode/uchar.h> is required for widechar support." "$LINENO" 5
+
 fi
 
 done
@@ -4929,6 +5247,7 @@ _ACEOF
 
 else
   as_fn_error $? "header file <unicode/ucnv.h> is required for widechar support." "$LINENO" 5
+
 fi
 
 done
@@ -4943,6 +5262,7 @@ _ACEOF
 
 else
   as_fn_error $? "header file <unicode/ustring.h> is required for widechar support." "$LINENO" 5
+
 fi
 
 done
@@ -4999,6 +5319,7 @@ if ${ac_cv_lib_z_inflate+:} false; then :
 else
   ac_check_lib_save_LIBS=$LIBS
 LIBS="-lz  $LIBS"
+
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5013,6 +5334,7 @@ int
 main ()
 {
 return inflate ();
+
   ;
   return 0;
 }
@@ -5021,44 +5343,20 @@ if ac_fn_c_try_link "$LINENO"; then :
   ac_cv_lib_z_inflate=yes
 else
   ac_cv_lib_z_inflate=no
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflate" >&5
-$as_echo "$ac_cv_lib_z_inflate" >&6; }
-if test "x$ac_cv_lib_z_inflate" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBZ 1
-_ACEOF
 
-  LIBS="-lz $LIBS"
-
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcre_compile in -lpcre" >&5
-$as_echo_n "checking for pcre_compile in -lpcre... " >&6; }
-if ${ac_cv_lib_pcre_pcre_compile+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpcre  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
 #endif
 char pcre_compile ();
 int
 main ()
 {
 return pcre_compile ();
+
   ;
   return 0;
 }
@@ -5084,6 +5382,9 @@ _ACEOF
 fi
 
 
+$as_echo "#define HAVE_SYS_WAIT_H 1" >>confdefs.h
+
+fi
 
 
 for ac_header in lunistd.h memory.h sys/select.h
@@ -5094,6 +5395,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
+
 
 fi
 
@@ -5152,6 +5454,7 @@ _ACEOF
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Locales will not be supported." >&5
 $as_echo "$as_me: WARNING: Locales will not be supported." >&2;}
+
 fi
 
 done
@@ -5181,6 +5484,7 @@ if test "x$ac_cv_header_zlib_h" = xyes; then :
 #define HAVE_ZLIB_H 1
 _ACEOF
 
+
 fi
 
 done
@@ -5209,6 +5513,7 @@ fi
 
 done
 
+
 	if test $found -eq 1; then break; fi
     done
     if test $found -eq 1; then
@@ -5220,6 +5525,19 @@ $as_echo "$as_me: WARNING: I will use my own internet structures.  Good luck." >
     unset found
 
 
+    found=0;
+    for f in arpa/inet.h sys/inet.h; do
+	for ac_header in $f
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ cat >>confdefs.h <<_ACEOF
+#define ARPA_INET_H <$f>
+_ACEOF
 
     found=0;
     for f in arpa/inet.h sys/inet.h; do
@@ -5240,6 +5558,7 @@ _ACEOF
 fi
 
 done
+
 
 	if test $found -eq 1; then break; fi
     done
@@ -5343,6 +5662,8 @@ fi
 rm -f conftest*
 
 
+done
+
 
 
 for ac_func in strftime
@@ -5364,6 +5685,7 @@ else
 LIBS="-lintl  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
+
 
 /* Override any GCC internal prototype to avoid an error.
    Use char because int might match the return type of a GCC
@@ -5458,6 +5780,7 @@ done
 
 
 
+
 if test "$enable_getaddrinfo" = "default"; then
     if test `uname -s` = 'Darwin'; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: getaddrinfo() may be broken, so IPv6 support is disabled.  Use --enable-getaddrinfo to override." >&5
@@ -5475,12 +5798,14 @@ do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
 _ACEOF
 
 fi
 done
+
 
 fi
 
@@ -5584,6 +5909,7 @@ fi
 
 ### man page
 
+
 if test "$enable_manpage" = "yes"; then
     MANPAGE='${mandir}/man1/'${EXENAME}.1
     MANTYPE='nroff'
@@ -5591,6 +5917,7 @@ else
     MANPAGE=''
     MANTYPE=''
 fi
+
 
 
 
@@ -5617,6 +5944,7 @@ if test "$enable_float"     = "no";  then $as_echo "#define NO_FLOAT 1" >>confde
           fi
 if test "$enable_widechar"  = "yes"; then $as_echo "#define WIDECHAR 1" >>confdefs.h
           fi
+
 
 CPPFLAGS="${CPPFLAGS} -DDATADIR=\${datadir}"
 
@@ -5963,7 +6291,6 @@ else
   }
 fi # as_fn_arith
 
-
 if expr a : '\(a\)' >/dev/null 2>&1 &&
    test "X`expr 00001 : '.*\(...\)'`" = X001; then
   as_expr=expr
@@ -6094,6 +6421,7 @@ $as_echo X"$as_dir" |
     done
     test -z "$as_dirs" || eval "mkdir $as_dirs"
   } || test -d "$as_dir" || as_fn_error $? "cannot create directory $as_dir"
+
 
 
 } # as_fn_mkdir_p
@@ -6875,8 +7203,10 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
   esac
 
 
+
   case $ac_file$ac_mode in
     "default":C)
+
 
 
 ### Create src/Makefile from pieces.

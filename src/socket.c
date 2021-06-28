@@ -3166,6 +3166,81 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
+=======
+{
+    int shiftby = 0;
+    if (input->data < input->data + input->len) {
+        shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
+    }
+    if (shiftby > 0) {
+        if (cflush == 0) {
+            Stringshift(input, shiftby);
+        } else {
+            Stringtrunc(input, 0);
+        }
+    }
+    return shiftby;
+}
+/* Take input of a particular encoding and Stringcat it into 'output'.
+ * Flush shold be FALSE(0) unless the socket is being shut down.
+ * Returns number of bytes the input pointer should increment.
+ * Only modifies 'output' and 'conv' arguments.
+ */
+static int inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush)
+{
+    /* This definitely, definitely needs optimizations for
+          * ISO-8859-1 -> UTF-8, and UTF-8 -> UTF-8. */
+    const char *iptr = input;
+
+    UChar outbufferUTF16[BUFFSIZE*4];
+    UChar *optr = outbufferUTF16;
+    const UChar *oendptr = outbufferUTF16 + BUFFSIZE*4;
+    UErrorCode err16 = U_ZERO_ERROR;
+
+    char outbufferUTF8[BUFFSIZE*8];
+    UErrorCode err8 = U_ZERO_ERROR;
+    int32_t utf8written = 0;
+
+    UBool flush = cflush ? TRUE : FALSE;
+    
+    /* xcharset -> UTF-16 -> UTF-8 */
+    ucnv_toUnicode(conv, &optr, oendptr, &iptr, iendptr, NULL, flush, &err16);
+/*
+void ucnv_toUnicode 	( 	UConverter *  	converter,
+		UChar **  	target,
+		const UChar *  	targetLimit,
+		const char **  	source,
+		const char *  	sourceLimit,
+		int32_t *  	offsets,
+		UBool  	flush,
+		UErrorCode *  	err 
+	)
+*/
+    u_strToUTF8(outbufferUTF8, BUFFSIZE*8, &utf8written, outbufferUTF16, (int32_t)(optr - outbufferUTF16), &err8);
+/*
+char* u_strToUTF8 	( 	char *  	dest,
+		int32_t  	destCapacity,
+		int32_t *  	pDestLength,
+		const UChar *  	src,
+		int32_t  	srcLength,
+		UErrorCode *  	pErrorCode 
+	) 	
+*/
+    Stringfncat(output, outbufferUTF8, utf8written);
+    if (U_FAILURE(err16) || U_FAILURE(err8))
+        core("inbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+    return (iptr - input); /* return number of input bytes consumed */
+
+}
+#endif
+/* handle input from current socket
+ * simbuffer and simlen are 'simulation', used when recursing (from MCCP)
+ * or when we're simulating input, such as from local echo from send_line.
+ * If 'encoding' is NULL then this writes to the partial socket buffers,
+ * otherwise initializes and uses a new converter.
+ */
+static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
+{
     char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
@@ -3682,7 +3757,8 @@ static void handle_socket_input_queue_lines(Sock *sock)
             Stringtrunc(nextline, 0);
             place = sock->buffer->data - 1;
             bufferend = sock->buffer->data + sock->buffer->len;
-            /* other occurrences of '\b' are handled by decode_ansi(), so
+
+           /* other occurrences of '\b' are handled by decode_ansi(), so
             * ansi codes aren't clobbered before they're interpreted */
 
         } else {

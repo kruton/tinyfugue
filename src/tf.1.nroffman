@@ -152,6 +152,7 @@ in features and performance.
 .PP
 The code size of \fITF\fR has surpassed 300K (unstripped),
 and is significantly larger than \fITinytalk\fR.
+
 It is, in fact, more than three times the size of a number of existing servers.
 As of version 3.0, it has 66 builtin commands and 57 library commands,
 each documented in the helpfile.

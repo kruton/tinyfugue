@@ -146,11 +146,11 @@ World *new_world(const char *name, const char *type,
     if (name) {
         result->name = STRDUP(name);
     } else {
-	if (oldunnamed) {
-            sprintf(buffer, "(unnamed%d)", unnamed++);
-	} else {
-            sprintf(buffer, "unnamed%d", unnamed++);
-	}
+	  if (oldunnamed) {
+         sprintf(buffer, "(unnamed%d)", unnamed++);
+	  } else {
+         sprintf(buffer, "unnamed%d", unnamed++);
+  	}
         result->name = STRDUP(buffer);
     }
 

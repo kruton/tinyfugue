@@ -151,6 +151,7 @@ enum Vars {
 #define getstdvar(id)	((char*)         (strvar(id) ? strvar(id)->data : NULL))
 
 #define MAIL		getstdvar(VAR_MAIL)
+#define OPTION102	getintvar(VAR_OPTION102)
 #define TERM		getstdvar(VAR_TERM)
 #define TFLIBDIR	getstdvar(VAR_TFLIBDIR)
 #define TFPATH		getstdvar(VAR_TFPATH)

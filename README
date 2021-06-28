@@ -42,7 +42,7 @@ be integrated into tf-lib:
 
 https://github.com/warmstarter/tinyfugue-scripts
 
-======
+================
 
 Unicode notes:
   "Release" is the branch you want.
@@ -60,6 +60,17 @@ Unicode notes:
   For servers that don't negotiate charsets, /set default_charset=NAME
   before defining a world with /addworld or /test addworld(). I recommend
   putting /set default_charset=Latin-1 at the top of your worlds.tf.
+
+======
+
+
+  Setting your terminal to send ^H instead of ^? for backspace mitigates
+  some, but not all of the backspace issues.
+
+  For servers that don't negotiate charsets, /set default_charset=NAME
+  before defining a world with /addworld or /test addworld(). I recommend
+  putting /set default_charset=Latin-1 at the top of your worlds.tf.
+
 
 ======
 
