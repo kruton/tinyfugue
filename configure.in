@@ -29,6 +29,7 @@ AC_REVISION([$Revision: 0.01 $])
 AC_PREREQ([2.69])
 AC_CONFIG_SRCDIR([src/tf.h])
 AC_PREFIX_DEFAULT([/usr/local])
+AC_CONFIG_HEADERS([src/tfconfig.h])
 
 AC_MSG_NOTICE([Configuring $PACKAGE_NAME $PACKAGE_VERSION])
 
