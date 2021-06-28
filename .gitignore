@@ -6,6 +6,7 @@
 /Makefile
 /autom4te.cache
 /config.*
+/configure
 /help/html2tf
 /help/tf-help
 /tf-lib/tf-help.idx
