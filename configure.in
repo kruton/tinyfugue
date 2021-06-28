@@ -13,7 +13,7 @@ dnl Note: autoconf uses <<EOF, so we use <<END instead.
 
 dnl ### Initialization variables.
 
-dnl PACKAGE_VERSION=`sed -ne 's/^PACKAGE_VERSION=\(.*\)/\1/p' src/vars.mak`
+dnl This should be placed into src/main.c rather than pulled from it.
 dnl PACKAGE_VERSIONSION=`sed -n -e '/Fugue version/s/^.*"\(.*\)".*$/\1/p' src/main.c`
 
 PACKAGE_SHORTNAME="tf"
