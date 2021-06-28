@@ -5,6 +5,7 @@
 *.un~
 /Makefile
 /autom4te.cache
+/configure
 /config.*
 /help/html2tf
 /help/tf-help
