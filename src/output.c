@@ -135,8 +135,8 @@ typedef struct statusfield {
     int rightjust;
     int column;
     int row;
-    attr_t attrs;	/* attibutes from status_fields */
-    attr_t vattrs;	/* attibutes from status_attr_{int,var}_<name> */
+    attr_t attrs;	/* attributes from status_fields */
+    attr_t vattrs;	/* attributes from status_attr_{int,var}_<name> */
 } StatusField;
 
 static Var bogusvar;   /* placeholder for StatusField->var */
@@ -2588,7 +2588,7 @@ int igoto(int place)
 		    xy(ix, lines);
 		}
 	    } else {
-		crnl(1);  cx = 1;  /* old text scrolls up, for continutity */
+		crnl(1);  cx = 1;  /* old text scrolls up, for continuity */
 		physical_refresh();
 	    }
         } else { /* on screen */
@@ -3028,7 +3028,7 @@ int screen_end(int need_redraw)
 	screen->nnew_filtered = screen->nnew = 0;
 	special_var[VAR_more].val.u.ival = 0;
 
-	/* XXX optimize if (jump < screenful) (but what about tmp lines?) */
+	/* XXX optimize if (jump < screenfull) (but what about tmp lines?) */
 	need_redraw = 1;
 	screen->maxbot = screen->bot = screen->pline.tail;
 	screen_refilter(screen);

@@ -236,7 +236,7 @@ char *cstrchr(register const char *s, register int c)
 }
 #endif
 
-/* c may be escaped by preceeding it with e */
+/* c may be escaped by preceding it with e */
 char *estrchr(register const char *s, register int c, register int e)
 {
     while (*s) {
@@ -305,7 +305,7 @@ int nullcstrcmp(const char *s, const char *t)
 }
 
 /* numarg
- * Converts argument to a nonnegative integer.  Returns -1 for failure.
+ * Converts argument to a non-negative integer.  Returns -1 for failure.
  * The *str pointer will be advanced to beginning of next word.
  */
 int numarg(const char **str)
@@ -409,7 +409,7 @@ char *stripstr(char *s)
    *arg; an integer argument is returned in *num; a time argument is returned
    in *tvp.  If end of options is reached, nextopt returns '\0'.  " - " or
    " -- " marks the end of options, and is consumed.  "\0", "=", or a word not
-   beggining with "-" marks the end of options, and is not consumed.  If an
+   beginning with "-" marks the end of options, and is not consumed.  If an
    invalid option is encountered, an error message is printed and '?' is
    returned.
 

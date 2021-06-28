@@ -43,6 +43,12 @@
     SSL_CTX *ssl_ctx;
 #endif
 
+/* Receive buffer before deciding server is misbehaving.
+ * This was previously 1024, but that's quite low for
+ * current servers. It should be fairly safe to modify
+ * this up or down as needed. */
+#define RECEIVELIMIT ((32 * 1024) -1)
+
 #ifdef NETINET_IN_H
 # include NETINET_IN_H
 #else
@@ -810,7 +816,7 @@ void main_loop(void)
          *   descriptor write:	nonblocking connect()
          *   timeout:		time for runall() or do_refresh()
          * Note: if the same descriptor appears in more than one fd_set, some
-         * systems count it only once, some count it once for each occurance.
+         * systems count it only once, some count it once for each occurrence.
          */
         active = readers;
         connected = writers;
@@ -1446,8 +1452,12 @@ static void setupnextconn(Sock *sock)
 {
     struct addrinfo *ai, *next = sock->addr;
 
-    if (sock->fd >= 0)
-	close(sock->fd);
+    if (sock->fd >= 0) {
+        FD_CLR(sock->fd, &readers);
+        FD_CLR(sock->fd, &writers);
+	close(sock->fd); 
+        sock->fd = -1;
+    }
 retry:
     next = next->ai_next;
     /* if next address is a duplicate of one we've already done, skip it */
@@ -2464,12 +2474,12 @@ int handle_send_function(conString *string, const char *world,
 
     for (p = flags; *p; p++) {
 	switch (*p) {
-	case 'o': /* for backward compatability */
+	case 'o': /* for backward compatibility */
 	    break;
-	case '1': case 'n': /* for backward compatability */
+	case '1': case 'n': /* for backward compatibility */
 	    eol_flag = 1; break;
 	case 'u': /* fall through */
-	case '0': case 'f': /* for backward compatability */
+	case '0': case 'f': /* for backward compatibility */
 	    eol_flag = 0; break;
 	case 'h':
 	    hook_flag = 1; break;
@@ -3156,6 +3166,81 @@ char* u_strToUTF8 	( 	char *  	dest,
  */
 static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
 {
+=======
+{
+    int shiftby = 0;
+    if (input->data < input->data + input->len) {
+        shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
+    }
+    if (shiftby > 0) {
+        if (cflush == 0) {
+            Stringshift(input, shiftby);
+        } else {
+            Stringtrunc(input, 0);
+        }
+    }
+    return shiftby;
+}
+/* Take input of a particular encoding and Stringcat it into 'output'.
+ * Flush shold be FALSE(0) unless the socket is being shut down.
+ * Returns number of bytes the input pointer should increment.
+ * Only modifies 'output' and 'conv' arguments.
+ */
+static int inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush)
+{
+    /* This definitely, definitely needs optimizations for
+          * ISO-8859-1 -> UTF-8, and UTF-8 -> UTF-8. */
+    const char *iptr = input;
+
+    UChar outbufferUTF16[BUFFSIZE*4];
+    UChar *optr = outbufferUTF16;
+    const UChar *oendptr = outbufferUTF16 + BUFFSIZE*4;
+    UErrorCode err16 = U_ZERO_ERROR;
+
+    char outbufferUTF8[BUFFSIZE*8];
+    UErrorCode err8 = U_ZERO_ERROR;
+    int32_t utf8written = 0;
+
+    UBool flush = cflush ? TRUE : FALSE;
+    
+    /* xcharset -> UTF-16 -> UTF-8 */
+    ucnv_toUnicode(conv, &optr, oendptr, &iptr, iendptr, NULL, flush, &err16);
+/*
+void ucnv_toUnicode 	( 	UConverter *  	converter,
+		UChar **  	target,
+		const UChar *  	targetLimit,
+		const char **  	source,
+		const char *  	sourceLimit,
+		int32_t *  	offsets,
+		UBool  	flush,
+		UErrorCode *  	err 
+	)
+*/
+    u_strToUTF8(outbufferUTF8, BUFFSIZE*8, &utf8written, outbufferUTF16, (int32_t)(optr - outbufferUTF16), &err8);
+/*
+char* u_strToUTF8 	( 	char *  	dest,
+		int32_t  	destCapacity,
+		int32_t *  	pDestLength,
+		const UChar *  	src,
+		int32_t  	srcLength,
+		UErrorCode *  	pErrorCode 
+	) 	
+*/
+    Stringfncat(output, outbufferUTF8, utf8written);
+    if (U_FAILURE(err16) || U_FAILURE(err8))
+        core("inbound_decode U_FAILURE", __FILE__, __LINE__, 0);
+    return (iptr - input); /* return number of input bytes consumed */
+
+}
+#endif
+/* handle input from current socket
+ * simbuffer and simlen are 'simulation', used when recursing (from MCCP)
+ * or when we're simulating input, such as from local echo from send_line.
+ * If 'encoding' is NULL then this writes to the partial socket buffers,
+ * otherwise initializes and uses a new converter.
+ */
+static int handle_socket_input(const char *simbuffer, int simlen, const char *encoding)
+{
     char rawchar, inbuffer[BUFFSIZE];
     const char *incoming, *place;
 #if HAVE_MCCP
@@ -3276,7 +3361,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    count = (char*)xsock->zstream->next_out - mccpbuffer;
                     if(count > 0)
 		        received += handle_socket_input(mccpbuffer, count, NULL);
-		    /* prepare to handle noncompressed stuff after stream end */
+		    /* prepare to handle non-compressed stuff after stream end */
 		    incoming = (char*)xsock->zstream->next_in;
 		    count = xsock->zstream->avail_in;
 		    /* clean up zstream */
@@ -3330,7 +3415,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 case TN_SB:
 		    if (!(xsock->flags & SOCKTELNET)) {
 			/* Telnet subnegotiation can't happen without a
-			 * previous telnet option negotation, so treat the
+			 * previous telnet option negotiation, so treat the
 			 * IAC SB as non-telnet, and disable telnet. */
 			xsock->flags &= ~SOCKMAYTELNET;
 			place--;
@@ -3389,11 +3474,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 continue;  /* avoid non-telnet processing */
 
             } else if (xsock->fsastate == TN_SB) {
-		/* NOTE: This can potentially be significantly raised, investigate.
-		 * Some have this set at 30*1023
-		 * With that significant of a change, should be investigated
-		 * thoroughly before any change is made */
-		if (xsock->subbuffer->len > 1023) {
+		if (xsock->subbuffer->len > RECEIVELIMIT) {
 		    /* It shouldn't take this long; server is broken.  Abort. */
 #if WIDECHAR
 		    SStringcat(incomingposttelnet, CS(xsock->subbuffer));
@@ -3676,7 +3757,8 @@ static void handle_socket_input_queue_lines(Sock *sock)
             Stringtrunc(nextline, 0);
             place = sock->buffer->data - 1;
             bufferend = sock->buffer->data + sock->buffer->len;
-            /* other occurances of '\b' are handled by decode_ansi(), so
+
+           /* other occurrences of '\b' are handled by decode_ansi(), so
             * ansi codes aren't clobbered before they're interpreted */
 
         } else {

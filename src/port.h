@@ -23,7 +23,7 @@
 #endif
 
 #if 0  /* These cause a few problems, but little benefit, so forget it. */
-/* These aren't neccessary, but may improve optimization, etc. */
+/* These aren't necessary, but may improve optimization, etc. */
 # ifdef __GNUC__
 #  define INLINE __inline__
 #  if (__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || (__GNUC__ > 2)

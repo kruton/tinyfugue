@@ -1,6 +1,6 @@
 ;;;; Character translation
 ;;; usage:  /tr <domain> <range> <string>
-;;; <domain> and <range> are lists of charcters.  Each character in <string>
+;;; <domain> and <range> are lists of characters.  Each character in <string>
 ;;; that appears in <domain> will be translated to the corresponding
 ;;; character in <range>.
 

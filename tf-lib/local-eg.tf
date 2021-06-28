@@ -1,5 +1,3 @@
-;;; $Id: local-eg.tf,v 35000.4 1998/06/17 05:38:12 hawkeye Exp $
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; TF local library
 ;;; This file is not required, but contains some examples of commands

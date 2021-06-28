@@ -49,14 +49,14 @@ all files:  _all
 	@echo '##    library:   $(TF_LIBDIR)'
 	@echo '##    manpage:   $(MANPAGE)'
 
-_all:  tf$(X) ../tf-lib/tf-help.idx
+_all: tf$(X) ../tf-lib/tf-help.idx
 
 _failmsg:
 	@echo '#####################################################'
 	@echo '## TinyFugue installation FAILED.'
 	@echo '## See README for help.'
 
-TF tf$(X):     $(OBJS) $(BUILDERS)
+TF tf$(X): $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre
 #	@# Some stupid linkers return ok status even if they fail.
 	@test -f "tf$(X)"
@@ -64,8 +64,8 @@ TF tf$(X):     $(OBJS) $(BUILDERS)
 	-test -z "$(STRIP)" || $(STRIP) tf$(X) || true
 
 PREFIXDIRS:
-	test -d "$(DESTDIR)$(bindir)" || mkdir -p $(DESTDIR)$(bindir)
-	test -d "$(DESTDIR)$(datadir)" || mkdir -p $(DESTDIR)$(datadir)
+	test -d "$(bindir)" || mkdir -p $(bindir)
+	test -d "$(datadir)" || mkdir -p $(datadir)
 
 install_TF $(TF): tf$(X) $(BUILDERS)
 	-@rm -f $(DESTDIR)$(TF)
@@ -75,15 +75,17 @@ install_TF $(TF): tf$(X) $(BUILDERS)
 SYMLINK $(SYMLINK): $(DESTDIR)$(TF)
 	test -z "$(SYMLINK)" || { rm -f $(SYMLINK) && ln -s $(TF) $(SYMLINK); }
 
+# There's a lot of unecessary steps below here.
+
 LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Creating library directory...'
 #	@# Overly simplified shell commands, to avoid problems on ultrix
-	-@test -n "$(DESTDIR)$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
-	test -n "$(DESTDIR)$(TF_LIBDIR)"
-	test -d "$(DESTDIR)$(TF_LIBDIR)" || mkdir -p $(DESTDIR)$(TF_LIBDIR)
-	-@test -d "$(DESTDIR)$(TF_LIBDIR)" || echo "Can't make $(DESTDIR)$(TF_LIBDIR) directory.  See if"
-	-@test -d "$(DESTDIR)$(TF_LIBDIR)" || echo "there is already a file with that name."
-	test -d "$(DESTDIR)$(TF_LIBDIR)"
+	-@test -n $(TF_LIBDIR) || echo "TF_LIBDIR is undefined."
+	test -n $(TF_LIBDIR)
+	test -d $(TF_LIBDIR) || mkdir -p $(TF_LIBDIR)
+	-@test -d $(TF_LIBDIR) || echo "Can't make $(TF_LIBDIR) directory.  See if"
+	-@test -d $(TF_LIBDIR) || echo "there is already a file with that name."
+	test -d $(TF_LIBDIR)
 #	@#rm -f $(TF_LIBDIR)/*;  # wrong: this would remove local.tf, etc.
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
@@ -122,7 +124,10 @@ __always__:
 
 ../tf-lib/tf-help: __always__
 	if test -d ../help; then cd ../help; $(MAKE) tf-help; fi
-	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
+# Skip this step for now.
+# Currently the HTML documents are the least up to date, so they
+# shouldn't be blowing away the most up to date documents.
+#	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
 
 ../tf-lib/tf-help.idx: ../tf-lib/tf-help makehelp
 	$(MAKE) -f ../unix/unix.mak CC='$(CC)' CFLAGS='$(CFLAGS)' makehelp

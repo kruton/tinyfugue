@@ -15,10 +15,11 @@
  **************************************************************/
 
 #include <stdio.h>
+#include "help.h"
 
 int main(int argc, char **argv)
 {
-    char line[240+1];
+    char line[HELPLEN];
     long offset = 0;
 
     while (fgets(line, sizeof(line), stdin) != NULL) {

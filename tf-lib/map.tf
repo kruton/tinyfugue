@@ -13,7 +13,7 @@
 ;;; /savepath <name>	Create a macro <name> to execute the current path.
 ;;;			  Note: macro is not written to a file.
 ;;; /unpath		Remove the last movement from the path.
-;;; /unmark		Disable maping.
+;;; /unmark		Disable mapping.
 ;;; /dopath <path>	Execute <path>, where <path> is a space-separated list
 ;;;			  of commands with optional repeat counts.  E.g.,
 ;;;			  "/dopath 10 n 3 e d 2 w" will execute "n" 10

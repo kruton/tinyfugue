@@ -1,0 +1,53 @@
+TinyFugue for Mac OS X
+
+You must have the developer tools installed on your system.
+Open a shell window, and follow the instructions in unix/README.
+
+----------------------------------------------------------------
+
+TinyFugue for Win32
+
+The likely best option for running TinyFugue under Windows is to
+get 'Windows Subsystem for Linux'. This should be straight-forward
+and give you an almost identical experience to a TinyFugue on UNIX
+like systems, but it has not yet been tested.
+
+https://docs.microsoft.com/en-us/windows/wsl/install-win10
+
+Once installed, open a shell window, and follow the instructions in
+unix/README.
+
+===================================================================
+
+Older note on TinyFugue for Win32 (not the recommended option)
+
+The official release of TF for win32 is available only in source form.
+To compile it, you will need the Cygwin Development Kit (cdk.exe),
+available at http://www.cygnus.com/misc/gnu-win32/.  Once you have the
+CDK installed, follow the instructions for compiling TF under UNIX.
+
+Unofficial binary releases may be available.  Check
+http://tinyfugue.sourceforge.net/ for more information.
+
+There are several known problems with the win32 version of tf, mostly due
+to shortcomings of cygwin:
+ * Scrolling in visual mode is jumpy.
+ * /quote ! (and code that calls it, like /sys) is not supported.
+ * $COMPRESS_READ is not supported.
+ * Nonblocking hostname resolution (%gethostbyname) is not supported.
+ * The flash attribute (-af) does not work.
+
+Note that TF (and all cygwin applications) use "//X" notation instead of
+"X:" to indicate drives in paths, and slashes instead of backslashes
+to separate path components.  For example, a DOS path of "C:\foo\bar"
+should be written "//c/foo/bar" in cygwin.
+
+-----------------------------------------------------------------------
+
+TinyFugue for OS/2
+
+Theoretically this is still supported, but it seems unlikely anyone will
+still be looking for this. Since this requires additional files, it's
+likely to slowly diverge from the rest of the code. It may very well be
+removed from the release line of this repo, but the old files would
+remain tracked and preserved for the future.

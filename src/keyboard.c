@@ -302,7 +302,7 @@ struct Value *handle_dokey_command(String *args, int offset)
     int n;
 
     /* XXX We use kbnum_internal here, but a macro would use the local %kbnum.
-     * It is possible (though unadvisable) for a macro to change the local
+     * It is possible (though inadvisable) for a macro to change the local
      * %kbnum before this point, making this code behave differently than
      * a /dokey_foo macro would.  Fetching the actual local %kbnum here would
      * make the behavior the same, but is a step in the wrong direction;
