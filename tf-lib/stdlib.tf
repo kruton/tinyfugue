@@ -639,7 +639,7 @@
   /def -ip2 -ah -mregexp -t'^(In a page-pose).+' ~hilite_page5%; \
   /def -ip2 -ah -mregexp -t'^(You paged,) .+' ~hilite_page6%; \
   /def -ip2 -ah -mregexp -t'^(You paged .+ with) .+' ~hilite_page7%; \
-  /def -ip2 -ah -mregexp -t'^(From afar,) .+' ~hilite_page9%; \
+  /def -ip2 -ah -mregexp -t'^(From afar[:,]) .+' ~hilite_page9%; \
   /def -ip2 -ah -mregexp -t'^(Long distance to) .+' ~hilite_page10%; \
   /def -ip2 -ah -mregexp -t'^(To \(.+\), .+ pages:) .+' ~hilite_page11%; \
   /def -ip2 -ah -mregexp -t'^(To \(.+\) From Afar:, .+ pages:) .+' ~hilite_page12
