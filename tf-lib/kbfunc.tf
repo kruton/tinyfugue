@@ -3,7 +3,7 @@
 ;;; /kb_backward_kill_line    delete from cursor to beginning of line
 ;;; /kb_kill_word	      delete from cursor to end of punctuated word
 ;;; /kb_backward_kill_word    delete from cursor to start of punctuated word
-;;; /kb_capitalize_word	      capitialize current word
+;;; /kb_capitalize_word	      capitalize current word
 ;;; /kb_downcase_word	      convert current word to lowercase
 ;;; /kb_upcase_word	      convert current word to uppercase
 ;;; /kb_transpose_chars	      swap current character with previous character

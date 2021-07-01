@@ -1,6 +1,6 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
@@ -24,10 +24,9 @@
 #include "tfio.h"
 #include "cmdlist.h"
 #include "variable.h"
+#include "help.h"
 
 STATIC_BUFFER(indexfname);
-
-#define HELPLEN  (240+1)	/* maximum length of lines in help file */
 
 struct Value *handle_help_command(String *args, int offset)
 {

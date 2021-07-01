@@ -1,6 +1,6 @@
 ########################################################################
 #  TinyFugue - programmable mud client
-#  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+#  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 #
 #  TinyFugue (aka "tf") is protected under the terms of the GNU
 #  General Public License.  See the file "COPYING" for details.
@@ -49,14 +49,14 @@ all files:  _all
 	@echo '##    library:   $(TF_LIBDIR)'
 	@echo '##    manpage:   $(MANPAGE)'
 
-_all:  tf$(X) ../tf-lib/tf-help.idx
+_all: tf$(X) ../tf-lib/tf-help.idx
 
 _failmsg:
 	@echo '#####################################################'
 	@echo '## TinyFugue installation FAILED.'
 	@echo '## See README for help.'
 
-TF tf$(X):     $(OBJS) $(BUILDERS)
+TF tf$(X): $(OBJS) $(BUILDERS)
 	$(CC) $(LDFLAGS) -o tf$(X) $(OBJS) $(LIBS) -lpcre
 #	@# Some stupid linkers return ok status even if they fail.
 	@test -f "tf$(X)"
@@ -64,51 +64,54 @@ TF tf$(X):     $(OBJS) $(BUILDERS)
 	-test -z "$(STRIP)" || $(STRIP) tf$(X) || true
 
 PREFIXDIRS:
-	test -d "$(DESTDIR)$(bindir)" || mkdir -p $(DESTDIR)$(bindir)
-	test -d "$(DESTDIR)$(datadir)" || mkdir -p $(DESTDIR)$(datadir)
+	test -d "$(bindir)" || mkdir -p $(bindir)
+	test -d "$(datadir)" || mkdir -p $(datadir)
 
 install_TF $(TF): tf$(X) $(BUILDERS)
-	-@rm -f $(DESTDIR)$(TF)
-	cp tf$(X) $(DESTDIR)$(TF)
-	chmod $(MODE) $(DESTDIR)$(TF)
+	-@rm -f $(TF)
+	cp tf$(X) $(TF)
+	chmod $(MODE) $(TF)
 
-SYMLINK $(SYMLINK): $(DESTDIR)$(TF)
+SYMLINK $(SYMLINK): $(TF)
 	test -z "$(SYMLINK)" || { rm -f $(SYMLINK) && ln -s $(TF) $(SYMLINK); }
+
+# There's a lot of unecessary steps below here.
 
 LIBRARY $(TF_LIBDIR): ../tf-lib/tf-help ../tf-lib/tf-help.idx
 	@echo '## Creating library directory...'
 #	@# Overly simplified shell commands, to avoid problems on ultrix
-	-@test -n "$(DESTDIR)$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
-	test -n "$(DESTDIR)$(TF_LIBDIR)"
-	test -d "$(DESTDIR)$(TF_LIBDIR)" || mkdir -p $(DESTDIR)$(TF_LIBDIR)
-	-@test -d "$(DESTDIR)$(TF_LIBDIR)" || echo "Can't make $(DESTDIR)$(TF_LIBDIR) directory.  See if"
-	-@test -d "$(DESTDIR)$(TF_LIBDIR)" || echo "there is already a file with that name."
-	test -d "$(DESTDIR)$(TF_LIBDIR)"
+	-@test -n "$(TF_LIBDIR)" || echo "TF_LIBDIR is undefined."
+	test -n "$(TF_LIBDIR)"
+	test -d "$(TF_LIBDIR)" || mkdir -p $(TF_LIBDIR)
+	-@test -d "$(TF_LIBDIR)" || echo "Can't make $(TF_LIBDIR) directory.  See if"
+	-@test -d "$(TF_LIBDIR)" || echo "there is already a file with that name."
+	test -d "$(TF_LIBDIR)"
 #	@#rm -f $(TF_LIBDIR)/*;  # wrong: this would remove local.tf, etc.
 	@echo '## Copying library files...'
 	cd ../tf-lib; \
 	for f in *; do test -f $$f && files="$$files $$f"; done; \
-	( cd $(DESTDIR)$(TF_LIBDIR); rm -f $$files tf.help tf.help.index; ); \
-	cp $$files $(DESTDIR)$(TF_LIBDIR); \
-	cd $(DESTDIR)$(TF_LIBDIR); \
+	( cd $(TF_LIBDIR); rm -f $$files tf.help tf.help.index; ); \
+	cp $$files $(TF_LIBDIR); \
+	cd $(TF_LIBDIR); \
 	chmod $(MODE) $$files; chmod ugo-wx $$files
-	-rm -f $(DESTDIR)$(TF_LIBDIR)/CHANGES 
-	cp ../CHANGES $(DESTDIR)$(TF_LIBDIR)
-	chmod $(MODE) $(DESTDIR)$(TF_LIBDIR)/CHANGES; chmod ugo-wx $(DESTDIR)$(TF_LIBDIR)/CHANGES
-	chmod $(MODE) $(DESTDIR)$(TF_LIBDIR)
-	-@cd $(DESTDIR)$(TF_LIBDIR); old=`ls replace.tf 2>/dev/null`; \
+	-rm -f $(TF_LIBDIR)/CHANGES 
+	cp ../CHANGES $(TF_LIBDIR)
+	chmod $(MODE) $(TF_LIBDIR)/CHANGES; chmod ugo-wx $(TF_LIBDIR)/CHANGES
+	chmod $(MODE) $(TF_LIBDIR)
+	-@cd $(TF_LIBDIR); old=`ls replace.tf 2>/dev/null`; \
 	if [ -n "$$old" ]; then \
-	    echo "## WARNING: Obsolete files found in $(DESTDIR)$(TF_LIBDIR): $$old"; \
+	    echo "## WARNING: Obsolete files found in $(TF_LIBDIR): $$old"; \
 	fi
 	@echo '## Creating links so old library names still work...'
 #	@# note: ln -sf isn't portable.
-	@cd $(DESTDIR)$(TF_LIBDIR); \
+	@cd $(TF_LIBDIR); \
 	rm -f bind-bash.tf;    ln -s  kb-bash.tf   bind-bash.tf;    \
 	rm -f bind-emacs.tf;   ln -s  kb-emacs.tf  bind-emacs.tf;   \
 	rm -f completion.tf;   ln -s  complete.tf  completion.tf;   \
 	rm -f factorial.tf;    ln -s  factoral.tf  factorial.tf;    \
 	rm -f file-xfer.tf;    ln -s  filexfer.tf  file-xfer.tf;    \
 	rm -f local.tf.sample; ln -s  local-eg.tf  local.tf.sample; \
+	rm -f mylib.tf;        ln -s  utilities.tf mylib.tf;        \
 	rm -f pref-shell.tf;   ln -s  psh.tf       pref-shell.tf;   \
 	rm -f space_page.tf;   ln -s  spc-page.tf  space_page.tf;   \
 	rm -f speedwalk.tf;    ln -s  spedwalk.tf  speedwalk.tf;    \
@@ -122,7 +125,10 @@ __always__:
 
 ../tf-lib/tf-help: __always__
 	if test -d ../help; then cd ../help; $(MAKE) tf-help; fi
-	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
+# Skip this step for now.
+# Currently the HTML documents are the least up to date, so they
+# shouldn't be blowing away the most up to date documents.
+#	if test -d ../help; then cp ../help/tf-help ../tf-lib; fi
 
 ../tf-lib/tf-help.idx: ../tf-lib/tf-help makehelp
 	$(MAKE) -f ../unix/unix.mak CC='$(CC)' CFLAGS='$(CFLAGS)' makehelp

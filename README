@@ -1,3 +1,49 @@
+TinyFugue 50b8 with numerous patches and improvements
+
+UTF8 support (--enable-widechar=yes)
+/HELP has been spell checked, along with everything else
+HTML documentation and html2tf found and returned to repo
+ANSI log output (/help ansi_log) off by default
+LOGs output prefix, such as timestamp (/help log_prefix) off by default
+ERROR output prefix now adjustable (/help error_prefix) '%' by default
+UNNAMED worlds not wrapped in () (/help oldunnamed) no-() by default
+@ALERT picks up on messages that could have been lost
+/ as a prefix to /command sends to MU, as opposed to ///command
+SSL now looks for GNU TLS
+ATCP protocol support (--enable-atcp=yes) off by default
+GMCP protocol support (--enable-gmcp=yes) off by default
+OPTION 102 protocol support (--enable-option102=yes) off by default
+MCCP protocol lockup issue resolved
+RFC 2066 compliance for Telnet Charset Negotiation
+PCRE unbundled and now can use system libraries
+GCC 10 and CLANG support
+64-bit crash issues resolved
+MULTI-address hostname crash issue resolved
+OS X compile issues resolved
+BUFFERS increased to reflect more modern computing resources
+TF-LIB being maintained as well.
+
+Plus numerous bug fixes, clean-up, and needed code base
+clean-up and modernization.
+
+Significant effort has been put into finding the various community
+patches for TF50b8 and integrating them all into one place. There
+are still several patches in the queue waiting to be examined and
+then potentially applied.
+
+In addition, new work has been added to this code base and will
+probably continue to be for some time. The intention is to make sure
+a well loved piece of software is still able to be run on modern
+platforms and future platforms, increased stability, and then lastly
+to add some additional features in-line with the existing codebase.
+
+Similar efforts are being done with TinyFugue Macros, and some may later
+be integrated into tf-lib:
+
+https://github.com/warmstarter/tinyfugue-scripts
+
+======
+
 Unicode notes:
   "Release" is the branch you want.
   On Debian or Ubuntu, make sure you apt-get libicu-dev before running
@@ -17,7 +63,7 @@ Unicode notes:
 
 ======
 
-  TinyFugue is Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys.
+  TinyFugue is Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 
 =======
 
@@ -101,7 +147,7 @@ Compression
 If you are short on disk space, you can compress the helpfile and
 library files (except stdlib.tf).  Make sure the COMPRESS_SUFFIX
 and COMPRESS_READ macros are set correctly; set them in the
-%{TFLIBDIR}/local.tf file if needed.  Note that compresion can not
+%{TFLIBDIR}/local.tf file if needed.  Note that compression can not
 be used if /restrict is used.
 
 
@@ -144,6 +190,6 @@ Amiga, so I don't plan on porting to them.  However, I am willing to
 work with someone who wants to try and is willing to follow my
 guidelines (this is how the OS/2 version was created, and why it is an
 official version which continues to grow).  Basically, this means
-keeping the platform-specific code seperate and to a minimum, and not
+keeping the platform-specific code separate and to a minimum, and not
 adding new features.
 

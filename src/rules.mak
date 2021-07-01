@@ -1,6 +1,6 @@
 ########################################################################
 #  TinyFugue - programmable mud client
-#  Copyright (C) 1998, 1999, 2002, 2006-2007 Ken Keys
+#  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
 #
 #  TinyFugue (aka "tf") is protected under the terms of the GNU
 #  General Public License.  See the file "COPYING" for details.
@@ -17,7 +17,7 @@
 # Predefined variables:
 #   SYS          - required system type (unix, os2)
 #   O            - required object suffix (e.g., "o" or "obj")
-#   BUILDERS     - optional list of system-specific dependancies
+#   BUILDERS     - optional list of system-specific dependencies
 
 attr.$(O): attr.c tfconfig.h tfdefs.h port.h tf.h malloc.h dstring.h \
   globals.h varlist.h enumlist.h hooklist.h util.h pattern.h \

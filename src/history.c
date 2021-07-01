@@ -1,6 +1,6 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
@@ -36,9 +36,9 @@
 const int feature_history = !(NO_HISTORY - 0);
 #if !NO_HISTORY
 
-#define GLOBALSIZE    1000	/* global history size */
-#define LOCALSIZE      100	/* local history size */
-#define INPUTSIZE      100	/* command history buffer size */
+#define GLOBALSIZE    5000	/* global history size */
+#define LOCALSIZE     1000	/* local history size */
+#define INPUTSIZE      500	/* command history buffer size */
 
 typedef struct History {	/* circular list of lines, and logfile */
     CQueue cq;
@@ -63,8 +63,8 @@ struct History globalhist_buf, localhist_buf;
 struct History * const globalhist = &globalhist_buf;
 struct History * const localhist = &localhist_buf;
 int log_count = 0;
-int nohistory = 0;	/* supress history (but not log) recording */
-int nolog = 0;		/* supress log (but not history) recording */
+int nohistory = 0;	/* suppress history (but not log) recording */
+int nolog = 0;		/* suppress log (but not history) recording */
 
 #define histline(hist, i) \
     ((String*)(hist)->cq.data[nmod(i, (hist)->cq.maxsize)])
@@ -661,7 +661,7 @@ static void listlog(World *world)
 /* Parse "ligw:" history options.  If another option is found, it is returned,
  * so the caller can parse it.  If end of options is reached, 0 is returned.
  * '?' is returned for error.  *histp will contain a pointer to the history
- * selected by the "ligw:" options.  *histp will be unchanged if no relavant
+ * selected by the "ligw:" options.  *histp will be unchanged if no relevant
  * options are given; the caller should assign a default before calling.
  */
 static int next_hist_opt(const char **ptr, int *offsetp, History **histp,

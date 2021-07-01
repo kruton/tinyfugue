@@ -4,7 +4,7 @@
 ;;;; containing only numbers and the letters "n", "s", "e", "w", "u", and
 ;;;; "d" are interpreted by speedwalk; other lines are left alone (of course,
 ;;;; to guarantee that lines don't get interpreted, you should turn speedwalk
-;;;; off).  Each letter is sent individually; if it is preceeded by a number,
+;;;; off).  Each letter is sent individually; if it is preceded by a number,
 ;;;; it will be repeated that many times.  For example, with speedwalk
 ;;;; enabled, typing "ne3ses" will send "n", "e", "s", "s", "s", "e", "s".
 

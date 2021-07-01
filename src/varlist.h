@@ -1,6 +1,6 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
@@ -35,11 +35,6 @@ varstrx(VAR_LC_CTYPE,	"LC_CTYPE",	NULL,		ch_locale)
 varstrx(VAR_LC_TIME,	"LC_TIME",	NULL,		ch_locale)
 #endif /* HAVE_SETLOCALE */
 varstr (VAR_MAIL,	"MAIL",		NULL,		ch_mailfile)
-#if ENABLE_OPTION102
-varflag(VAR_OPTION102,  "option102",    TRUE,           NULL)
-#else
-varenum(VAR_OPTION102,  "option102",    FALSE,          NULL,   enum_off)
-#endif
 varstr (VAR_TERM,	"TERM",		NULL,		change_term)
 varstr (VAR_TFLIBDIR,	"TFLIBDIR",	DEFAULT_TFLIBD,	NULL)
 varstr (VAR_TFMAILPATH,	"TFMAILPATH",	NULL,		ch_mailfile)
@@ -75,6 +70,7 @@ varenum(VAR_async_conn,	"connect",	TRUE,		NULL,	enum_block)
 varflag(VAR_defcompile,	"defcompile",	FALSE,		NULL)
 varenum(VAR_emulation,	"emulation",	EMUL_ANSI_ATTR,	NULL,	enum_emul)
 varstr (VAR_error_attr,	"error_attr",	NULL,		ch_attr)
+varstr (VAR_error_prefix,"error_prefix","%",            NULL)
 varflag(VAR_expand_tabs,"expand_tabs",	TRUE,		NULL)
 varflag(VAR_expnonvis,	"expnonvis",	FALSE,		ch_expnonvis)
 varflag(VAR_gag,	"gag",		TRUE,		NULL)
@@ -86,7 +82,7 @@ varenum(VAR_gmcp,       "gmcp",         FALSE,          NULL,   enum_off)
 varint (VAR_gpri,	"gpri",		0,		NULL)
 varflag(VAR_hilite,	"hilite",	TRUE,		NULL)
 varstr (VAR_hiliteattr,	"hiliteattr",	"B",		ch_attr)
-varpos (VAR_histsize,	"histsize",	1000,		NULL)
+varpos (VAR_histsize,	"histsize",	5000,		NULL)
 varflag(VAR_hook,	"hook",		TRUE,		NULL)
 varint (VAR_hpri,	"hpri",		0,		NULL)
 varenum(VAR_iecho,	"iecho",	0,		NULL,	enum_mecho)
@@ -125,7 +121,13 @@ varenum(VAR_meta_esc,	"meta_esc",	META_NONPRINT,	NULL,	enum_meta)
 varflag(VAR_more,	"more",		FALSE,		tog_more)
 varstr (VAR_mprefix,	"mprefix",	"+",		NULL)
 varflag(VAR_oldslash,	"oldslash",	TRUE,		NULL)
+varflag(VAR_oldunnamed,	"oldunnamed",	FALSE,		NULL)
 varflag(VAR_optimize,	"optimize",	TRUE,		NULL)
+#if ENABLE_OPTION102
+varflag(VAR_option102,  "option102",    TRUE,           NULL)
+#else
+varenum(VAR_option102,  "option102",    FALSE,          NULL,   enum_off)
+#endif
 varflag(VAR_pedantic,	"pedantic",	FALSE,		NULL)
 varstr (VAR_prompt_sec,	"prompt_sec",	NULL,		obsolete_prompt)
 varstr (VAR_prompt_usec,"prompt_usec",	NULL,		obsolete_prompt)

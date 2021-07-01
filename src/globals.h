@@ -1,6 +1,6 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
@@ -151,14 +151,13 @@ enum Vars {
 #define getstdvar(id)	((char*)         (strvar(id) ? strvar(id)->data : NULL))
 
 #define MAIL		getstdvar(VAR_MAIL)
-#define OPTION102	getintvar(VAR_OPTION102)
 #define TERM		getstdvar(VAR_TERM)
 #define TFLIBDIR	getstdvar(VAR_TFLIBDIR)
 #define TFPATH		getstdvar(VAR_TFPATH)
 #define TFMAILPATH	getstdvar(VAR_TFMAILPATH)
 #define alert_attr	getattrvar(VAR_alert_attr)
 #define alert_time	gettimevar(VAR_alert_time)
-#define	ansi_log	getintvar(VAR_ansi_log)
+#define ansi_log	getintvar(VAR_ansi_log)
 #define async_conn	getintvar(VAR_async_conn)
 #define async_name	getintvar(VAR_async_name)
 #define atcp		getintvar(VAR_atcp)
@@ -180,6 +179,7 @@ enum Vars {
 #define defcompile	getintvar(VAR_defcompile)
 #define emulation 	getintvar(VAR_emulation)
 #define error_attr	getattrvar(VAR_error_attr)
+#define error_prefix	getstdvar(VAR_error_prefix)
 #define expand_tabs 	getintvar(VAR_expand_tabs)
 #define expnonvis 	getintvar(VAR_expnonvis)
 #define gag		getintvar(VAR_gag)
@@ -220,7 +220,9 @@ enum Vars {
 #define more		getintvar(VAR_more)
 #define mprefix		getstrvar(VAR_mprefix)
 #define oldslash	getintvar(VAR_oldslash)
+#define oldunnamed	getintvar(VAR_oldunnamed)
 #define optimize_user	getintvar(VAR_optimize)
+#define option102	getintvar(VAR_option102)
 #define pedantic	getintvar(VAR_pedantic)
 #define prompt_wait	gettimevar(VAR_prompt_wait)
 #define proxy_host	getstdvar(VAR_proxy_host)

@@ -5,7 +5,7 @@
 ; Note: users should not rely on %_loaded_libs like this.  I can get away
 ; with this here only because this and /loaded are both internal to TF.
 /if (_loaded_libs =/ "*{__TFLIB__/textutil.tf}*") \
-    /echo -e %% Warning: textutil.tf and grep.tf have conflicting defintions.%;\
+    /echo -e %% Warning: textutil.tf and grep.tf have conflicting definitions.%;\
 /endif
 
 

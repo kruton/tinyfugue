@@ -1,6 +1,6 @@
 /*************************************************************************
  *  TinyFugue - programmable mud client
- *  Copyright (C) 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
+ *  Copyright (C) 1993-2007 Ken Keys (kenkeys@users.sourceforge.net)
  *
  *  TinyFugue (aka "tf") is protected under the terms of the GNU
  *  General Public License.  See the file "COPYING" for details.
@@ -141,7 +141,7 @@ void init_tty(void)
      * so we'll ignore anything that isn't a control character.
      */
     if (is_cntrl(*bs)      && *bs       && *bs != '\b' && *bs != '\177')
-                                       add_ibind(bs,      "/DOKEY BSPC");
+                                        add_ibind(bs,      "/DOKEY BSPC");
     if (is_cntrl(*bword)   && *bword)   add_ibind(bword,   "/DOKEY BWORD");
 /*  if (is_cntrl(*dline)   && *dline)   add_ibind(dline,   "/DOKEY DLINE"); */
     if (is_cntrl(*refresh) && *refresh) add_ibind(refresh, "/DOKEY REFRESH");

@@ -10,7 +10,7 @@ usage:
         @echo ####                           (scrolling, using os/2-vio-functions,termcap)
         @echo #### Use "nmake VIDEO=TERMCAP" to build termcap-version
         @echo ####                           (no scrolling, using termcap.dat).
- 	@echo #### Use "...DEBUG=ON..."      for debugging informations
+ 	@echo #### Use "...DEBUG=ON..."      for debugging information
 	@echo #### Use "nmake clean"         for removing object-files
 
 $(EXE): $(OBJS) $(BUILDERS)

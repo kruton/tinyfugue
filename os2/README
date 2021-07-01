@@ -14,7 +14,7 @@ REQUIREMENTS TO COMPILE
 1...OS/2 3.0 with installed Internet Access Kit or OS/2 2.x with installed
     TCP/IP Basis Kit
 2...the tinyfugue-sources
-3...more space on your harddisk-partition
+3...more space on your hard disk-partition
 4...an installed emx-gcc-system
 
 INSTALL
@@ -29,7 +29,7 @@ INSTALL
      variables are set in your config.sys or by the OS/2-Command 'SET')
 2...unzip the tinyfugue-package with "unzip -a...". You can delete src/*,
     if you don't want to compile tinyfugue 
-3...set the followig environment-variables:
+3...set the following environment-variables:
         HOME......your home directory. (.tfrc or tfrc will be searched there)
         TFLIBDIR..the full pathname of your tf-lib directory
 4...setup your .tfrc-file (you can use "tfrc" for FAT-systems). Here is mine 
@@ -47,7 +47,7 @@ INSTALL
         /loadworld
         ;; macros can be redefined
         /redef on
-        ;; german-redefining for easier acces of /-key
+        ;; german-redefining for easier access of /-key
         ;;; #-key is now /
         /def -ib'#' = /input /
         ;;; alt-# is now #
