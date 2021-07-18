@@ -2,9 +2,15 @@ name: C CI
 
 on:
   push:
-    branches: [ * ]
+    branches:
+      - release
+      - "feature/*"
+      - "*"
   pull_request:
-    branches: [ * ]
+    branches:
+      - release
+      - "feature/*"
+      - "*"
 
 jobs:
   build:
