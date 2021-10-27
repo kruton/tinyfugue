@@ -1,10 +1,13 @@
-name: C CI
+---
+name: Continuous Integration
 
 on:
   push:
-    branches: [ widechar ]
+    branches: [widechar]
   pull_request:
-    branches: [ widechar ]
+    branches: [widechar]
+  schedule:
+    - cron: '31 5 * * *'
 
 jobs:
   build:
@@ -12,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
+      - uses: actions/checkout@v2
+      - name: configure
+        run: ./configure
+      - name: make
+        run: make
