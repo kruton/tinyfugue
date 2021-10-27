@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <sys/file.h>	/* for FNONBLOCK on SVR4, hpux, ... */
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <signal.h>	/* for killing resolver child process */
 
 #if WIDECHAR
