@@ -40,15 +40,10 @@ Unicode notes:
 
                        INSTALLING TINYFUGUE
 
-TinyFugue can be installed and run on UNIX-like systems, Mac OS X, OS/2,
+TinyFugue can be installed and run on UNIX-like systems, Mac OS X,
 and Win32.  For instructions, see the README file in the appropriate
 directory.  For information on unofficial versions of TF for other
 operating systems, see the TF web page at http://tinyfugue.sourceforge.net/.
-
-Note that the .tar.gz and .tar.Z distributions contain LF line delimiters,
-intended for UNIX, and the .zip distribution contains CR LF delimiters,
-intended for OS/2.  It is possible to convert line delimiters, but it's
-easier to just get a distribution that already has the correct delimiters.
 
 
 "Make" options
@@ -142,8 +137,6 @@ Porting
 I have no personal interest in Mac OS 9, DOS, Windows 95, Windows NT, or
 Amiga, so I don't plan on porting to them.  However, I am willing to
 work with someone who wants to try and is willing to follow my
-guidelines (this is how the OS/2 version was created, and why it is an
-official version which continues to grow).  Basically, this means
-keeping the platform-specific code seperate and to a minimum, and not
-adding new features.
+guidelines.  Basically, this means keeping the platform-specific code
+seperate and to a minimum, and not adding new features.
 

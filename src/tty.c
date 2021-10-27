@@ -13,11 +13,6 @@
 #include "tfconfig.h"
 #include "port.h"
 
-#ifdef EMXANSI
-# define INCL_VIO
-# include <os2.h>
-#endif
-
 #if HAVE_TERMIOS_H                 /* POSIX is the way to go. */
 # define USE_TERMIOS
 # include <termios.h>
@@ -148,10 +143,6 @@ void init_tty(void)
     if (is_cntrl(*lnext)   && *lnext)   add_ibind(lnext,   "/DOKEY LNEXT");
 }
 
-#ifdef EMXANSI
-# define CAN_GET_WINSIZE
-# undef TIOCGWINSZ
-#endif
 #ifdef TIOCGWINSZ
 # define CAN_GET_WINSIZE
 #endif
@@ -180,14 +171,6 @@ retry:
 	select(0, NULL, NULL, NULL, &timeout);
 	goto retry;
     }
-# endif
-
-# ifdef EMXANSI
-    static VIOMODEINFO info;    /* must be static for thunking (16 bit func) */
-    info.cb = sizeof(info);
-    VioGetMode(&info,(HVIO)0);
-    if (info.col > 0) columns = info.col;
-    if (info.row > 0) lines = info.row;
 # endif
 
     if (columns == ocol && lines == oline) return 1;

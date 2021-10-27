@@ -265,9 +265,6 @@ TFILE *tfopen(const char *name, const char *mode)
 #ifdef PLATFORM_UNIX
             Sprintf(buffer, "%s %s 2>/dev/null", prog, newname);
 #endif
-#ifdef PLATFORM_OS2
-            Sprintf(buffer, "%s %s 2>nul", prog, newname);
-#endif
             fp = popen(buffer->data, mode);
             type = TF_PIPE;
         }

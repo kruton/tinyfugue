@@ -43,11 +43,6 @@
 #include <unicode/ubrk.h>
 #endif
 
-#ifdef EMXANSI
-# define INCL_VIO
-# include <os2.h>
-#endif
-
 #if HAVE_SETLOCALE
 static char *lang = NULL;
 #endif
@@ -55,8 +50,8 @@ static char *lang = NULL;
 /* Terminal codes and capabilities.
  * Visual mode requires at least clear_screen and cursor_address.  The other
  *   codes are good to have, but are not strictly necessary.
- * Scrolling in visual mode requires set_scroll_region (preferred), or
- *   insert_line and delete_line (may appear jumpy), or EMXANSI.
+ * Scrolling in visual mode requires set_scroll_region (preferred) or
+ *   insert_line and delete_line (may appear jumpy).
  * Fast insert in visual mode requires insert_start and insert_end (preferred),
  *   or insert_char.
  * Fast delete in visual mode requires delete_char.
@@ -191,14 +186,10 @@ static void  (*tp)(const char *str);
 #define bufputc(c)		Stringadd(outbuf, c)
 #define bufputnc(c, n)		Stringnadd(outbuf, c, n)
 
-#ifdef EMXANSI /* OS2 */
-   static void crnl(int n);  
-#else
-# if USE_SGTTY  /* CRMOD is off (tty.c) */
-#  define crnl(count)  do { bufputc('\r'); bufputnc('\n', count); } while (0)
-# else             /* ONLCR is on (tty.c) */
-#  define crnl(count)  bufputnc('\n', count)
-# endif
+#if USE_SGTTY  /* CRMOD is off (tty.c) */
+# define crnl(count)  do { bufputc('\r'); bufputnc('\n', count); } while (0)
+#else             /* ONLCR is on (tty.c) */
+# define crnl(count)  bufputnc('\n', count)
 #endif
 
 
@@ -240,11 +231,7 @@ static int alert_len = 0;	    /* length of current alert message */
 
 STATIC_STRING(moreprompt, "--More--", F_BOLD | F_REVERSE);  /* pager prompt */
 
-#ifndef EMXANSI
-# define has_scroll_region (set_scroll_region != NULL)
-#else
-# define has_scroll_region (1)
-#endif
+#define has_scroll_region (1)
 
 
 #if HARDCODE
@@ -364,20 +351,6 @@ static int fbufputc(int c)
     Stringadd(outbuf, c);
     return c;
 }
-
-#ifdef EMXANSI
-void crnl(int n)
-{
-    int off = (cy + n) - bottom_margin;
-    if (off < 0 || !visual) off = 0;
-    bufputnc('\n', n - off);
-    if (off) {
-        bufflush();
-        VioScrollUp(top_margin-1, 0, bottom_margin-1, columns, off, " \x07", 0);
-        bufputc('\r');
-    }
-}
-#endif
 
 void dobell(int n)
 {
@@ -573,10 +546,6 @@ static void init_term(void)
 
     if (!bell) bell = "\007";
 
-#ifdef EMXANSI
-    VioSetAnsi(1,0);                   /* ensure ansi-mode */
-#endif /* EMXANSI */
-
 #endif /* TERMCAP */
 
 #if 1
@@ -606,13 +575,9 @@ static void init_term(void)
 static void setscroll(int top, int bottom)
 {
     if (top_margin == top && bottom_margin == bottom) return; /* optimization */
-#ifdef EMXANSI
-    bufflush();
-#else
     if (!set_scroll_region) return;
     tpgoto(set_scroll_region, (bottom), (top));
     cx = cy = -1;   /* cursor position is undefined */
-#endif
     bottom_margin = bottom;
     top_margin = top;
     if (top != 1 || bottom != lines) set_refresh_pending(REF_PHYSICAL);

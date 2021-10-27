@@ -638,9 +638,5 @@ int shell(const char *cmd)
     redraw();
     if (result == -1) return result;
     check_mail();
-#ifdef PLATFORM_OS2
-    return result;
-#else /* UNIX */
     return shell_status(result);
-#endif
 }
