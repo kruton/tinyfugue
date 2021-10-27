@@ -22,9 +22,6 @@ all:
 	@echo : ./configure [options]
 	@echo : make install
 	@echo :
-	@echo : OS/2:
-	@echo : os2make [options]
-	@echo :
 
 install files tf clean uninstall: all
 

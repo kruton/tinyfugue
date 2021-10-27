@@ -103,10 +103,6 @@ struct sockaddr_in {
 #define INET6_ADDRSTRLEN 46
 #endif
 
-#ifdef PLATFORM_OS2
-# define NONBLOCKING_GETHOST
-#endif
-
 #ifdef PLATFORM_UNIX
 # ifndef __CYGWIN32__
 #  if HAVE_WAITPID
@@ -201,9 +197,6 @@ static const char *h_errlist[] = {
 #endif /* !HAVE_GETADDRINFO */
 
 #ifdef NONBLOCKING_GETHOST
-# ifndef PLATFORM_OS2
-#  include <sys/uio.h> /* child uses writev() */
-# endif
   static void waitforhostname(int fd, const char *name, const char *port);
   static int nonblocking_gethost(const char *name, const char *port,
       struct addrinfo **addrs, pid_t *pidp, const char **what);
@@ -1843,22 +1836,6 @@ static void waitforhostname(int fd, const char *name, const char *port)
     close(fd);
 }
 
-# ifdef PLATFORM_OS2
-typedef struct _threadpara {
-    const char *hostname;
-    const char *port;
-    int   fd;
-} threadpara;
-
-void os2waitforhostname(threadpara *targs)
-{
-    waitforhostname(targs->fd, targs->hostname, targs->port);
-    FREE(targs->hostname);
-    FREE(targs->port);
-    FREE(targs);
-}
-# endif /* PLATFORM_OS2 */
-
 static int nonblocking_gethost(const char *name, const char *port,
     struct addrinfo **res, pid_t *pidp, const char **what)
 {
@@ -1879,24 +1856,6 @@ static int nonblocking_gethost(const char *name, const char *port,
             close(fds[0]);
             waitforhostname(fds[1], name, port);
             exit(0);
-        }
-    }
-#endif
-#ifdef PLATFORM_OS2
-    {
-        threadpara *tpara;
-
-        if ((tpara = XMALLOC(sizeof(threadpara)))) {
-            setmode(fds[0],O_BINARY);
-            setmode(fds[1],O_BINARY);
-            tpara->fd = fds[1];
-            tpara->hostname = STRDUP(name);
-            tpara->port = STRDUP(port);
-
-            /* BUG: gethostbyname() isn't threadsafe! */
-            *what = "_beginthread";
-            if (_beginthread(os2waitforhostname,NULL,0x8000,(void*)tpara) != -1)
-                return(fds[0]);
         }
     }
 #endif

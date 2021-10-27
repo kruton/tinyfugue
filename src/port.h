@@ -141,12 +141,6 @@ extern char *sys_errlist[];
 # endif
 #endif
 
-#ifdef PLATFORM_OS2
-# define HAVE_GETCWD
-# define getcwd _getcwd2   /* handles drive names */
-# define chdir _chdir2     /* handles drive names */
-#endif
-
 
 #if !HAVE_LOCALE_H
 # undef HAVE_SETLOCALE
