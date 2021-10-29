@@ -102,11 +102,7 @@
 #cmakedefine ENABLE_GMCP @ENABLE_GMCP@
 #cmakedefine ENABLE_OPTION102 @ENABLE_OPTION102@
 
-#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
-#  define HAVE_MCCP 1
-#else
-#  define HAVE_MCCP 0
-#endif
+#define HAVE_MCCP (HAVE_ZLIB_H && HAVE_LIBZ)
 
 #undef inline
 
