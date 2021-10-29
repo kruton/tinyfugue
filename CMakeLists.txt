@@ -161,7 +161,7 @@ if (FLOAT)
 endif (FLOAT)
 
 if (WIDECHAR)
-    find_package(ICU 61.0 COMPONENTS uc i18n data REQUIRED)
+    find_package(ICU 49.1 COMPONENTS uc i18n data REQUIRED)
     target_link_libraries(tf PRIVATE ICU::uc ICU::i18n ICU::data)
 endif (WIDECHAR)
 
