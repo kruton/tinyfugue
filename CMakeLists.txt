@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.7)
+if (POLICY CMP0075)
+    cmake_policy(SET CMP0075 NEW)
+endif()
+
 project(tinyfugue)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -8,7 +12,7 @@ string(REGEX REPLACE "^TFVER=" "" TFVER "${TFVER_LINE}")
 file(STRINGS "src/main.c" TFVERSION_LINE REGEX "Fugue version")
 string(REGEX REPLACE "^.*\"(.*)\".*$" "\\1" TFVERSION "${TFVERSION_LINE}")
 
-message(NOTICE "Configuring ${TFVERSION}")
+message("Configuring ${TFVERSION}")
 
 # For custom FindXXX.cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
@@ -70,17 +74,17 @@ else (CORE)
 endif (CORE)
 
 if (DEVELOPMENT)
-    message(NOTICE "Development version.")
+    message("Development version.")
 else (DEVELOPMENT)
     string(FIND "${TFVERSION}" "alpha" IS_ALPHA_VERSION)
-    if (IS_ALPHA_VERSION GREATER_EQUAL 0)
-        message(NOTICE "
+    if (NOT IS_ALPHA_VERSION EQUAL -1)
+        message("
 This is an alpha version, and so may not be fully tested on some platforms.
 With the new features comes the possibility of new bugs.  If you don't want
 to deal with this, get the latest stable or gamma version.
 
 ")
-    endif (IS_ALPHA_VERSION GREATER_EQUAL 0)
+    endif (NOT IS_ALPHA_VERSION EQUAL -1)
 endif (DEVELOPMENT)
 if (DMALLOC)
     message(" DMALLOC Enabled")
@@ -128,8 +132,7 @@ if (SSL)
     if (OPENSSL_FOUND OR GNUTLS_WORKS)
         set(HAVE_SSL 1)
     else (OPENSSL_FOUND OR GNUTLS_WORKS)
-        message(WARNING "SSL support will not be enabled.")
-        set(SSL OFF)
+        message(FATAL_ERROR "SSL requested but neither OpenSSL nor GnuTLS found!")
     endif (OPENSSL_FOUND OR GNUTLS_WORKS)
 endif (SSL)
 
@@ -161,7 +164,7 @@ if (FLOAT)
 endif (FLOAT)
 
 if (WIDECHAR)
-    find_package(ICU 49.1 COMPONENTS uc i18n data REQUIRED)
+    find_package(ICU 51.0 COMPONENTS uc i18n data REQUIRED)
     target_link_libraries(tf PRIVATE ICU::uc ICU::i18n ICU::data)
 endif (WIDECHAR)
 

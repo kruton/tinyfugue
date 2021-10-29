@@ -4,7 +4,7 @@ set(TFLIB_INTERMEDIATE "${CMAKE_CURRENT_BINARY_DIR}/tf-lib")
 
 # These are symlinks for backward compatibility
 # Format is "new; old;"
-set(COMPAT_LINKS
+set(compat_links
 	 kb-bash.tf;  bind-bash.tf;
 	 kb-emacs.tf; bind-emacs.tf;
 	 complete.tf; completion.tf;
@@ -26,8 +26,10 @@ foreach(file ${tflib_files})
     configure_file(${file} ${intermediate_file} COPYONLY)
 endforeach()
 
-while(COMPAT_LINKS)
-    list(POP_FRONT COMPAT_LINKS new old)
+while(compat_links)
+    list(GET compat_links 0 new)
+    list(GET compat_links 1 old)
+    list(REMOVE_AT compat_links 0 1)
     execute_process(
         COMMAND rm -f ${TFLIB_INTERMEDIATE}/${old}
         COMMAND ln -s ${new} ${TFLIB_INTERMEDIATE}/${old}
