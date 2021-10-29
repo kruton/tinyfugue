@@ -582,7 +582,9 @@ static void ssl_io_err(Sock *sock, int ret, int hook)
 
 static void init_ssl(void)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_load_error_strings();
+#endif
     SSL_library_init();
     /* XXX seed PRNG */
     ssl_ctx = SSL_CTX_new(SSLv23_client_method());
