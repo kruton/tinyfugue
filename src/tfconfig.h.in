@@ -35,7 +35,7 @@
 #cmakedefine01 HAVE_LIBZ
 #cmakedefine01 SOCKS
 #cmakedefine01 HAVE_SSL
-#cmakedefine HAVE_GNUTLS_OPENSSL_H @GNUTLS_FOUND@
+#cmakedefine01 HAVE_GNUTLS_OPENSSL_H
 
 #cmakedefine01 HAVE_BCOPY
 #cmakedefine01 HAVE_BZERO
