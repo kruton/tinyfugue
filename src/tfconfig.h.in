@@ -20,89 +20,93 @@
 #undef time_t
 #undef socklen_t
 
-#define HAVE_UNISTD_H 0
-#define HAVE_SYS_WAIT_H 0
-#define STDC_HEADERS 0
-#define HAVE_MEMORY_H 0
-#define HAVE_SYS_SELECT_H 0
-#define HAVE_LOCALE_H 0
-#define NETINET_IN_H 0
-#define ARPA_INET_H 0
-#define NETDB_H 0
-#define HAVE_PWD_H 0
-#define NEED_PTEM_H 0
-#define HAVE_ZLIB_H 0
-#define HAVE_LIBZ 0
-#define SOCKS 0
-#define HAVE_SSL 0
-#define HAVE_GNUTLS_OPENSSL_H 0
+#cmakedefine01 HAVE_UNISTD_H
+#cmakedefine01 HAVE_SYS_WAIT_H
+#cmakedefine STDC_HEADERS @STDC_HEADERS@
+#cmakedefine01 HAVE_MEMORY_H
+#cmakedefine01 HAVE_SYS_SELECT_H
+#cmakedefine01 HAVE_LOCALE_H
+#cmakedefine NETINET_IN_H "@NETINET_IN_H@"
+#cmakedefine ARPA_INET_H "@ARPA_INET_H@"
+#cmakedefine NETDB_H "@NETDB_H@"
+#cmakedefine01 HAVE_PWD_H
+#cmakedefine01 NEED_PTEM_H
+#cmakedefine01 HAVE_ZLIB_H
+#cmakedefine01 HAVE_LIBZ
+#cmakedefine01 SOCKS
+#cmakedefine01 HAVE_SSL
+#cmakedefine HAVE_GNUTLS_OPENSSL_H @GNUTLS_FOUND@
 
-#define HAVE_BCOPY 0
-#define HAVE_BZERO 0
-#define HAVE_CONNECT 0
-#define HAVE_ERR_PEEK_ERROR 0
-#define HAVE_FILENO 0
-#define HAVE_GETCWD 0
-#define HAVE_GETHOSTBYNAME 0
-#define HAVE_GETHOSTNAME 0
-#define HAVE_GETIPNODEBYNAME 0
-#define HAVE_GETPWNAM 0
-#define HAVE_GETTIMEOFDAY 0
-#define HAVE_GETWD 0
-#define HAVE_H_ERRNO 0
-#define HAVE_HSTRERROR 0
-#define HAVE_INDEX 0
-#define HAVE_INET_ATON 0
-#define HAVE_INET_PTON 0
-#define HAVE_KILL 0
-#define HAVE_MEMCPY 0
-#define HAVE_MEMSET 0
-#define HAVE_RAISE 0
-#define HAVE_SETLOCALE 0
-#define HAVE_SETRLIMIT 0
-#define HAVE_SIGACTION 0
-#define HAVE_SRAND 0
-#define HAVE_SRANDOM 0
-#define HAVE_STRCASECMP 0
-#define HAVE_STRCHR 0
-#define HAVE_STRCMPI 0
-#define HAVE_STRCSPN 0
-#define HAVE_STRERROR 0
-#define HAVE_STRFTIME 0
-#define HAVE_STRICMP 0
-#define HAVE_STRTOD 0
-#define HAVE_TZSET 0
-#define HAVE_WAITPID 0
+#cmakedefine01 HAVE_BCOPY
+#cmakedefine01 HAVE_BZERO
+#cmakedefine01 HAVE_CONNECT
+#cmakedefine01 HAVE_ERR_PEEK_ERROR
+#cmakedefine01 HAVE_FILENO
+#cmakedefine01 HAVE_GETCWD
+#cmakedefine01 HAVE_GETHOSTBYNAME
+#cmakedefine01 HAVE_GETHOSTNAME
+#cmakedefine01 HAVE_GETIPNODEBYNAME
+#cmakedefine01 HAVE_GETPWNAM
+#cmakedefine01 HAVE_GETTIMEOFDAY
+#cmakedefine01 HAVE_GETWD
+#cmakedefine01 HAVE_H_ERRNO
+#cmakedefine01 HAVE_HSTRERROR
+#cmakedefine01 HAVE_INDEX
+#cmakedefine01 HAVE_INET_ATON
+#cmakedefine01 HAVE_INET_PTON
+#cmakedefine01 HAVE_KILL
+#cmakedefine01 HAVE_MEMCPY
+#cmakedefine01 HAVE_MEMSET
+#cmakedefine01 HAVE_RAISE
+#cmakedefine01 HAVE_SETLOCALE
+#cmakedefine01 HAVE_SETRLIMIT
+#cmakedefine01 HAVE_SIGACTION
+#cmakedefine01 HAVE_SRAND
+#cmakedefine01 HAVE_SRANDOM
+#cmakedefine01 HAVE_STRCASECMP
+#cmakedefine01 HAVE_STRCHR
+#cmakedefine01 HAVE_STRCMPI
+#cmakedefine01 HAVE_STRCSPN
+#cmakedefine01 HAVE_STRERROR
+#cmakedefine01 HAVE_STRFTIME
+#cmakedefine01 HAVE_STRICMP
+#cmakedefine01 HAVE_STRTOD
+#cmakedefine01 HAVE_TZSET
+#cmakedefine01 HAVE_WAITPID
 
-#define SIZEOF_SHORT 0
-#define SIZEOF_INT 0
-#define SIZEOF_LONG 0
+#cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
+#cmakedefine SIZEOF_INT @SIZEOF_INT@
+#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
 
-#define TERMCAP 0
-#define HARDCODE 0
-#define HAVE_TERMIOS_H 0
-#define HAVE_TERMIO_H 0
-#define HAVE_SGTTY_H 0
+#cmakedefine01 TERMCAP
+#cmakedefine HARDCODE @HARDCODE@
+#cmakedefine01 HAVE_TERMIOS_H
+#cmakedefine01 HAVE_TERMIO_H
+#cmakedefine01 HAVE_SGTTY_H
 
-#define HAVE_SOCKADDR_SA_LEN 0
-#define HAVE_GETADDRINFO 0
-#define HAVE_GAI_STRERROR 0
-#define ENABLE_INET6 0
-#define DISABLE_CORE 0
-#undef  IN6_ADDR
-#define NO_HISTORY 0
-#define NO_PROCESS 0
-#define NO_FLOAT 0
-#define NCOLORS 16
-#define WIDECHAR 0
-#define USE_DMALLOC 0
+#cmakedefine01 HAVE_SOCKADDR_SA_LEN
+#cmakedefine01 HAVE_GETADDRINFO
+#cmakedefine01 HAVE_GAI_STRERROR
+#cmakedefine01 ENABLE_INET6
+#cmakedefine01 DISABLE_CORE
+#cmakedefine IN6_ADDR @IN6_ADDR@
+#cmakedefine01 NO_HISTORY
+#cmakedefine01 NO_PROCESS
+#cmakedefine01 NO_FLOAT
+#cmakedefine NCOLORS @NCOLORS@
+#cmakedefine01 WIDECHAR
+#cmakedefine USE_DMALLOC @USE_DMALLOC@
 #define USE_MMALLOC 0
 
-#define ENABLE_ATCP 0
-#define ENABLE_GMCP 0
-#define ENABLE_OPTION102 0
+#cmakedefine ENABLE_ATCP @ENABLE_ACTP@
+#cmakedefine ENABLE_GMCP @ENABLE_GMCP@
+#cmakedefine ENABLE_OPTION102 @ENABLE_OPTION102@
 
-#define HAVE_MCCP (HAVE_ZLIB_H && HAVE_LIBZ)
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+#  define HAVE_MCCP 1
+#else
+#  define HAVE_MCCP 0
+#endif
 
 #undef inline
 
