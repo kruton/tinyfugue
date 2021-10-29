@@ -52,6 +52,8 @@ option(INET6 "IPv6 support" ON)
 # Need to enable setting directory
 option(MAILCHECK "mail checking" ON)
 
+option(MANPAGE "convert manpage to readable format" OFF)
+
 option(OPTION102 "102 option support" OFF)
 
 option(PROCESS "/quote and /repeat" ON)
