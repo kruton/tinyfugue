@@ -36,3 +36,11 @@ clean:
 .PHONY: install
 install: build/tf
 	$(CMAKE) --build build --target install
+
+.PHONY: test
+test: .begin | build
+	cd build; $(CMAKE) .. -G "$(GENERATOR)" \
+		$(if $(PREFIX),-DCMAKE_INSTALL_PREFIX="$(PREFIX)",) \
+		-DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+	$(CMAKE) --build build --target tf_test
+	cd build; ctest --output-on-failure
