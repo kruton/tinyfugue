@@ -6,7 +6,7 @@ if (POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
-project(tinyfugue)
+project(tinyfugue C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -20,9 +20,25 @@ message("Configuring ${TFVERSION}")
 # For custom FindXXX.cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
+add_library(tflib "")
 add_executable(tf "")
+target_link_libraries(tf PRIVATE tflib)
 
 add_executable(makehelp "")
+
+# Determine default installation prefix based on writability of standard directories,
+# mirroring the original autoconf behavior.
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    execute_process(COMMAND test -w /usr/local/bin -a -w /usr/local/share
+        RESULT_VARIABLE DEST_DIR_WRITABLE)
+    if (NOT DEST_DIR_WRITABLE EQUAL 0)
+        if (CMAKE_SYSTEM_NAME MATCHES "BeOS")
+            set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/config" CACHE PATH "Where to install the distribution" FORCE)
+        else ()
+            set(CMAKE_INSTALL_PREFIX "$ENV{HOME}" CACHE PATH "Where to install the distribution" FORCE)
+        endif ()
+    endif ()
+endif ()
 
 include(GNUInstallDirs)
 include(CheckIncludeFiles)
@@ -97,22 +113,22 @@ if (DMALLOC)
     message(" DMALLOC Enabled")
 endif (DMALLOC)
 
-search_for_function(select "bsd" tf HAVE_SELECT)
+search_for_function(select "bsd" tflib HAVE_SELECT)
 if (NOT HAVE_SELECT)
     message(FATAL_ERROR "TF can not work without select().")
 endif (NOT HAVE_SELECT)
 
 # gethostbyname may not be in default libraries.
 # QNX keeps gethostbyname in lsocket.
-search_for_function(gethostbyname "bsd;nsl_s;nsl;resolv;socket" tf HAVE_GETHOSTBYNAME)
+search_for_function(gethostbyname "bsd;nsl_s;nsl;resolv;socket" tflib HAVE_GETHOSTBYNAME)
 
 ## If we haven't found connect(), look for -lsocket.
 ## Note: on IRIX 5, -lsocket exists, but we mustn't use its gethostbyname().
-search_for_function(connect "socket" tf HAVE_CONNECT)
+search_for_function(connect "socket" tflib HAVE_CONNECT)
 
 # TODO: enable socks detection?
 
-search_for_function(setlocale intl tf HAVE_SETLOCALE)
+search_for_function(setlocale intl tflib HAVE_SETLOCALE)
 if (NOT HAVE_SETLOCALE)
     message(WARNING "Locales will not be supported.")
 endif (NOT HAVE_SETLOCALE)
@@ -123,7 +139,7 @@ if (SSL)
         list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
         list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_SSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES})
         check_symbol_exists(ERR_peek_error openssl/err.h HAVE_ERR_PEEK_ERROR)
-        target_link_libraries(tf PRIVATE OpenSSL::SSL)
+        target_link_libraries(tflib PRIVATE OpenSSL::SSL)
     else (OPENSSL_FOUND)
         find_package(GnuTLS)
         if (GNUTLS_FOUND)
@@ -131,7 +147,7 @@ if (SSL)
             check_include_file("gnutls/openssl.h" HAVE_GNUTLS_OPENSSL_H)
             check_library_exists(gnutls-openssl SSL_free "" HAVE_GNUTLS_OPENSSL_LIB)
             if (HAVE_GNUTLS_OPENSSL_H AND HAVE_GNUTLS_OPENSSL_LIB)
-                target_link_libraries(tf PRIVATE GnuTLS::GnuTLS gnutls-openssl)
+                target_link_libraries(tflib PRIVATE GnuTLS::GnuTLS gnutls-openssl)
                 set(GNUTLS_WORKS TRUE)
             endif()
         endif(GNUTLS_FOUND)
@@ -148,8 +164,8 @@ if (CURSES)
     if (NOT CURSES_FOUND)
         message(FATAL_ERROR "Could not find curses library")
     endif (NOT CURSES_FOUND)
-    target_include_directories(tf PRIVATE ${CURSES_INCLUDE_DIR})
-    target_link_libraries(tf PRIVATE ${CURSES_LIBRARIES})
+    target_include_directories(tflib PRIVATE ${CURSES_INCLUDE_DIR})
+    target_link_libraries(tflib PRIVATE ${CURSES_LIBRARIES})
     set(TERMCAP 1)
     set(HARDCODE 0)
 else (CURSES)
@@ -167,18 +183,18 @@ else(256COLORS)
 endif (256COLORS)
 
 if (FLOAT)
-    search_for_function(sqrt m tf HAVE_SQRT)
+    search_for_function(sqrt m tflib HAVE_SQRT)
 endif (FLOAT)
 
 if (WIDECHAR)
     find_package(ICU 51.0 COMPONENTS uc i18n data REQUIRED)
-    target_include_directories(tf PRIVATE ${ICU_INCLUDE_DIRS})
-    target_link_libraries(tf PRIVATE ICU::uc ICU::i18n ICU::data)
+    target_include_directories(tflib PRIVATE ${ICU_INCLUDE_DIRS})
+    target_link_libraries(tflib PRIVATE ICU::uc ICU::i18n ICU::data)
 endif (WIDECHAR)
 
 find_package(ZLIB)
 if (ZLIB_FOUND)
-    target_link_libraries(tf PRIVATE ZLIB::ZLIB)
+    target_link_libraries(tflib PRIVATE ZLIB::ZLIB)
     set(HAVE_LIBZ 1)
     check_include_file("zlib.h" HAVE_ZLIB_H)
 endif (ZLIB_FOUND)
@@ -187,8 +203,8 @@ find_package(PCRE)
 if (NOT PCRE_FOUND)
     message(FATAL_ERROR "Could not find PCRE package")
 endif (NOT PCRE_FOUND)
-target_include_directories(tf PRIVATE ${PCRE_INCLUDE_DIRS})
-target_link_libraries(tf PRIVATE ${PCRE_LIBRARIES})
+target_include_directories(tflib PRIVATE ${PCRE_INCLUDE_DIRS})
+target_link_libraries(tflib PRIVATE ${PCRE_LIBRARIES})
 
 ########### headers ############
 
@@ -229,7 +245,7 @@ check_struct_has_member("struct winsize" ws_col sys/ptem.h NEED_PTEM_H LANGUAGE 
 ########### functions ############
 
 # strftime
-search_for_function(strftime "intl" tf HAVE_STRFTIME)
+search_for_function(strftime "intl" tflib HAVE_STRFTIME)
 
 check_symbol_exists(h_errno "netdb.h" HAVE_H_ERRNO)
 
@@ -359,6 +375,7 @@ else (MANPAGE)
     set(MANTYPE "")
 endif (MANPAGE)
 
+target_compile_options(tflib PRIVATE "-DDATADIR=${CMAKE_INSTALL_FULL_DATADIR}")
 target_compile_options(tf PRIVATE "-DDATADIR=${CMAKE_INSTALL_FULL_DATADIR}")
 
 include(cmake/Docs.cmake)
@@ -367,5 +384,8 @@ include(cmake/TfLib.cmake)
 
 # Setup installation target
 include(cmake/Install.cmake)
+
+option(BUILD_TESTING "Build the TinyFugue test suite" OFF)
+include(CTest)
 
 add_subdirectory(src)

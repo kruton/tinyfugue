@@ -29,7 +29,6 @@ jobs:
           sudo apt-get install -q -y \
               make \
               cmake \
-              g++ \
               libssl-dev \
               libncurses-dev \
               libicu-dev \
@@ -42,4 +41,4 @@ jobs:
           echo "ICU_ROOT=$(brew list icu4c | awk '/\/bin\//{sub(/\/bin\/.*/,"");print;exit}')" >> "$GITHUB_ENV"
 
       - name: Run build
-        run: make
+        run: make test
