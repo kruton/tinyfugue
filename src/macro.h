@@ -36,7 +36,7 @@ extern int    find_and_run_matches(String *text, int hooknum, String **linep,
 		struct World *world, int globalflag, int exec_list_long);
 
 #define macro_hash(name) \
-    (!name ? 0 : (*name == '#') ? atoi(name + 1) : hash_string(name))
+    (!name ? 0 : (*name == '#') ? atoi(&name[1]) : hash_string(name))
 #define find_macro(name)    find_hashed_macro(name, macro_hash(name))
 
 #if USE_DMALLOC
