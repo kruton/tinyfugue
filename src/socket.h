@@ -9,6 +9,10 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* socktime ids */
 #define SOCK_RECV	0
 #define SOCK_SEND	1
@@ -67,5 +71,9 @@ extern void          xsock_alert_id(void);
 extern const char   *fgname(void);
 extern const char   *world_info(const char *worldname, const char *fieldname);
 extern struct World *named_or_current_world(const char *name);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* SOCKET_H */

@@ -9,6 +9,10 @@
 #ifndef ATTR_H
 #define ATTR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void init_attrs(void);
 extern int  ch_attr(Var *var);
 extern int  ch_status_attr(Var *var);
@@ -19,5 +23,9 @@ extern String *decode_ansi(const char *src, attr_t attrs, int emul,
 extern String *attr2str(String *dest, attr_t attrs);
 extern String *encode_attr(const conString *str, int offset);
 extern String *encode_ansi(const conString *str, int offset);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* ATTR_H */

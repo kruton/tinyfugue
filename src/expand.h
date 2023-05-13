@@ -9,6 +9,10 @@
 #ifndef EXPAND_H
 #define EXPAND_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* note: these numbers must agree with enum_subs[] in variable.c. */
 #define SUB_LITERAL -1  /* send literally (no /command interpretation, even) */
 #define SUB_KEYWORD  0  /* SUB_NEWLINE if initial keyword, else no subs      */
@@ -57,5 +61,9 @@ extern int recur_count, breaking;
 	Value *tmp = val; /* evaluate val once, before freeing user_result */ \
         freeval(user_result); user_result = tmp; \
     } while(0)
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* EXPAND_H */

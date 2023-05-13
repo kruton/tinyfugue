@@ -9,6 +9,10 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************************************************
  * trie, hash table, linked list, and binary search routines *
  *************************************************************/
@@ -147,6 +151,10 @@ int resize_cqueue(CQueue *cq, int maxsize);
 #if USE_DMALLOC
 extern void   free_search(void);
 extern void   free_hash(HashTable *table);
+#endif
+
+#ifdef __cplusplus
+};
 #endif
 
 #endif /* SEARCH_H */

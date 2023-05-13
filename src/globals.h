@@ -9,6 +9,10 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************
  * Global user variables *
  *************************/
@@ -272,5 +276,9 @@ enum Vars {
 extern Var special_var[];
 
 #define reset_kbnum()	unsetvar(&special_var[VAR_kbnum])
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* GLOBALS_H */

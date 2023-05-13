@@ -9,6 +9,10 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if TERMCAP
 # define SCREEN
 #endif
@@ -87,6 +91,10 @@ extern void clear_alert(void);
 
 #if USE_DMALLOC
 extern void   free_output(void);
+#endif
+
+#ifdef __cplusplus
+};
 #endif
 
 #endif /* OUTPUT_H */

@@ -9,6 +9,10 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct Value *(Handler)(String *args, int offset);
 
 typedef struct BuiltinCmd {
@@ -28,5 +32,9 @@ extern int      handle_echo_func(conString *string, const char *attrstr,
 extern int      handle_substitute_func(conString *string,
                      const char *attrstr, int inline_flag);
 extern int      handle_prompt_func(conString *string);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* COMMAND_H */

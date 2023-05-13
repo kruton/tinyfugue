@@ -9,6 +9,10 @@
 #ifndef DSTRING_H
 #define DSTRING_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ALLOCSIZE		(32L)
 
 typedef struct String {
@@ -180,5 +184,9 @@ extern void free_dstring(void);
 extern conString blankline[1];
 
 #undef FL
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* DSTRING_H */

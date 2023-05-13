@@ -9,6 +9,10 @@
 #ifndef PATTERN_H
 #define PATTERN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pcre.h>
 
 typedef struct RegInfo {
@@ -43,5 +47,9 @@ extern void   free_pattern(Pattern *pat);
 extern int    smatch(const char *pat, const char *str);
 extern int    smatch_check(const char *s);
 extern void   free_patterns(void);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PATTERN_H */

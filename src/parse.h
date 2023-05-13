@@ -9,6 +9,10 @@
 #ifndef PARSE_H
 #define PARSE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* keywords: must be sorted and numbered sequentially */
 typedef enum {
     BREAK = 0200, DO, DONE, ELSE, ELSEIF, ENDIF, EXIT, IF,
@@ -149,5 +153,9 @@ extern const conString *argstring;	/* command argument text */
 extern keyword_id_t block;		/* type of current expansion block */
 extern int condition;			/* checked by /if and /while */
 extern int evalflag;			/* flag: should we evaluate? */
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PARSE_H */

@@ -9,6 +9,10 @@
 #ifndef HISTORY_H
 #define HISTORY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 # if !NO_HISTORY
 
 extern void   init_histories(void);
@@ -53,5 +57,9 @@ extern int log_count, norecord, nolog;
 static int norecord = 0, nolog = 0;
 
 # endif /* NO_HISTORY */
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* HISTORY_H */

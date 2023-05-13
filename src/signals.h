@@ -9,6 +9,10 @@
 #ifndef SIGNALS_H
 #define SIGNALS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern void init_signals(void);
 extern void init_exename(char *name);
 extern void process_signals(void);
@@ -23,5 +27,9 @@ extern const char *checkstring(const char *s);
 
 #define core(fmt, file, line, n)	crash(TRUE, fmt, file, line, n)
 #define error_exit(fmt, file, line, n)	crash(FALSE, fmt, file, line, n)
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* SIGNALS_H */

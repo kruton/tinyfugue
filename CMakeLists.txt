@@ -3,7 +3,15 @@ if (POLICY CMP0075)
     cmake_policy(SET CMP0075 NEW)
 endif()
 
+# Avoid warning about DOWNLOAD_EXTRACT_TIMESTAMP in CMake 3.24:
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+	cmake_policy(SET CMP0135 NEW)
+endif()
+
 project(tinyfugue)
+
+# Used only for GTest tests; main executable is C
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -17,7 +25,9 @@ message("Configuring ${TFVERSION}")
 # For custom FindXXX.cmake modules
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
+add_library(tflib "")
 add_executable(tf "")
+target_link_libraries(tf PRIVATE tflib)
 
 include(GNUInstallDirs)
 include(CheckIncludeFiles)
@@ -118,7 +128,7 @@ if (SSL)
         list(APPEND CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
         list(APPEND CMAKE_REQUIRED_LIBRARIES ${OPENSSL_SSL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARIES})
         check_symbol_exists(ERR_peek_error openssl/err.h HAVE_ERR_PEEK_ERROR)
-        target_link_libraries(tf PRIVATE OpenSSL::SSL)
+        target_link_libraries(tflib PRIVATE OpenSSL::SSL)
     else (OPENSSL_FOUND)
         find_package(GnuTLS)
         if (GNUTLS_FOUND)
@@ -126,7 +136,7 @@ if (SSL)
             check_include_file("gnutls/openssl.h" HAVE_GNUTLS_OPENSSL_H)
             check_library_exists(gnutls-openssl SSL_free "" HAVE_GNUTLS_OPENSSL_LIB)
             if (HAVE_GNUTLS_OPENSSL_H AND HAVE_GNUTLS_OPENSSL_LIB)
-                target_link_libraries(tf PRIVATE GnuTLS::GnuTLS gnutls-openssl)
+                target_link_libraries(tflib PRIVATE GnuTLS::GnuTLS gnutls-openssl)
                 set(GNUTLS_WORKS TRUE)
             endif()
         endif(GNUTLS_FOUND)
@@ -144,7 +154,7 @@ if (CURSES)
         message(FATAL_ERROR "Could not find curses library")
     endif (NOT CURSES_FOUND)
     include_directories(${CURSES_INCLUDE_DIR})
-    target_link_libraries(tf PRIVATE ${CURSES_LIBRARIES})
+    target_link_libraries(tflib PRIVATE ${CURSES_LIBRARIES})
     set(TERMCAP 1)
     set(HARDCODE 0)
 else (CURSES)
@@ -167,12 +177,12 @@ endif (FLOAT)
 
 if (WIDECHAR)
     find_package(ICU 51.0 COMPONENTS uc i18n data REQUIRED)
-    target_link_libraries(tf PRIVATE ICU::uc ICU::i18n ICU::data)
+    target_link_libraries(tflib PRIVATE ICU::uc ICU::i18n ICU::data)
 endif (WIDECHAR)
 
 find_package(ZLIB)
 if (ZLIB_FOUND)
-    target_link_libraries(tf PRIVATE ZLIB::ZLIB)
+    target_link_libraries(tflib PRIVATE ZLIB::ZLIB)
     set(HAVE_LIBZ 1)
     check_include_file("zlib.h" HAVE_ZLIB_H)
 endif (ZLIB_FOUND)
@@ -182,7 +192,7 @@ if (NOT PCRE_FOUND)
     message(FATAL_ERROR "Could not find PCRE package")
 endif (NOT PCRE_FOUND)
 include_directories(${PCRE_INCLUDE_DIRS})
-target_link_libraries(tf PRIVATE ${PCRE_LIBRARIES})
+target_link_libraries(tflib PRIVATE ${PCRE_LIBRARIES})
 
 ########### headers ############
 

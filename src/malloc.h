@@ -24,6 +24,10 @@
 #ifndef MALLOC_H
 #define MALLOC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int low_memory_warning;
 
 #if USE_MMALLOC
@@ -105,6 +109,10 @@ extern void      init_malloc(void);
 #if USE_DMALLOC
 extern void   free_reserve(void);
 extern void   debug_mstats(const char *s);
+#endif
+
+#ifdef __cplusplus
+};
 #endif
 
 #endif /* MALLOC_H */

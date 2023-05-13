@@ -9,6 +9,10 @@
 #ifndef MACRO_H
 #define MACRO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum { USED_NAME, USED_TRIG, USED_HOOK, USED_KEY, USED_N }; /* for Macro.used */
 
 extern int invis_flag;
@@ -45,5 +49,9 @@ extern void   free_macros(void);
 
 #define add_ibind(key, cmd) \
     add_new_macro(NULL, key, NULL, NULL, cmd, 0, 100, 0, TRUE, 0)
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* MACRO_H */

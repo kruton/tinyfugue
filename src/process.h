@@ -9,6 +9,10 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 # if !NO_PROCESS
 
 extern void kill_procs_by_world(struct World *world);
@@ -29,5 +33,9 @@ extern struct timeval proctime;		/* when next process should run */
 #define proctime tvzero
 
 # endif /* NO_PROCESS */
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* PROCESS_H */

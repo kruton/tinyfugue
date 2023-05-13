@@ -9,10 +9,18 @@
 #ifndef EXPR_H
 #define EXPR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int    expr(Program *prog);
 
 #if USE_DMALLOC
 extern void   free_expr(void);
+#endif
+
+#ifdef __cplusplus
+};
 #endif
 
 #endif /* EXPR_H */
