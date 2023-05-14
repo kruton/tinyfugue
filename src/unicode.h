@@ -7,6 +7,9 @@
 #ifndef UNICODE_H
 #define UNICODE_H
 
+extern int tf_character_offset(const char *str, int len, int position,
+    int count);
+
 #if WIDECHAR
 #include <unicode/ucnv.h>
 

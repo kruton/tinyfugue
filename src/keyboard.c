@@ -25,6 +25,7 @@
 #include "expand.h"	/* macro_run() */
 #include "cmdlist.h"
 #include "variable.h"	/* unsetvar() */
+#include "unicode.h"
 
 static int literal_next = FALSE;
 static TrieNode *keynode = NULL;	/* current node matched by input */
@@ -180,7 +181,8 @@ int handle_keyboard_input(int read_flag)
             } else if (s[key_start] == '\b' || s[key_start] == '\177') {
                 handle_input_string(s + input_start, key_start - input_start);
                 place = input_start = ++key_start;
-                do_kbdel(keyboard_pos - kbnumval);
+                do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+                    keyboard_pos, -kbnumval));
 		reset_kbnum();
             } else if (kbnum && is_digit(s[key_start]) &&
 		key_start == input_start)
@@ -324,8 +326,17 @@ struct Value *handle_dokey_command(String *args, int offset)
 
     switch (ptr - efunc_table) {
 
+    case DOKEY_BSPC:
+        return newint(do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, -n)));
     case DOKEY_CLEAR:      return newint(clear_display_screen());
+    case DOKEY_DCH:
+        return newint(do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, n)));
     case DOKEY_FLUSH:      return newint(screen_end(0));
+    case DOKEY_LEFT:
+        return newint(igoto(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, -n)));
     case DOKEY_LNEXT:      return newint(literal_next = TRUE);
     case DOKEY_NEWLINE:    return newint(dokey_newline());
     case DOKEY_PAUSE:      return newint(pause_screen());
@@ -335,6 +346,9 @@ struct Value *handle_dokey_command(String *args, int offset)
     case DOKEY_RECALLF:    return newint(replace_input(recall_input(n,0)));
     case DOKEY_REDRAW:     return newint(redraw());
     case DOKEY_REFRESH:    return newint((logical_refresh(), keyboard_pos));
+    case DOKEY_RIGHT:
+        return newint(igoto(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, n)));
     case DOKEY_SEARCHB:    return newint(replace_input(recall_input(-n,1)));
     case DOKEY_SEARCHF:    return newint(replace_input(recall_input(n,1)));
     case DOKEY_SELFLUSH:   return newint(selflush());
