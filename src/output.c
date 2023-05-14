@@ -210,7 +210,9 @@ static int in_top, in_bot;	    /* top & bottom line # of input window */
 static int out_bot;		    /* bottom line # of output window */
 static int stat_top, stat_bot;	    /* top & bottom line # of status area */
 static int istarty, iendy, iendx;   /* start/end of current input line */
-static conString *prompt;           /* current prompt */
+conString *prompt;                  /* current prompt */
+int in_visual_move = FALSE;
+int desired_column = -1;
 static attr_t have_attr = 0;        /* available attributes */
 static int screen_mode = -1;        /* -1=unset, 0=nonvisual, 1=visual */
 static int output_disabled = 1;     /* is it safe to oflush()? */
@@ -2684,6 +2686,9 @@ void logical_refresh(void)
             prompt_column, Wrap, tabsize, &input_rows, &input_column);
     } else {
         input_column = prompt_column;
+    }
+    if (!in_visual_move) {
+        desired_column = input_column;
     }
     nix = input_column + 1;
     niy = istarty + prompt_rows + input_rows;

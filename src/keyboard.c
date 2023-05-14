@@ -466,6 +466,74 @@ int handle_input_line(void)
     return result;
 }
 
+int kb_visual_move(int delta)
+{
+    int prompt_rows = 0, prompt_column = 0;
+    int input_rows = 0, input_column = 0;
+    int target_row;
+    int best_offset = keyboard_pos;
+    int min_row_diff = -1;
+    int min_col_diff = -1;
+    int offset = 0;
+    int wrap_val = (wrapsize ? wrapsize : columns);
+
+    if (prompt) {
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, wrap_val, tabsize, &prompt_rows, &prompt_column);
+    }
+    tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+        prompt_column, wrap_val, tabsize, &input_rows, &input_column);
+
+    if (desired_column < 0) {
+        desired_column = input_column;
+    }
+
+    target_row = input_rows + delta;
+
+    while (offset <= keybuf->len) {
+        int row = 0, col = 0;
+        int row_diff, col_diff;
+        int next_offset;
+
+        tf_display_position(keybuf->data, keybuf->len, offset,
+            prompt_column, wrap_val, tabsize, &row, &col);
+
+        row_diff = row - target_row;
+        if (row_diff < 0) row_diff = -row_diff;
+        col_diff = col - desired_column;
+        if (col_diff < 0) col_diff = -col_diff;
+
+        if (min_row_diff == -1 || row_diff < min_row_diff) {
+            min_row_diff = row_diff;
+            min_col_diff = col_diff;
+            best_offset = offset;
+        } else if (row_diff == min_row_diff) {
+            if (min_col_diff == -1 || col_diff < min_col_diff) {
+                min_col_diff = col_diff;
+                best_offset = offset;
+            }
+        }
+
+        if (offset == keybuf->len) {
+            break;
+        }
+
+        next_offset = tf_character_offset(keybuf->data, keybuf->len, offset, 1);
+        if (next_offset <= offset) {
+            offset++;
+        } else {
+            offset = next_offset;
+        }
+    }
+
+    in_visual_move = TRUE;
+    igoto(best_offset);
+    in_visual_move = FALSE;
+
+    return keyboard_pos;
+}
+
+
 #if USE_DMALLOC
 void free_keyboard(void)
 {

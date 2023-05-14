@@ -230,6 +230,56 @@ static void test_outgoing_conversion(void)
     ucnv_close(converter);
     Stringfree(output);
 }
+
+extern Stringp keybuf;
+extern int keyboard_pos;
+extern conString *prompt;
+extern int desired_column;
+extern int kb_visual_move(int delta);
+
+static void test_kb_visual_move_func(void)
+{
+    int old_pos = keyboard_pos;
+    conString *old_prompt = prompt;
+    int old_desired = desired_column;
+    char old_content[1024];
+    int old_len = keybuf->len;
+
+    if (old_len < (int)sizeof(old_content)) {
+        if (keybuf->data && old_len > 0) {
+            memcpy(old_content, keybuf->data, old_len);
+        }
+        old_content[old_len] = '\0';
+    } else {
+        old_content[0] = '\0';
+    }
+
+    special_var[VAR_wrapsize].val.u.ival = 5;
+    special_var[VAR_tabsize].val.u.ival = 8;
+
+    Stringtrunc(keybuf, 0);
+    Stringcat(keybuf, "abcdefgh");
+    keyboard_pos = 7; // 'h'
+    prompt = NULL;
+    desired_column = -1;
+
+    /* Move up 1 row */
+    kb_visual_move(-1);
+    EXPECT_INT(2, keyboard_pos); // 'c' (column 2)
+
+    /* Move down 1 row */
+    kb_visual_move(1);
+    EXPECT_INT(7, keyboard_pos); // 'h' (column 2)
+
+    /* Clean up */
+    Stringtrunc(keybuf, 0);
+    if (old_len > 0 && old_len < (int)sizeof(old_content)) {
+        Stringncat(keybuf, old_content, old_len);
+    }
+    keyboard_pos = old_pos;
+    prompt = old_prompt;
+    desired_column = old_desired;
+}
 #endif
 
 int main(void)
@@ -242,6 +292,7 @@ int main(void)
     test_display_positions();
     test_incoming_conversion();
     test_outgoing_conversion();
+    test_kb_visual_move_func();
 #endif
 
     if (failures) {
