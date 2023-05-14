@@ -153,7 +153,7 @@ static void  ioutall(int kpos);
 static void  attributes_off(attr_t attrs);
 static void  attributes_on(attr_t attrs);
 static void  color_on(const char *prefix, long color);
-static void  hwrite(conString *line, int start, int len, int indent);
+void  hwrite(conString *line, int start, int len, int indent);
 static int   check_more(Screen *screen);
 static int   next_physline(Screen *screen);
 static void  output_novisual(PhysLine *pl);
@@ -201,7 +201,7 @@ static StatusField *variable_width_field[max_status_height];
 
 STATIC_BUFFER(outbuf);              /* output buffer */
 static int top_margin = -1, bottom_margin = -1;	/* scroll region */
-static int cx = -1, cy = -1;        /* Real cursor ((-1,-1)==unknown) */
+int cx = -1, cy = -1;        /* Real cursor ((-1,-1)==unknown) */
 static int ox = 1, oy = 1;          /* Output cursor */
 static int ix, iy;                  /* Input cursor */
 static int old_ix = -1;		    /* original ix before output clobbered it */
@@ -2850,21 +2850,15 @@ static void color_on(const char *prefix, long color)
     }
 }
 
-static void hwrite(conString *line, int start, int len, int indent)
+void hwrite(conString *line, int start, int len, int indent)
 {
     attr_t attrs = line->attrs & F_HWRITE;
     attr_t current = 0;
     attr_t new;
     int i, ctrl;
     int col = 0;
+    int total_width = 0;
     char c;
-#if WIDECHAR
-    size_t ret;
-    mbstate_t is, os;
-
-    memset(&is, 0, sizeof(is));
-    memset(&os, 0, sizeof(os));
-#endif
 
     if (line->attrs & F_BELL && start == 0) {
         dobell(1);
@@ -2873,14 +2867,44 @@ static void hwrite(conString *line, int start, int len, int indent)
     if (indent) {
         bufputnc(' ', indent);
         cx += indent;
+        col += indent;
     }
-
-    cx += len;
 
     if (!line->charattrs && hilite && attrs)
         attributes_on(current = attrs);
 
-    for (i = start; i < start + len; ++i) {
+    for (i = start; i < start + len; ) {
+#if WIDECHAR
+        int end_idx;
+        int width;
+        int j;
+
+        width = tf_grapheme_width((char *)line->data, start + len, i, col, tabsize, &end_idx);
+        if (end_idx <= i) {
+            end_idx = i + 1;
+        }
+
+        for (j = i; j < end_idx; ++j) {
+            new = line->charattrs ? adj_attr(attrs, line->charattrs[j]) : attrs;
+            c = unmapchar(localize(line->data[j]));
+            ctrl = (emulation > EMUL_RAW && is_cntrl(c) && c != '\t');
+            if (ctrl)
+                new |= F_BOLD | F_REVERSE;
+            if (new != current) {
+                if (current) attributes_off(current);
+                current = new;
+                if (current) attributes_on(current);
+            }
+            if (c == '\t') {
+                bufputnc(' ', tabsize - col % tabsize);
+            } else {
+                bufputc(ctrl ? CTRL(c) : c);
+            }
+        }
+        col += width;
+        total_width += width;
+        i = end_idx;
+#else
         new = line->charattrs ? adj_attr(attrs, line->charattrs[i]) : attrs;
         c = unmapchar(localize(line->data[i]));
         ctrl = (emulation > EMUL_RAW && is_cntrl(c) && c != '\t');
@@ -2893,28 +2917,23 @@ static void hwrite(conString *line, int start, int len, int indent)
         }
         if (c == '\t') {
             bufputnc(' ', tabsize - col % tabsize);
+            total_width += tabsize - col % tabsize;
             col += tabsize - col % tabsize;
         } else {
-#if WIDECHAR
-	    ret = mbrtowc(NULL, (char *)line->data+i, len - i, &is);
-	    if (ret >= (size_t) -2) {
-		/* Invalid character. Punt. */
-		bufputc(ctrl ? CTRL(c) : c);
-	    } else {
-		int j = 1;
-		bufputc(c);
-		while (j++ < ret) {
-		  c = line->data[++i];
-		  bufputc(c);
-		}
-	    }
-#else
             bufputc(ctrl ? CTRL(c) : c);
-#endif
+            total_width++;
             col++;
         }
+        ++i;
+#endif
     }
     if (current) attributes_off(current);
+
+#if WIDECHAR
+    cx += total_width;
+#else
+    cx += len;
+#endif
 }
 
 void reset_outcount(Screen *screen)
