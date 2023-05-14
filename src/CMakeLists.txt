@@ -26,6 +26,7 @@ target_sources(tflib
         ${src_dir}/search.c
         ${src_dir}/signals.c
         ${src_dir}/socket.c
+        ${src_dir}/unicode.c
         ${src_dir}/tfio.c
         ${src_dir}/tty.c
         ${src_dir}/util.c
