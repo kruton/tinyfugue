@@ -117,12 +117,19 @@ static void test_decode_ansi_utf8(void)
 
 static void test_unicode_wrapping(void)
 {
+    const char zwj_emoji[] =
+        "\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x92\xbbX";
+
     EXPECT_INT(4, tf_utf8_wraplen("abcd", 4, 4, 8));
     EXPECT_INT(5, tf_utf8_wraplen("ab\xe7\x95\x8c" "c", 6, 4, 8));
     EXPECT_INT(3, tf_utf8_wraplen("e\xcc\x81x", 4, 1, 8));
     EXPECT_INT(4, tf_utf8_wraplen("\xf0\x9f\x98\x80x", 5, 2, 8));
     EXPECT_INT(3, tf_utf8_wraplen("ab cd", 5, 4, 8));
     EXPECT_INT(1, tf_utf8_wraplen("a\tb", 3, 4, 8));
+    EXPECT_INT(3, tf_utf8_wraplen("\xe7\x95\x8cX", 4, 1, 8));
+    EXPECT_INT(3, tf_utf8_wraplen("e\xcc\x81x", 4, 0, 8));
+    EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 2, 8));
+    EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 1, 8));
 }
 
 static void test_incoming_conversion(void)
