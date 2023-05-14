@@ -369,6 +369,37 @@ static void test_hwrite_column_tracking(void)
     Stringfree(str);
     cx = old_cx;
 }
+
+extern int ix;
+extern int iendx;
+extern void physical_refresh(void);
+
+static void test_prompt_clipping(void)
+{
+    conString *old_prompt = prompt;
+    int old_pos = keyboard_pos;
+    int old_ix = ix;
+    int old_iendx = iendx;
+    int old_expnonvis = special_var[VAR_expnonvis].val.u.ival;
+
+    special_var[VAR_wrapsize].val.u.ival = 2;
+    special_var[VAR_tabsize].val.u.ival = 8;
+    special_var[VAR_expnonvis].val.u.ival = 1;
+
+    prompt = (conString *)owned_string("a\xc3\xa9X", 4, 0);
+    keyboard_pos = 0;
+
+    physical_refresh();
+
+    EXPECT_INT(2, iendx); // display width of 'X' is 1, so iendx is 2
+
+    release_string((String *)prompt);
+    prompt = old_prompt;
+    keyboard_pos = old_pos;
+    ix = old_ix;
+    iendx = old_iendx;
+    special_var[VAR_expnonvis].val.u.ival = old_expnonvis;
+}
 #endif
 
 int main(void)
@@ -384,6 +415,7 @@ int main(void)
     test_kb_visual_move_func();
     test_overwrite_and_insert();
     test_hwrite_column_tracking();
+    test_prompt_clipping();
 #endif
 
     if (failures) {
