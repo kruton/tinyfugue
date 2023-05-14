@@ -10,13 +10,85 @@
 #include "unicode.h"
 
 #if WIDECHAR
+#include <unicode/ubrk.h>
+#include <unicode/utext.h>
+#endif
+
+int tf_character_offset(const char *str, int len, int position, int count)
+{
+    if (!str || len <= 0)
+        return 0;
+    if (position < 0)
+        position = 0;
+    if (position > len)
+        position = len;
+
+#if WIDECHAR
+    {
+        UBreakIterator *characters;
+        UText *text;
+        UErrorCode error = U_ZERO_ERROR;
+        int result = position;
+
+        text = utext_openUTF8(NULL, str, len, &error);
+        if (U_FAILURE(error))
+            goto byte_fallback;
+
+        characters = ubrk_open(UBRK_CHARACTER, NULL, NULL, 0, &error);
+        if (U_FAILURE(error)) {
+            utext_close(text);
+            goto byte_fallback;
+        }
+        ubrk_setUText(characters, text, &error);
+        if (U_FAILURE(error)) {
+            ubrk_close(characters);
+            utext_close(text);
+            goto byte_fallback;
+        }
+
+        if (count < 0) {
+            if (!ubrk_isBoundary(characters, position)) {
+                result = ubrk_preceding(characters, result);
+                count++;
+            }
+            while (count < 0 && result > 0) {
+                result = ubrk_preceding(characters, result);
+                count++;
+            }
+        } else if (count > 0) {
+            if (!ubrk_isBoundary(characters, position)) {
+                result = ubrk_following(characters, result);
+                count--;
+            }
+            while (count > 0 && result < len) {
+                result = ubrk_following(characters, result);
+                count--;
+            }
+        }
+
+        ubrk_close(characters);
+        utext_close(text);
+        if (result == UBRK_DONE)
+            return count < 0 ? 0 : len;
+        return result;
+    }
+
+byte_fallback:
+#endif
+    position += count;
+    if (position < 0)
+        return 0;
+    if (position > len)
+        return len;
+    return position;
+}
+
+#if WIDECHAR
 
 #include <stdlib.h>
 #include <unicode/uchar.h>
-#include <unicode/ubrk.h>
 #include <unicode/ustring.h>
 #include <unicode/utf8.h>
-#include <unicode/utext.h>
 
 #define CONVERT_BUFFER_SIZE 4096
 
