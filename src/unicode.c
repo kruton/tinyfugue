@@ -12,6 +12,7 @@
 #if WIDECHAR
 #include <unicode/ubrk.h>
 #include <unicode/utext.h>
+static int cluster_width(const char *str, int start, int end);
 #endif
 
 int tf_character_offset(const char *str, int len, int position, int count)
@@ -81,6 +82,98 @@ byte_fallback:
     if (position > len)
         return len;
     return position;
+}
+
+int tf_grapheme_width(const char *str, int len, int start, int column,
+    int tab_width, int *end)
+{
+    int next;
+
+    if (!str || start >= len) {
+        *end = len;
+        return 0;
+    }
+    next = tf_character_offset(str, len, start, 1);
+    if (next <= start)
+        next = start + 1;
+    *end = next;
+
+#if WIDECHAR
+    if (str[start] == '\t') {
+        int effective_tab_width = tab_width > 0 ? tab_width : 1;
+        return effective_tab_width - column % effective_tab_width;
+    }
+    return cluster_width(str, start, next);
+#else
+    return 1;
+#endif
+}
+
+void tf_display_position(const char *str, int len, int position,
+    int start_column, int wrap_width, int tab_width, int *row, int *column)
+{
+    int offset = 0;
+    int current_row = 0;
+    int current_column = start_column;
+
+    if (position > len)
+        position = len;
+    while (offset < position) {
+        int end;
+        int width = tf_grapheme_width(str, len, offset, current_column,
+            tab_width, &end);
+
+        if (current_column > 0 &&
+            current_column + width > wrap_width)
+        {
+            current_row++;
+            current_column = 0;
+            width = tf_grapheme_width(str, len, offset, current_column,
+                tab_width, &end);
+        }
+        current_column += width;
+        offset = end;
+        if (current_column >= wrap_width) {
+            current_row++;
+            current_column = 0;
+        }
+    }
+    *row = current_row;
+    *column = current_column;
+}
+
+int tf_display_row_offset(const char *str, int len, int target_row,
+    int start_column, int wrap_width, int tab_width)
+{
+    int offset = 0;
+    int row = 0;
+    int column = start_column;
+
+    if (target_row <= 0)
+        return 0;
+    while (offset < len) {
+        int end;
+        int width = tf_grapheme_width(str, len, offset, column,
+            tab_width, &end);
+
+        if (column > 0 && column + width > wrap_width) {
+            row++;
+            column = 0;
+            if (row >= target_row)
+                return offset;
+            width = tf_grapheme_width(str, len, offset, column,
+                tab_width, &end);
+        }
+        column += width;
+        offset = end;
+        if (column >= wrap_width) {
+            row++;
+            column = 0;
+            if (row >= target_row)
+                return offset;
+        }
+    }
+    return len;
 }
 
 #if WIDECHAR

@@ -2202,13 +2202,39 @@ static void ictrl_put(const char *s, int n)
 }
 
 /* ioutputs
- * Print string within bounds of input window.  len is the number of
- * characters to print; return value is the number actually printed,
- * which may be less than len if string doesn't fit in the input window.
+ * Print string within bounds of input window.  len and the return value are
+ * byte counts; wide-character builds advance and wrap by grapheme width.
+ * The return value may be less than len if the string does not fit.
  * precondition: iendx,iendy and real cursor are at the output position.
  */
 static int ioutputs(const char *str, int len)
 {
+#if WIDECHAR
+    int written = 0;
+
+    while (written < len) {
+        int end;
+        int width = tf_grapheme_width(str, len, written, iendx - 1,
+            tabsize, &end);
+
+        if (iendx > 1 && iendx - 1 + width > Wrap) {
+            if (!visual || iendy == lines)
+                break;
+            xy(iendx = 1, ++iendy);
+            width = tf_grapheme_width(str, len, written, 0, tabsize, &end);
+        }
+
+        if (end - written == 1 && is_cntrl(str[written])) {
+            ictrl_put(str + written, 1);
+        } else {
+            bufputns(str + written, end - written);
+        }
+        cx += width;
+        iendx += width;
+        written = end;
+    }
+    return written;
+#else
     int space, written;
 
     for (written = 0; len > 0; len -= space) {
@@ -2224,6 +2250,7 @@ static int ioutputs(const char *str, int len)
         iendx += space;
     }
     return written;
+#endif
 }
 
 /* ioutall
@@ -2254,6 +2281,10 @@ void iput(int len)
     s = keybuf->data + keyboard_pos - len;
 
     if (!sockecho()) return;
+#if WIDECHAR
+    logical_refresh();
+    return;
+#endif
     if (visual) physical_refresh();
 
     if (keybuf->len - keyboard_pos > 8 &&     /* faster than redisplay? */
@@ -2389,6 +2420,10 @@ void idel(int place)
 
     if ((len = place - keyboard_pos) < 0) keyboard_pos = place;
     if (!sockecho()) return;
+#if WIDECHAR
+    logical_refresh();
+    return;
+#endif
     if (len < 0) ix += len;
     
     if (!visual) {
@@ -2500,6 +2535,11 @@ int igoto(int place)
     } else if (!sockecho()) {
         /* no physical change */
 
+#if WIDECHAR
+    } else {
+        logical_refresh();
+    }
+#else
     } else if (!visual) {
 	int prompt_len = prompt ? prompt->len % Wrap : 0;
         ix += diff;
@@ -2575,6 +2615,7 @@ int igoto(int place)
             ipos();
         }
     }
+#endif
 
     bufflush();
     return keyboard_pos;
@@ -2624,21 +2665,52 @@ void physical_refresh(void)
 void logical_refresh(void)
 {
     int kpos, nix, niy;
+#if WIDECHAR
+    int prompt_rows = 0, prompt_column = 0;
+    int input_rows = 0, input_column = 0;
+#endif
 
     if (!visual)
         oflush();  /* no sense refreshing if there's going to be output after */
 
     kpos = prompt ? -(prompt->len % Wrap) : 0;
+#if WIDECHAR
+    if (prompt) {
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, Wrap, tabsize, &prompt_rows, &prompt_column);
+    }
+    if (sockecho()) {
+        tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+            prompt_column, Wrap, tabsize, &input_rows, &input_column);
+    } else {
+        input_column = prompt_column;
+    }
+    nix = input_column + 1;
+    niy = istarty + prompt_rows + input_rows;
+#else
     nix = ((sockecho() ? keyboard_pos : 0) - kpos) % Wrap + 1;
+#endif
 
     if (visual) {
         setscroll(1, lines);
+#if !WIDECHAR
         niy = istarty + (keyboard_pos - kpos) / Wrap;
+#endif
         if (niy <= lines) {
             clear_input_line();
         } else {
+            int skipped_rows = niy - lines;
             clear_input_window();
+#if WIDECHAR
+            if (skipped_rows > prompt_rows) {
+                kpos = tf_display_row_offset(keybuf->data, keybuf->len,
+                    skipped_rows - prompt_rows, prompt_column, Wrap, tabsize);
+            } else {
+                kpos += skipped_rows * Wrap;
+            }
+#else
             kpos += (niy - lines) * Wrap;
+#endif
             niy = lines;
         }
         ioutall(kpos);
