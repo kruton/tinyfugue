@@ -132,6 +132,44 @@ static void test_unicode_wrapping(void)
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 1, 8));
 }
 
+static void test_display_positions(void)
+{
+    const char zwj_emoji[] =
+        "\xf0\x9f\x91\xa9\xe2\x80\x8d\xf0\x9f\x92\xbbX";
+    int row, column;
+
+    tf_display_position("ab\xe7\x95\x8c" "c", 6, 5, 0, 4, 8,
+        &row, &column);
+    EXPECT_INT(1, row);
+    EXPECT_INT(0, column);
+
+    tf_display_position("ab\xe7\x95\x8c" "c", 6, 6, 0, 4, 8,
+        &row, &column);
+    EXPECT_INT(1, row);
+    EXPECT_INT(1, column);
+
+    tf_display_position("Ae\xcc\x81" "B", 5, 4, 0, 2, 8,
+        &row, &column);
+    EXPECT_INT(1, row);
+    EXPECT_INT(0, column);
+
+    tf_display_position(zwj_emoji, 12, 11, 0, 2, 8, &row, &column);
+    EXPECT_INT(1, row);
+    EXPECT_INT(0, column);
+
+    tf_display_position("\xe7\x95\x8cX", 4, 4, 1, 4, 8,
+        &row, &column);
+    EXPECT_INT(1, row);
+    EXPECT_INT(0, column);
+
+    EXPECT_INT(5, tf_display_row_offset("ab\xe7\x95\x8c" "c", 6,
+        1, 0, 4, 8));
+    EXPECT_INT(4, tf_display_row_offset("e\xcc\x81xy", 5,
+        1, 0, 2, 8));
+    EXPECT_INT(11, tf_display_row_offset(zwj_emoji, 12,
+        1, 0, 2, 8));
+}
+
 static void test_incoming_conversion(void)
 {
     UConverter *converter;
@@ -201,6 +239,7 @@ int main(void)
 #if WIDECHAR
     test_decode_ansi_utf8();
     test_unicode_wrapping();
+    test_display_positions();
     test_incoming_conversion();
     test_outgoing_conversion();
 #endif
