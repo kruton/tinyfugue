@@ -28,6 +28,9 @@ extern ref_type_t need_refresh;		/* Input needs refresh? */
 extern int need_more_refresh;		/* Visual more prompt needs refresh? */
 extern struct timeval alert_timeout;	/* when to clear alert */
 extern unsigned long alert_id;
+extern conString *prompt;
+extern int in_visual_move;
+extern int desired_column;
 
 extern void dobell(int n);
 extern void init_output(void);

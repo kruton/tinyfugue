@@ -31,7 +31,7 @@
 /def -i dokey_dch	= /dokey dch
 /def -i dokey_deol	= /@test kbdel(kblen())
 /def -i dokey_dline	= /@test kbgoto(0), kbdel(kblen())
-/def -i dokey_down	= /@test kbgoto(kbpoint() + wrapsize * (kbnum?:1))
+/def -i dokey_down	= /@test kb_visual_move(kbnum?:1)
 /def -i dokey_dword	= /kb_kill_word
 /def -i dokey_end	= /@test kbgoto(kblen())
 /def -i dokey_home	= /@test kbgoto(0)
@@ -49,7 +49,7 @@
 /def -i dokey_searchf	= /dokey searchf
 /def -i dokey_socketb	= /fg -c$[-kbnum?:-1]
 /def -i dokey_socketf	= /fg -c$[+kbnum?:1]
-/def -i dokey_up	= /@test kbgoto(kbpoint() - wrapsize * (kbnum?:1))
+/def -i dokey_up	= /@test kb_visual_move(-(kbnum?:1))
 /def -i dokey_wleft	= /test kbgoto(kb_nth_word(-(kbnum?:1)))
 /def -i dokey_wright	= /test kbgoto(kb_nth_word(kbnum?:1))
 /def -i dokey_page	= /test morescroll(winlines() * (kbnum?:1))
@@ -133,17 +133,17 @@
     /if /limit%; /then /unlimit%; /else /relimit%; /endif
 
 /def -i kb_up_or_recallb = \
-    /if (kbpoint() < wrapsize) \
+    /let _old=$[kbpoint()]%; \
+    /@test kb_visual_move(-1)%; \
+    /if (kbpoint() == _old) \
 	/dokey_recallb%; \
-    /else \
-	/dokey_up%; \
     /endif
 
 /def -i kb_down_or_recallf = \
-    /if (kbpoint() == kblen()) \
+    /let _old=$[kbpoint()]%; \
+    /@test kb_visual_move(1)%; \
+    /if (kbpoint() == _old) \
 	/dokey_recallf%; \
-    /else \
-	/dokey_down%; \
     /endif
 
 /eval /def -ip%maxpri -mregexp -h'REDEF macro (dokey|kb)_' ~hook_redef_dokey = \

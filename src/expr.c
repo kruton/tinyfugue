@@ -38,6 +38,7 @@
 #include "tty.h"	/* no_tty */
 #include "history.h"	/* log_count */
 #include "world.h"	/* new_world() */
+#include "unicode.h"
 
 
 #define STACKSIZE 512
@@ -1414,6 +1415,9 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 
         case FN_kbpoint:
             return newint(keyboard_pos);
+
+        case FN_kb_visual_move:
+            return newint(kb_visual_move(opdint(1)));
 
         case FN_kbgoto:
             return newint(igoto(opdint(1)));
