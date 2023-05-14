@@ -131,6 +131,21 @@ static void test_unicode_wrapping(void)
     EXPECT_INT(3, tf_utf8_wraplen("e\xcc\x81x", 4, 0, 8));
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 2, 8));
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 1, 8));
+
+    {
+        int end_idx;
+        /* U+2600 (ambiguous/text emoji) default width should be 1 */
+        EXPECT_INT(1, tf_grapheme_width("\xe2\x98\x80", 3, 0, 0, 8, &end_idx));
+        EXPECT_INT(3, end_idx);
+
+        /* U+2600 + VS16 should be 2 */
+        EXPECT_INT(2, tf_grapheme_width("\xe2\x98\x80\xef\xb8\x8f", 6, 0, 0, 8, &end_idx));
+        EXPECT_INT(6, end_idx);
+
+        /* Keycap sequence should be 2 */
+        EXPECT_INT(2, tf_grapheme_width("1\xef\xb8\x8f\xe2\x83\xa3", 7, 0, 0, 8, &end_idx));
+        EXPECT_INT(7, end_idx);
+    }
 }
 
 static void test_display_positions(void)
