@@ -203,13 +203,15 @@ STATIC_BUFFER(outbuf);              /* output buffer */
 static int top_margin = -1, bottom_margin = -1;	/* scroll region */
 int cx = -1, cy = -1;        /* Real cursor ((-1,-1)==unknown) */
 static int ox = 1, oy = 1;          /* Output cursor */
-static int ix, iy;                  /* Input cursor */
+int ix;
+static int iy;                  /* Input cursor */
 static int old_ix = -1;		    /* original ix before output clobbered it */
 static int in_top, in_bot;	    /* top & bottom line # of input window */
 #define out_top 1		    /* top line # of output window */
 static int out_bot;		    /* bottom line # of output window */
 static int stat_top, stat_bot;	    /* top & bottom line # of status area */
-static int istarty, iendy, iendx;   /* start/end of current input line */
+static int istarty, iendy;
+int iendx;   /* start/end of current input line */
 conString *prompt;                  /* current prompt */
 int in_visual_move = FALSE;
 int desired_column = -1;
@@ -2264,11 +2266,25 @@ static void ioutall(int kpos)
     int ppos;
 
     if (kpos < 0) {                  /* posible only if there's a prompt */
+#if WIDECHAR
+        int prompt_rows = 0, prompt_column = 0;
+        int start_row = -kpos - 1;
+        int start_offset;
+
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, Wrap, tabsize, &prompt_rows, &prompt_column);
+        start_offset = tf_display_row_offset(prompt->data, prompt->len,
+            start_row, 0, Wrap, tabsize);
+
+        hwrite(prompt, start_offset, prompt->len - start_offset, 0);
+        iendx = prompt_column + 1;
+#else
         kpos = -(-kpos % Wrap);
         ppos = prompt->len + kpos;
         if (ppos < 0) ppos = 0;
         hwrite(prompt, ppos, prompt->len - ppos, 0);
         iendx = -kpos + 1;
+#endif
         kpos = 0;
     }
     if (sockecho())
@@ -2630,6 +2646,56 @@ void do_refresh(void)
     else if (need_refresh >= REF_PHYSICAL) physical_refresh();
 }
 
+#if WIDECHAR
+static void get_scroll_info(int *start_byte, int *ix, int plen)
+{
+    int cursor_rows = 0, cursor_col = 0;
+    int wrap_val = Wrap;
+    int input_width = wrap_val - plen;
+
+    if (input_width < 1) input_width = 1;
+
+    tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+        0, 100000, tabsize, &cursor_rows, &cursor_col);
+
+    if (cursor_col < input_width) {
+        *start_byte = 0;
+        *ix = cursor_col + plen + 1;
+    } else {
+        int target_cursor_col = input_width / 2;
+        int window_start_col = cursor_col - target_cursor_col;
+        int offset = 0;
+        int best_offset = 0;
+        int best_col = 0;
+
+        while (offset <= keybuf->len) {
+            int r = 0, c = 0;
+            tf_display_position(keybuf->data, keybuf->len, offset,
+                0, 100000, tabsize, &r, &c);
+
+            if (c <= window_start_col) {
+                best_offset = offset;
+                best_col = c;
+            } else {
+                break;
+            }
+
+            if (offset == keybuf->len) {
+                break;
+            }
+            int next_offset = tf_character_offset(keybuf->data, keybuf->len, offset, 1);
+            if (next_offset <= offset) {
+                offset++;
+            } else {
+                offset = next_offset;
+            }
+        }
+        *start_byte = best_offset;
+        *ix = cursor_col - best_col + plen + 1;
+    }
+}
+#endif
+
 void physical_refresh(void)
 {
     if (visual) {
@@ -2639,6 +2705,21 @@ void physical_refresh(void)
 	int start;
 	int prompt_len = 0;
         clear_input_line();
+#if WIDECHAR
+	if (prompt) {
+            int prompt_rows = 0, prompt_column = 0;
+            int last_row_start = 0;
+            tf_display_position(prompt->data, prompt->len, prompt->len,
+                0, Wrap, tabsize, &prompt_rows, &prompt_column);
+            last_row_start = tf_display_row_offset(prompt->data, prompt->len,
+                prompt_rows, 0, Wrap, tabsize);
+            hwrite(prompt, last_row_start, prompt->len - last_row_start, 0);
+            prompt_len = prompt_column;
+            iendx = prompt_len + 1;
+	}
+        get_scroll_info(&start, &ix, prompt_len);
+        ioutall(start);
+#else
 	if (prompt) {
 	    prompt_len = (prompt->len + 1) % Wrap - 1;
 	    hwrite(prompt, prompt->len - prompt_len, prompt_len, 0);
@@ -2657,7 +2738,10 @@ void physical_refresh(void)
 	    }
 	}
 	ioutall(start);
-        bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+#endif
+	if (iendx - ix > 0) {
+	    bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	}
     }
     bufflush();
     if (need_refresh <= REF_PHYSICAL) need_refresh = 0;
@@ -2675,12 +2759,12 @@ void logical_refresh(void)
     if (!visual)
         oflush();  /* no sense refreshing if there's going to be output after */
 
-    kpos = prompt ? -(prompt->len % Wrap) : 0;
 #if WIDECHAR
     if (prompt) {
         tf_display_position(prompt->data, prompt->len, prompt->len,
             0, Wrap, tabsize, &prompt_rows, &prompt_column);
     }
+    kpos = prompt ? -1 : 0;
     if (sockecho()) {
         tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
             prompt_column, Wrap, tabsize, &input_rows, &input_column);
@@ -2693,6 +2777,7 @@ void logical_refresh(void)
     nix = input_column + 1;
     niy = istarty + prompt_rows + input_rows;
 #else
+    kpos = prompt ? -(prompt->len % Wrap) : 0;
     nix = ((sockecho() ? keyboard_pos : 0) - kpos) % Wrap + 1;
 #endif
 
@@ -2711,7 +2796,7 @@ void logical_refresh(void)
                 kpos = tf_display_row_offset(keybuf->data, keybuf->len,
                     skipped_rows - prompt_rows, prompt_column, Wrap, tabsize);
             } else {
-                kpos += skipped_rows * Wrap;
+                kpos = -1 - skipped_rows;
             }
 #else
             kpos += (niy - lines) * Wrap;
@@ -2726,6 +2811,22 @@ void logical_refresh(void)
         clear_input_line();
 	if (expnonvis) {
 	    int plen = 0;
+#if WIDECHAR
+            int start_byte = 0;
+            if (prompt) {
+                int prompt_rows = 0, prompt_column = 0;
+                int last_row_start = 0;
+                tf_display_position(prompt->data, prompt->len, prompt->len,
+                    0, Wrap, tabsize, &prompt_rows, &prompt_column);
+                last_row_start = tf_display_row_offset(prompt->data, prompt->len,
+                    prompt_rows, 0, Wrap, tabsize);
+                hwrite(prompt, last_row_start, prompt->len - last_row_start, 0);
+                plen = prompt_column;
+                iendx = plen + 1;
+            }
+            get_scroll_info(&start_byte, &ix, plen);
+            ioutall(start_byte);
+#else
 	    if (prompt) {
 		plen = (prompt->len + 1) % Wrap - 1;
 		hwrite(prompt, prompt->len - plen, plen, 0);
@@ -2746,6 +2847,7 @@ void logical_refresh(void)
 		}
 	    }
 	    ioutall(kpos);
+#endif
 	} else {
 	    ioutall(kpos);
 	    kpos += Wrap;

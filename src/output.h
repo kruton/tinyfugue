@@ -31,6 +31,8 @@ extern unsigned long alert_id;
 extern conString *prompt;
 extern int in_visual_move;
 extern int desired_column;
+extern int ix;
+extern int iendx;
 
 extern void dobell(int n);
 extern void init_output(void);
