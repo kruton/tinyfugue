@@ -206,10 +206,22 @@ static int codepoint_width(UChar32 c)
     return 1;
 }
 
+/*
+ * Policy for East Asian Ambiguous Width:
+ * Ambiguous characters (like Greek, Cyrillic, line drawings, and some symbols)
+ * are treated as narrow (width 1) by default to match Western terminal behavior.
+ * Variation Selector 16 (VS16, U+FE0F) or enclosing mark sequence overrides this
+ * to width 2 for emoji presentation.
+ */
 static int cluster_width(const char *str, int start, int end)
 {
     int index = start;
     int width = 0;
+    int has_emoji_selector = 0;
+    int has_text_selector = 0;
+    int has_keycap = 0;
+    int has_zwj = 0;
+    int has_emoji = 0;
 
     while (index < end) {
         UChar32 c;
@@ -218,12 +230,36 @@ static int cluster_width(const char *str, int start, int end)
         U8_NEXT(str, index, end, c);
         if (c < 0)
             return 1;
+
+        if (c == 0xFE0F) {
+            has_emoji_selector = 1;
+        } else if (c == 0xFE0E) {
+            has_text_selector = 1;
+        } else if (c == 0x20E3) {
+            has_keycap = 1;
+        } else if (c == 0x200D) {
+            has_zwj = 1;
+        }
+
+        if (u_hasBinaryProperty(c, UCHAR_EMOJI)) {
+            has_emoji = 1;
+        }
+
         current = codepoint_width(c);
         if (current > width)
             width = current;
     }
+
+    if (has_keycap || has_zwj || (has_emoji && has_emoji_selector)) {
+        return 2;
+    }
+    if (has_text_selector && !has_keycap && !has_zwj) {
+        return 1;
+    }
+
     return width;
 }
+
 
 int tf_utf8_wraplen(const char *str, int len, int max_columns, int tab_width)
 {
