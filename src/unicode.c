@@ -139,8 +139,9 @@ int tf_utf8_wraplen(const char *str, int len, int max_columns, int tab_width)
     UText *text = NULL;
     UErrorCode error = U_ZERO_ERROR;
     int start, end, fit_end = 0, columns = 0, line_end = 0;
+    int forced_grapheme = 0;
 
-    if (len <= 0 || max_columns <= 0)
+    if (len <= 0)
         return 0;
 
     text = utext_openUTF8(NULL, str, len, &error);
@@ -164,8 +165,13 @@ int tf_utf8_wraplen(const char *str, int len, int max_columns, int tab_width)
         } else {
             width = cluster_width(str, start, end);
         }
-        if (columns + width > max_columns)
+        if (columns + width > max_columns) {
+            if (fit_end == 0) {
+                fit_end = end;
+                forced_grapheme = 1;
+            }
             break;
+        }
         columns += width;
         fit_end = end;
         start = end;
@@ -175,6 +181,12 @@ int tf_utf8_wraplen(const char *str, int len, int max_columns, int tab_width)
         ubrk_close(characters);
         utext_close(text);
         return len;
+    }
+
+    if (forced_grapheme) {
+        ubrk_close(characters);
+        utext_close(text);
+        return fit_end;
     }
 
     error = U_ZERO_ERROR;
