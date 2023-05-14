@@ -37,7 +37,7 @@ struct timeval keyboard_time;
 
 static int  dokey_newline(void);
 static int  replace_input(String *line);
-static void handle_input_string(const char *input, unsigned int len);
+void handle_input_string(const char *input, unsigned int len);
 
 
 STATIC_BUFFER(scratch);                 /* buffer for manipulating text */
@@ -231,18 +231,18 @@ end:
     return eof < 100;
 }
 
-/* Update the input window and keyboard buffer. */
-static void handle_input_string(const char *input, unsigned int len)
+void handle_input_string(const char *input, unsigned int len)
 {
-    int putlen = len, extra = 0;
+    int repl_count = 1;
+    String *repl;
+    int r;
 
     if (len == 0) return;
     if (kbnum) {
-	if (kbnumval > 1) {
-	    extra = kbnumval - 1;
-	    putlen = len + extra;
-	}
-	reset_kbnum();
+        if (kbnumval > 1) {
+            repl_count = kbnumval;
+        }
+        reset_kbnum();
     }
 
     /* if this is a fresh line, input history is already synced;
@@ -251,37 +251,49 @@ static void handle_input_string(const char *input, unsigned int len)
      */
     if (keybuf->len) sync_input_hist();
 
+    /* Build the full replacement string 'repl' */
+    repl = Stringnew(NULL, 0, 0);
+    for (r = 0; r < repl_count; r++) {
+        Stringncat(repl, input, len);
+    }
+
     if (keyboard_pos == keybuf->len) {                    /* add to end */
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-	Stringncat(keybuf, input, len);
+        Stringncat(keybuf, repl->data, repl->len);
+        keyboard_pos += repl->len;
     } else if (insert) {                                  /* insert in middle */
         Stringcpy(scratch, keybuf->data + keyboard_pos);
         Stringtrunc(keybuf, keyboard_pos);
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-        Stringncat(keybuf, input, len);
+        Stringncat(keybuf, repl->data, repl->len);
         SStringcat(keybuf, CS(scratch));
-    } else if (keyboard_pos + len + extra < keybuf->len) {    /* overwrite */
-	while (extra) {
-	    keybuf->data[keyboard_pos++] = *input;
-	    extra--;
-	}
-	memcpy(keybuf->data + keyboard_pos, input, len);
-    } else {                                              /* write past end */
+        keyboard_pos += repl->len;
+    } else {                                              /* overwrite */
+        int repl_graphemes = 0;
+        int offset = 0;
+        int overwrite_end;
+        /* Count graphemes in the replacement string */
+        while (offset < repl->len) {
+            int next_offset = tf_character_offset(repl->data, repl->len, offset, 1);
+            if (next_offset <= offset) {
+                offset++;
+            } else {
+                offset = next_offset;
+            }
+            repl_graphemes++;
+        }
+
+        /* Find how many bytes to overwrite in keybuf */
+        overwrite_end = tf_character_offset(keybuf->data, keybuf->len, keyboard_pos, repl_graphemes);
+
+        /* Replace range [keyboard_pos, overwrite_end] with repl */
+        Stringcpy(scratch, keybuf->data + overwrite_end);
         Stringtrunc(keybuf, keyboard_pos);
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-        Stringncat(keybuf, input, len);
-    }                      
-    keyboard_pos += len;
-    iput(putlen);
+        Stringncat(keybuf, repl->data, repl->len);
+        SStringcat(keybuf, CS(scratch));
+        keyboard_pos += repl->len;
+    }
+
+    iput(repl->len);
+    Stringfree(repl);
 }
 
 

@@ -2757,7 +2757,9 @@ void logical_refresh(void)
 	    }
 	    ix = nix;
 	}
-	bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	if (iendx - ix > 0) {
+	    bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	}
     }
     bufflush();
     if (need_refresh <= REF_LOGICAL) need_refresh = 0;
