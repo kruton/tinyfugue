@@ -554,8 +554,15 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 
         } else if (*s == '\b') {
 	    /* bug: doesn't handle expanded tabs */
-	    if (dst->len > 0)
+	    if (dst->len > 0) {
+#if WIDECHAR
+		int previous = dst->len;
+		U8_BACK_1(dst->data, 0, previous);
+		Stringtrunc(dst, previous);
+#else
 		Stringtrunc(dst, dst->len - 1);
+#endif
+	    }
 
         } else if (*s == '\07') {
             dst->attrs |= F_BELL;
@@ -810,4 +817,3 @@ String *encode_ansi(const conString *str, int offset)
     }
     return new;
 }
-

@@ -6,6 +6,7 @@
 #include "tf.h"
 #include "attr.h"
 #include "output.h"
+#include "unicode.h"
 
 static int failures;
 
@@ -64,9 +65,138 @@ static void test_encode_ansi(void)
     Stringfree(input);
 }
 
+static void test_string_shift_attributes(void)
+{
+    String *value = owned_string("abcd", 4, 0);
+
+    check_charattrs(value, value->len, 0, __FILE__, __LINE__);
+    value->charattrs[0] = 10;
+    value->charattrs[1] = 11;
+    value->charattrs[2] = 12;
+    value->charattrs[3] = 13;
+    value->charattrs[4] = 14;
+
+    Stringshift(value, 2);
+    expect_bytes("cd", 2, value);
+    EXPECT_INT(12, value->charattrs[0]);
+    EXPECT_INT(13, value->charattrs[1]);
+    EXPECT_INT(14, value->charattrs[2]);
+    Stringfree(value);
+}
+
+#if WIDECHAR
+static void test_decode_ansi_utf8(void)
+{
+    String *actual;
+    const char styled[] = "\033[1m\xc3\xa9\033[0mX";
+
+    special_var[VAR_expand_tabs].val.u.ival = 0;
+    actual = decode_ansi(styled, 0, EMUL_ANSI_ATTR, NULL);
+    expect_bytes("\xc3\xa9X", 3, actual);
+    EXPECT_TRUE(actual->charattrs != NULL);
+    if (actual->charattrs) {
+        EXPECT_TRUE((actual->charattrs[0] & F_BOLD) != 0);
+        EXPECT_TRUE((actual->charattrs[1] & F_BOLD) != 0);
+        EXPECT_TRUE((actual->charattrs[2] & F_BOLD) == 0);
+    }
+    release_string(actual);
+
+    actual = decode_ansi("\xc3\xa9\xe7\x95\x8c\xf0\x9f\x98\x80",
+        0, EMUL_ANSI_ATTR, NULL);
+    expect_bytes("\xc3\xa9\xe7\x95\x8c\xf0\x9f\x98\x80", 9, actual);
+    release_string(actual);
+
+    actual = decode_ansi("\xc3\xa9\bX", 0, EMUL_ANSI_ATTR, NULL);
+    expect_bytes("X", 1, actual);
+    release_string(actual);
+
+    actual = decode_ansi("A\xff" "B", 0, EMUL_ANSI_ATTR, NULL);
+    expect_bytes("AB", 2, actual);
+    release_string(actual);
+}
+
+static void test_unicode_wrapping(void)
+{
+    EXPECT_INT(4, tf_utf8_wraplen("abcd", 4, 4, 8));
+    EXPECT_INT(5, tf_utf8_wraplen("ab\xe7\x95\x8c" "c", 6, 4, 8));
+    EXPECT_INT(3, tf_utf8_wraplen("e\xcc\x81x", 4, 1, 8));
+    EXPECT_INT(4, tf_utf8_wraplen("\xf0\x9f\x98\x80x", 5, 2, 8));
+    EXPECT_INT(3, tf_utf8_wraplen("ab cd", 5, 4, 8));
+    EXPECT_INT(1, tf_utf8_wraplen("a\tb", 3, 4, 8));
+}
+
+static void test_incoming_conversion(void)
+{
+    UConverter *converter;
+    UErrorCode error = U_ZERO_ERROR;
+    String *input;
+    String *output;
+    const char latin1[] = "caf\xe9";
+
+    converter = ucnv_open("ISO-8859-1", &error);
+    EXPECT_TRUE(U_SUCCESS(error));
+    input = owned_string(latin1, 4, 0);
+    output = owned_string(NULL, 0, 0);
+    EXPECT_INT(4, tf_to_utf8(output, input, converter, 1, &error));
+    EXPECT_TRUE(U_SUCCESS(error));
+    expect_bytes("caf\xc3\xa9", 5, output);
+    EXPECT_INT(0, input->len);
+    Stringfree(output);
+    Stringfree(input);
+    ucnv_close(converter);
+
+    error = U_ZERO_ERROR;
+    converter = ucnv_open("UTF-8", &error);
+    input = owned_string("\xe2\x82", 2, 0);
+    output = owned_string(NULL, 0, 0);
+    EXPECT_INT(2, tf_to_utf8(output, input, converter, 1, &error));
+    EXPECT_TRUE(U_SUCCESS(error));
+    expect_bytes("\xef\xbf\xbd", 3, output);
+    Stringfree(output);
+    Stringfree(input);
+    ucnv_close(converter);
+
+    error = U_ZERO_ERROR;
+    converter = ucnv_open("UTF-8", &error);
+    input = owned_string("\xe2\x82", 2, 0);
+    output = owned_string(NULL, 0, 0);
+    EXPECT_INT(2, tf_to_utf8(output, input, converter, 0, &error));
+    EXPECT_INT(0, output->len);
+    Stringcat(input, "\xac");
+    EXPECT_INT(1, tf_to_utf8(output, input, converter, 1, &error));
+    EXPECT_TRUE(U_SUCCESS(error));
+    expect_bytes("\xe2\x82\xac", 3, output);
+    Stringfree(output);
+    Stringfree(input);
+    ucnv_close(converter);
+}
+
+static void test_outgoing_conversion(void)
+{
+    UConverter *converter;
+    UErrorCode error = U_ZERO_ERROR;
+    String *output = owned_string(NULL, 0, 0);
+
+    converter = ucnv_open("ISO-8859-1", &error);
+    EXPECT_TRUE(U_SUCCESS(error));
+    EXPECT_INT(4, tf_from_utf8(output, "caf\xc3\xa9", 5, converter, &error));
+    EXPECT_TRUE(U_SUCCESS(error));
+    expect_bytes("caf\xe9", 4, output);
+    ucnv_close(converter);
+    Stringfree(output);
+}
+#endif
+
 int main(void)
 {
     test_encode_ansi();
+    test_string_shift_attributes();
+#if WIDECHAR
+    test_decode_ansi_utf8();
+    test_unicode_wrapping();
+    test_incoming_conversion();
+    test_outgoing_conversion();
+#endif
 
     if (failures) {
         fprintf(stderr, "%d test assertion(s) failed\n", failures);
