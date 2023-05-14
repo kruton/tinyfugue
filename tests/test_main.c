@@ -346,6 +346,29 @@ static void test_overwrite_and_insert(void)
     prompt = old_prompt;
     special_var[VAR_insert].val.u.ival = old_insert;
 }
+
+extern int cx;
+static void test_hwrite_column_tracking(void)
+{
+    /* Test that printing UTF-8 string advances cx by grapheme width, not byte length */
+    String *str = owned_string("a\xc3\xa9X", 4, 0); // "aéX", length 4 bytes, width 3
+    int old_cx = cx;
+
+    cx = 0;
+    special_var[VAR_tabsize].val.u.ival = 8;
+    hwrite(CS(str), 0, str->len, 0);
+    EXPECT_INT(3, cx); // should advance by 3 (grapheme width), not 4 (byte length)
+
+    /* Test tab handling: tab should advance to next tab stop */
+    cx = 1;
+    Stringtrunc(str, 0);
+    Stringcat(str, "\t");
+    hwrite(CS(str), 0, str->len, 0);
+    EXPECT_INT(8, cx); // should advance to 8 from 1 (7 columns)
+
+    Stringfree(str);
+    cx = old_cx;
+}
 #endif
 
 int main(void)
@@ -360,6 +383,7 @@ int main(void)
     test_outgoing_conversion();
     test_kb_visual_move_func();
     test_overwrite_and_insert();
+    test_hwrite_column_tracking();
 #endif
 
     if (failures) {

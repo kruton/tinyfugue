@@ -76,6 +76,7 @@ extern void enscreen(Screen *screen, conString *line);
 extern void screenout(conString *line);
 extern void update_prompt(conString *newprompt, int display);
 extern int  wraplen(const char *str, int len, int indent);
+extern void hwrite(conString *line, int start, int len, int indent);
 extern const char *get_keycode(const char *name);
 
 extern int moresize(Screen *screen);
