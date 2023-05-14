@@ -7,6 +7,7 @@
 #include "attr.h"
 #include "output.h"
 #include "unicode.h"
+#include "keyboard.h"
 
 static int failures;
 
@@ -280,6 +281,71 @@ static void test_kb_visual_move_func(void)
     prompt = old_prompt;
     desired_column = old_desired;
 }
+
+static void test_overwrite_and_insert(void)
+{
+    int old_pos = keyboard_pos;
+    conString *old_prompt = prompt;
+    int old_insert = special_var[VAR_insert].val.u.ival;
+    char old_content[1024];
+    int old_len = keybuf->len;
+
+    if (old_len < (int)sizeof(old_content)) {
+        if (keybuf->data && old_len > 0) {
+            memcpy(old_content, keybuf->data, old_len);
+        }
+        old_content[old_len] = '\0';
+    } else {
+        old_content[0] = '\0';
+    }
+
+    /* Test 1: Insert mode with UTF-8 */
+    special_var[VAR_insert].val.u.ival = 1;
+    Stringtrunc(keybuf, 0);
+    Stringcat(keybuf, "aX");
+    keyboard_pos = 1; // between 'a' and 'X'
+
+    /* Simulate typing 'é' (\xc3\xa9) */
+    handle_input_string("\xc3\xa9", 2);
+    expect_bytes("a\xc3\xa9X", 4, keybuf);
+    EXPECT_INT(3, keyboard_pos);
+
+    fprintf(stderr, "TEST: Starting Test 2\n"); fflush(stderr);
+    /* Test 2: Overwrite mode, overwriting a 2-byte character with a 1-byte character */
+    special_var[VAR_insert].val.u.ival = 0;
+    fprintf(stderr, "TEST: Truncating keybuf\n"); fflush(stderr);
+    Stringtrunc(keybuf, 0);
+    fprintf(stderr, "TEST: Catting to keybuf\n"); fflush(stderr);
+    Stringcat(keybuf, "a\xc3\xa9X"); // a, é (2 bytes), X
+    fprintf(stderr, "TEST: Setting keyboard_pos\n"); fflush(stderr);
+    keyboard_pos = 1; // start of 'é'
+
+    /* Simulate typing 'u' (1 byte) in overwrite mode */
+    fprintf(stderr, "TEST: Calling handle_input_string\n"); fflush(stderr);
+    handle_input_string("u", 1);
+    expect_bytes("auX", 3, keybuf);
+    EXPECT_INT(2, keyboard_pos);
+
+    /* Test 3: Overwrite mode, overwriting a 1-byte character with a 2-byte character */
+    special_var[VAR_insert].val.u.ival = 0;
+    Stringtrunc(keybuf, 0);
+    Stringcat(keybuf, "abX");
+    keyboard_pos = 1; // start of 'b'
+
+    /* Simulate typing 'é' (2 bytes) in overwrite mode */
+    handle_input_string("\xc3\xa9", 2);
+    expect_bytes("a\xc3\xa9X", 4, keybuf);
+    EXPECT_INT(3, keyboard_pos);
+
+    /* Clean up */
+    Stringtrunc(keybuf, 0);
+    if (old_len > 0 && old_len < (int)sizeof(old_content)) {
+        Stringncat(keybuf, old_content, old_len);
+    }
+    keyboard_pos = old_pos;
+    prompt = old_prompt;
+    special_var[VAR_insert].val.u.ival = old_insert;
+}
 #endif
 
 int main(void)
@@ -293,6 +359,7 @@ int main(void)
     test_incoming_conversion();
     test_outgoing_conversion();
     test_kb_visual_move_func();
+    test_overwrite_and_insert();
 #endif
 
     if (failures) {
