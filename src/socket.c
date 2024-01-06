@@ -1961,7 +1961,12 @@ static int establish(Sock *sock)
 #if HAVE_SSL
     if (xsock->ssl) {
 	int sslret;
-	sslret = SSL_connect(xsock->ssl);
+	if (xsock->host != NULL)
+	    sslret = SSL_set_tlsext_host_name(xsock->ssl, xsock->host);
+
+	if (sslret == 1)
+	    sslret = SSL_connect(xsock->ssl);
+
 	if (sslret <= 0) {
 	    setupnextconn(xsock);
 	    ssl_io_err(xsock, sslret, xsock->addr ? H_ICONFAIL : H_CONFAIL);
