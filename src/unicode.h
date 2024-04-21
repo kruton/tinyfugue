@@ -15,6 +15,7 @@ extern void tf_display_position(const char *str, int len, int position,
     int start_column, int wrap_width, int tab_width, int *row, int *column);
 extern int tf_display_row_offset(const char *str, int len, int target_row,
     int start_column, int wrap_width, int tab_width);
+extern int tf_utf8_incomplete_bytes(const char *str, int len);
 
 #if WIDECHAR
 #include <unicode/ucnv.h>
