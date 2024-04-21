@@ -83,8 +83,9 @@
     /repeat -S $[kbnum>0?+kbnum:1] \
 	/@test kbgoto(kbwordright()), kbgoto(kbwordleft()) %%;\
 	/let end=$$[kbwordright()]%%;\
-	/@test input(toupper(substr(kbtail(), 0, 1))) %%;\
-	/@test input(tolower(substr(kbtail(), 0, end - kbpoint()))) %;\
+	/let _g1=$$[grapheme_offset(kbtail(), 0, 1)]%%;\
+	/@test input(toupper(substr(kbtail(), 0, _g1))) %%;\
+	/@test input(tolower(substr(kbtail(), _g1, end - kbpoint() - _g1))) %;\
     /set insert=%{_old_insert}
 
 /def -i kb_downcase_word = \
@@ -102,13 +103,12 @@
     /set insert=%{_old_insert}
 
 /def -i kb_transpose_chars = \
-    /if ( kbpoint() <= 0 ) /beep 1%; /return 0%; /endif%; \
+    /if (grapheme_count(kbhead()) < (kbpoint() == kblen() ? 2 : 1)) /beep 1%; /return 0%; /endif%; \
     /let _old_insert=$[+insert]%;\
     /set insert=0%;\
-;   Can't use /dokey_left because it would use %kbnum.
-    /@test kbgoto(kbpoint() - (kbpoint()==kblen()) - 1)%; \
-    /@test input(strcat(substr(kbtail(),1,kbnum>0?kbnum:1), \
-	substr(kbtail(),0,1)))%; \
+    /@test kbgoto(grapheme_offset(kbhead(), kbpoint(), - (kbpoint() == kblen()) - 1))%; \
+    /@test input(strcat(grapheme_substr(kbtail(), 1, kbnum>0?kbnum:1), \
+	grapheme_substr(kbtail(), 0, 1)))%; \
     /set insert=%{_old_insert}
 
 /def -i kb_last_argument = \
