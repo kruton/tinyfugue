@@ -559,6 +559,20 @@ static void test_grapheme_expr_functions(void)
     }
     unsetvar(var);
     Stringfree(attributed);
+
+    val = expr_value("regmatch('^.X$', '\xc3\xa9X')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("regmatch('^\\\\w+$', '\xe4\xb8\xaa')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
 }
 
 static void test_tf_utf8_incomplete_bytes(void)
