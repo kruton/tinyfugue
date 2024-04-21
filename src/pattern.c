@@ -126,6 +126,9 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
     int eoffset, n;
     /* PCRE_DOTALL optimizes patterns starting with ".*" */
     int options = PCRE_DOLLAR_ENDONLY | PCRE_DOTALL | PCRE_CASELESS;
+#if WIDECHAR
+    options |= PCRE_UTF8 | PCRE_UCP;
+#endif
 
     ri = dmalloc(NULL, sizeof(RegInfo), file, line);
     if (!ri) return NULL;
