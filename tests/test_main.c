@@ -8,6 +8,9 @@
 #include "output.h"
 #include "unicode.h"
 #include "keyboard.h"
+#include "parse.h"
+#include "search.h"
+#include "variable.h"
 
 static int failures;
 
@@ -415,6 +418,148 @@ static void test_prompt_clipping(void)
     iendx = old_iendx;
     special_var[VAR_expnonvis].val.u.ival = old_expnonvis;
 }
+
+static void test_do_kbword_func(void)
+{
+    int old_pos = keyboard_pos;
+    Stringtrunc(keybuf, 0);
+    Stringcat(keybuf, "  abc  \xc3\xa9X  ");
+
+    EXPECT_INT(5, do_kbword(0, 1));
+    EXPECT_INT(5, do_kbword(2, 1));
+    EXPECT_INT(10, do_kbword(5, 1));
+    EXPECT_INT(10, do_kbword(7, 1));
+
+    EXPECT_INT(7, do_kbword(12, -1));
+    EXPECT_INT(7, do_kbword(10, -1));
+    EXPECT_INT(2, do_kbword(7, -1));
+    EXPECT_INT(2, do_kbword(5, -1));
+
+    Stringtrunc(keybuf, 0);
+    keyboard_pos = old_pos;
+}
+
+static void test_grapheme_expr_functions(void)
+{
+    String *attributed;
+    Value *val;
+    Var *var;
+
+    val = expr_value("grapheme_count('a\xc3\xa9X')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(3, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("grapheme_offset('a\xc3\xa9X', 0, 2)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(3, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("grapheme_offset('a\xc3\xa9X', 3, -1)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("grapheme_substr('a\xc3\xa9X', 1, 1)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("\xc3\xa9", 2, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("grapheme_substr('a\xc3\xa9X', 1)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("\xc3\xa9X", 3, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("tolower('A\xc3\x89X')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("a\xc3\xa9x", 4, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("toupper('a\xc3\xa9x')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("A\xc3\x89X", 4, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("tolower('A\xc3\x89X', 3)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("a\xc3\xa9X", 4, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    attributed = owned_string("A\xc3\x89X", 4, 0);
+    check_charattrs(attributed, attributed->len + 1, 0, __FILE__, __LINE__);
+    attributed->charattrs[0] = 1;
+    attributed->charattrs[1] = 2;
+    attributed->charattrs[2] = 2;
+    attributed->charattrs[3] = 4;
+    var = setstrvar(newglobalvar("__case_attr"), CS(attributed), 0);
+    val = expr_value("tolower(__case_attr)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE(valstr(val)->charattrs != NULL);
+        if (valstr(val)->charattrs) {
+            EXPECT_INT(1, valstr(val)->charattrs[0]);
+            EXPECT_INT(2, valstr(val)->charattrs[1]);
+            EXPECT_INT(2, valstr(val)->charattrs[2]);
+            EXPECT_INT(4, valstr(val)->charattrs[3]);
+        }
+        freeval(val);
+    }
+    unsetvar(var);
+    Stringfree(attributed);
+
+    attributed = owned_string("a\xc3\xa9x", 4, 0);
+    check_charattrs(attributed, attributed->len + 1, 0, __FILE__, __LINE__);
+    attributed->charattrs[0] = 5;
+    attributed->charattrs[1] = 6;
+    attributed->charattrs[2] = 6;
+    attributed->charattrs[3] = 8;
+    var = setstrvar(newglobalvar("__case_attr"), CS(attributed), 0);
+    val = expr_value("toupper(__case_attr)");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE(valstr(val)->charattrs != NULL);
+        if (valstr(val)->charattrs) {
+            EXPECT_INT(5, valstr(val)->charattrs[0]);
+            EXPECT_INT(6, valstr(val)->charattrs[1]);
+            EXPECT_INT(6, valstr(val)->charattrs[2]);
+            EXPECT_INT(8, valstr(val)->charattrs[3]);
+        }
+        freeval(val);
+    }
+    unsetvar(var);
+    Stringfree(attributed);
+}
 #endif
 
 int main(void)
@@ -431,6 +576,8 @@ int main(void)
     test_overwrite_and_insert();
     test_hwrite_column_tracking();
     test_prompt_clipping();
+    test_do_kbword_func();
+    test_grapheme_expr_functions();
 #endif
 
     if (failures) {
