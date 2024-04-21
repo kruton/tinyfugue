@@ -5186,10 +5186,10 @@ String functions
 #strchr()
   [1mstrchr[22m([4ms1[24m, [4ms2[24m)
   [1mstrchr[22m([4ms1[24m, [4ms2[24m, [4mi[24m)
-          (int) Searches for any character of <[4ms2[24m> in <[4ms1[24m> starting at
-          position <[4mi[24m> (default 0), and returns the position if found, or -1
-          if not found.  If <[4mi[24m> is negative, it is counted as an absolute
-          value from the end of <[4ms[24m>.
+          (int) Searches for any byte of <[4ms2[24m> in <[4ms1[24m> starting at
+          position <[4mi[24m> (default 0, in bytes), and returns the byte position
+          if found, or -1 if not found.  If <[4mi[24m> is negative, it is counted
+          as an absolute value from the end of <[4ms[24m>.
 #strcmp
 #strcmp()
   [1mstrcmp[22m([4ms1[24m, [4ms2[24m)
@@ -5201,26 +5201,27 @@ String functions
   [1mstrcmpattr[22m([4ms1[24m, [4ms2[24m)
           (int) Like [1mstrcmp()[22;0m, except that in order for the strings to be
           considered equal, both their text and their attributes must be
-          equal.  In other words, [1mstrcmp[22;0m([1mencode_attr[22;0m(<[4ms1[24m>), [1mencode_attr[22;0m(<[4ms2[24m>))
+          equal.  In other words, [1mstrcmp[22m([1mencode_attr[22;0m(<[4ms1[24m>), [1mencode_attr[22;0m(<[4ms2[24m>))
           The ordering of attributes is not documented, and may change between
           versions of tf.
 #strlen
 #strlen()
   [1mstrlen[22m([4ms[24m)
-          (int) Length of string <[4ms[24m>.
+          (int) Length of string <[4ms[24m> in bytes. For grapheme count, see
+          [1mgrapheme_count()[22;0m.
 #strncmp
 #strncmp()
   [1mstrncmp[22m([4ms1[24m, [4ms2[24m, [4mi[24m)
-          (int) Like [1mstrcmp()[22;0m, but compares only the first <[4mi[24m> characters of
+          (int) Like [1mstrcmp()[22;0m, but compares only the first <[4mi[24m> bytes of
           <[4ms1[24m> and <[4ms2[24m>.
 #strrchr
 #strrchr()
   [1mstrrchr[22m([4ms1[24m, [4ms2[24m)
   [1mstrrchr[22m([4ms1[24m, [4ms2[24m, [4mi[24m)
           (int) Searches backward in <[4ms1[24m> starting at position <[4mi[24m> (default:
-          end of <[4ms1[24m>) for any character of <[4ms2[24m>, and returns the position if
-          found, or -1 if not found.  If <[4mi[24m> is negative, it is counted as an
-          absolute value from the end of <[4ms[24m>.
+          end of <[4ms1[24m>, in bytes) for any byte of <[4ms2[24m>, and returns the
+          byte position if found, or -1 if not found.  If <[4mi[24m> is negative, it
+          is counted as an absolute value from the end of <[4ms[24m>.
 #strrep
 #strrep()
   [1mstrrep[22m([4ms[24m, [4mi[24m)
@@ -5230,15 +5231,17 @@ String functions
   [1mstrstr[22m([4ms1[24m, [4ms2[24m)
   [1mstrstr[22m([4ms1[24m, [4ms2[24m, [4mi[24m)
           (int) Searches for <[4ms2[24m> in <[4ms1[24m> starting at position <[4mi[24m> (default
-          0), and returns the position if found, or -1 if not found.
+          0, in bytes), and returns the byte position if found, or -1 if not
+          found.
 #substr
 #substr()
   [1msubstr[22m([4ms[24m, [4mi1[24m)
   [1msubstr[22m([4ms[24m, [4mi1[24m, [4mi2[24m)
-          (str) Substring of <[4ms[24m>, starting at position <[4mi1[24m>, with length <[4mi2[24m>.
-          If <[4mi2[24m> is omitted, it defaults to the remaining length of <[4ms[24m>.  If
-          <[4mi1[24m> or <[4mi2[24m> is negative, they are counted as absolute values from
-          the end of <[4ms[24m>.
+          (str) Substring of <[4ms[24m>, starting at position <[4mi1[24m> (in bytes), with
+          length <[4mi2[24m> (in bytes).  If <[4mi2[24m> is omitted, it defaults to the
+          remaining length of <[4ms[24m> in bytes.  If <[4mi1[24m> or <[4mi2[24m> is negative, they
+          are counted as absolute values from the end of <[4ms[24m>. For grapheme-safe
+          slicing, see [1mgrapheme_substr()[22;0m.
 #strip_attr
 #strip_attr()
   [1mstrip_attr[22m([4ms[24m)
@@ -5290,14 +5293,15 @@ Keyboard buffer functions
 #kbdel
 #kbdel()
   [1mkbdel[22m([4mi[24m)
-          (int) Delete from the cursor to position <[4mi[24m> in the input buffer.
-          Returns the new position.
+          (int) Delete from the cursor to position <[4mi[24m> (in bytes) in the
+          input buffer. Returns the new position.
 #kbgoto
 #kbgoto()
   [1mkbgoto[22m([4mi[24m)
-          (int) Move the cursor to position <[4mi[24m> in the input buffer.  Returns
-          the new position (which may be different than <[4mi[24m> if <[4mi[24m> would put
-          the cursor outside the buffer).
+          (int) Move the cursor to position <[4mi[24m> (in bytes) in the input buffer.
+          Returns the new position (which may be different than <[4mi[24m> if <[4mi[24m>
+          would put the cursor outside the buffer). For grapheme-aligned
+          movement, see [1mgrapheme_offset()[22;0m.
 #kbhead
 #kbhead()
   [1mkbhead[22m()
@@ -5305,18 +5309,19 @@ Keyboard buffer functions
 #kblen
 #kblen()
   [1mkblen[22m()
-          (int) Length of current input line.
+          (int) Length of current input line in bytes. For grapheme count, see
+          [1mgrapheme_count()[22;0m.
 #kbmatch
 #kbmatch()
   [1mkbmatch[22m()
   [1mkbmatch[22m([4mi[24m)
           (int) Finds one of "()[]{}" under or to the right of the position
-          <[4mi[24m> (default: cursor position), and returns the position of its
-          match, or -1 if not found.  (See also: [1mkeybindings[22;0m)
+          <[4mi[24m> (default: cursor position, in bytes), and returns the byte
+          position of its match, or -1 if not found.  (See also: [1mkeybindings[22;0m)
 #kbpoint
 #kbpoint()
   [1mkbpoint[22m()
-          (int) Return the current position of the cursor in input.
+          (int) Return the current position of the cursor in input in bytes.
 #kbtail
 #kbtail()
   [1mkbtail[22m()
@@ -5325,16 +5330,16 @@ Keyboard buffer functions
 #kbwordleft()
   [1mkbwordleft[22m()
   [1mkbwordleft[22m([4mi[24m)
-          (int) Position of the beginning of the word left of <[4mi[24m> within the
-          input buffer.  <[4mi[24m> defaults to the current cursor position.  (See
-          also: [1m%wordpunct[22;0m)
+          (int) Position of the beginning of the word left of <[4mi[24m> (in bytes)
+          within the input buffer.  <[4mi[24m> defaults to the current cursor position.
+          (See also: [1m%wordpunct[22;0m)
 #kbwordright
 #kbwordright()
   [1mkbwordright[22m()
   [1mkbwordright[22m([4mi[24m)
-          (int) Position just past the end of the word right of <[4mi[24m> within the
-          input buffer.  <[4mi[24m> defaults to the current cursor position.  (See
-          also: [1m%wordpunct[22;0m)
+          (int) Position just past the end of the word right of <[4mi[24m> (in bytes)
+          within the input buffer.  <[4mi[24m> defaults to the current cursor position.
+          (See also: [1m%wordpunct[22;0m)
 #keycode
 #keycode()
   [1mkeycode[22m([4ms[24m)
@@ -5442,6 +5447,24 @@ Information functions
           (int) Returns 1 if the [1mcurrent[22;0m [1msocket[22;0m is open, 0 otherwise.
   [1mis_open[22m([4ms[24m)
           (int) Returns 1 if [1mworld[22;0m <[4ms[24m> is open, 0 otherwise.
+#grapheme_count
+#grapheme_count()
+  [1mgrapheme_count[22m([4ms[24m)
+          (int) Returns the number of grapheme clusters in string <[4ms[24m>.
+#grapheme_offset
+#grapheme_offset()
+  [1mgrapheme_offset[22m([4ms[24m, [4mi1[24m, [4mi2[24m)
+          (int) Returns the byte offset reached by moving <[4mi2[24m> grapheme
+          clusters from byte position <[4mi1[24m> in string <[4ms[24m>. Clamps to the
+          bounds of the string and normalizes positions.
+#grapheme_substr
+#grapheme_substr()
+  [1mgrapheme_substr[22m([4ms[24m, [4mi1[24m)
+  [1mgrapheme_substr[22m([4ms[24m, [4mi1[24m, [4mi2[24m)
+          (str) Substring of <[4ms[24m>, starting at grapheme position <[4mi1[24m>, with
+          length <[4mi2[24m> grapheme clusters. If <[4mi2[24m> is omitted, it defaults to the
+          remaining graphemes of <[4ms[24m>. If <[4mi1[24m> or <[4mi2[24m> is negative, they are
+          counted as absolute values from the end of <[4ms[24m>.
 #idle
 #idle()
   [1midle[22m()  (dtime) Number of seconds (to the nearest microsecond) since the
