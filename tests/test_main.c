@@ -585,6 +585,98 @@ static void test_tf_utf8_incomplete_bytes(void)
     EXPECT_INT(3, tf_utf8_incomplete_bytes("xyz\xf0\x9f\x98", 6));
     EXPECT_INT(0, tf_utf8_incomplete_bytes("xyz\xf0\x9f\x98\x80", 7));
 }
+
+#include <unistd.h>
+#include <fcntl.h>
+
+extern const char *clear_screen;
+extern const char *clear_to_eol;
+extern const char *cursor_address;
+extern int can_have_visual;
+extern void bufflush(void);
+
+static int stdout_pipe[2];
+static int saved_stdout;
+
+static void start_capturing_stdout(void)
+{
+    fflush(stdout);
+    bufflush();
+    saved_stdout = dup(STDOUT_FILENO);
+    if (pipe(stdout_pipe) < 0) {
+        perror("pipe");
+        return;
+    }
+    fcntl(stdout_pipe[0], F_SETFL, O_NONBLOCK);
+    dup2(stdout_pipe[1], STDOUT_FILENO);
+    close(stdout_pipe[1]);
+}
+
+static int get_captured_stdout(char *buf, int max_len)
+{
+    fflush(stdout);
+    bufflush();
+    dup2(saved_stdout, STDOUT_FILENO);
+    close(saved_stdout);
+
+    int n = read(stdout_pipe[0], buf, max_len - 1);
+    close(stdout_pipe[0]);
+    if (n < 0) n = 0;
+    buf[n] = '\0';
+    return n;
+}
+
+static void test_pseudo_terminal_rendering(void)
+{
+    conString *old_prompt = prompt;
+    int old_pos = keyboard_pos;
+    int old_ix = ix;
+    int old_iendx = iendx;
+    int old_visual = special_var[VAR_visual].val.u.ival;
+    int old_wrapsize = special_var[VAR_wrapsize].val.u.ival;
+
+    char buf[1024];
+    int n;
+
+    special_var[VAR_visual].val.u.ival = 0;
+    prompt = (conString *)owned_string("a\xc3\xa9", 3, 0);
+    keyboard_pos = 0;
+
+    start_capturing_stdout();
+    physical_refresh();
+    n = get_captured_stdout(buf, sizeof(buf));
+
+    EXPECT_TRUE(n > 0);
+    EXPECT_TRUE(strstr(buf, "a\xc3\xa9") != NULL);
+
+    clear_screen = "\033[H\033[J";
+    clear_to_eol = "\033[K";
+    cursor_address = "\033[%d;%dH";
+    can_have_visual = 1;
+
+    special_var[VAR_visual].val.u.ival = 1;
+    keyboard_pos = 0;
+
+    start_capturing_stdout();
+    physical_refresh();
+    n = get_captured_stdout(buf, sizeof(buf));
+
+    EXPECT_TRUE(n > 0);
+    EXPECT_TRUE(strstr(buf, "a\xc3\xa9") != NULL);
+
+    release_string((String *)prompt);
+    prompt = old_prompt;
+    keyboard_pos = old_pos;
+    ix = old_ix;
+    iendx = old_iendx;
+    special_var[VAR_visual].val.u.ival = old_visual;
+    special_var[VAR_wrapsize].val.u.ival = old_wrapsize;
+
+    clear_screen = NULL;
+    clear_to_eol = NULL;
+    cursor_address = NULL;
+    can_have_visual = 0;
+}
 #endif
 
 int main(void)
@@ -604,6 +696,7 @@ int main(void)
     test_do_kbword_func();
     test_grapheme_expr_functions();
     test_tf_utf8_incomplete_bytes();
+    test_pseudo_terminal_rendering();
 #endif
 
     if (failures) {
