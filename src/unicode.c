@@ -440,3 +440,33 @@ int tf_from_utf8(String *output, const char *input, int input_len,
 }
 
 #endif /* WIDECHAR */
+
+int tf_utf8_incomplete_bytes(const char *str, int len)
+{
+    int i;
+    if (len <= 0 || !str) return 0;
+
+    for (i = 1; i <= 4 && i <= len; i++) {
+        unsigned char c = (unsigned char)str[len - i];
+
+        if (c >= 0xC0) {
+            int expected_len = 0;
+            if (c >= 0xC0 && c <= 0xDF) expected_len = 2;
+            else if (c >= 0xE0 && c <= 0xEF) expected_len = 3;
+            else if (c >= 0xF0 && c <= 0xF7) expected_len = 4;
+
+            if (i < expected_len) {
+                return i;
+            } else {
+                return 0;
+            }
+        }
+
+        if (c >= 0x80 && c <= 0xBF) {
+            continue;
+        }
+
+        break;
+    }
+    return 0;
+}

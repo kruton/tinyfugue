@@ -560,6 +560,17 @@ static void test_grapheme_expr_functions(void)
     unsetvar(var);
     Stringfree(attributed);
 }
+
+static void test_tf_utf8_incomplete_bytes(void)
+{
+    EXPECT_INT(1, tf_utf8_incomplete_bytes("\xc3", 1));
+    EXPECT_INT(0, tf_utf8_incomplete_bytes("\xc3\xa9", 2));
+    EXPECT_INT(0, tf_utf8_incomplete_bytes("abc", 3));
+    EXPECT_INT(2, tf_utf8_incomplete_bytes("a\xe4\xb8", 3));
+    EXPECT_INT(0, tf_utf8_incomplete_bytes("a\xe4\xb8\xaa", 4));
+    EXPECT_INT(3, tf_utf8_incomplete_bytes("xyz\xf0\x9f\x98", 6));
+    EXPECT_INT(0, tf_utf8_incomplete_bytes("xyz\xf0\x9f\x98\x80", 7));
+}
 #endif
 
 int main(void)
@@ -578,6 +589,7 @@ int main(void)
     test_prompt_clipping();
     test_do_kbword_func();
     test_grapheme_expr_functions();
+    test_tf_utf8_incomplete_bytes();
 #endif
 
     if (failures) {

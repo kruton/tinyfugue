@@ -160,10 +160,15 @@ int handle_keyboard_input(int read_flag)
         Stringadd(current_input, mapchar(buf[i]));
     }
 
+    int limit = current_input->len;
+#if WIDECHAR
+    limit -= tf_utf8_incomplete_bytes(current_input->data, current_input->len);
+#endif
+
     s = current_input->data;
     if (!s) /* no good chars; current_input not yet allocated */
 	goto end;
-    while (place < current_input->len) {
+    while (place < limit) {
         if (!keynode) keynode = keytrie;
         if ((pending_input = pending_line))
             break;
@@ -173,7 +178,7 @@ int handle_keyboard_input(int read_flag)
             literal_next = FALSE;
             continue;
         }
-        while (place < current_input->len && keynode && keynode->children)
+        while (place < limit && keynode && keynode->children)
             keynode = keynode->u.child[(unsigned char)s[place++]];
         if (!keynode) {
             /* No keybinding match; check for builtins. */
@@ -227,6 +232,10 @@ int handle_keyboard_input(int read_flag)
     if (key_start >= current_input->len) {
         Stringtrunc(current_input, 0);
         place = key_start = 0;
+    } else if (key_start > 0) {
+        Stringshift(current_input, key_start);
+        place -= key_start;
+        key_start = 0;
     }
     input_start = key_start;
     if (pending_line && !read_depth)
