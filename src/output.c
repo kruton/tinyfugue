@@ -57,6 +57,8 @@
 #define DEFAULT_LINES   24
 #define DEFAULT_COLUMNS 80
 
+#define STATIC_TEST
+
 #if HARDCODE
 # define origin 1      /* top left corner is (1,1) */
 # if HARDCODE == TERM_vt100
@@ -68,7 +70,7 @@
 # endif
 #else /* !HARDCODE */
 # define origin 0      /* top left corner is (0,0) */
-# define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = NULL;
+# define TERMCODE(id, vt100, vt220, ansi)   STATIC_TEST const char *(id) = NULL;
 #endif /* HARDCODE */
 
 /*				vt100		vt220		ansi */
@@ -136,7 +138,7 @@ static Var bogusvar;   /* placeholder for StatusField->var */
 
 static void  init_term(void);
 static int   fbufputc(int c);
-static void  bufflush(void);
+void  bufflush(void);
 static void  tbufputs(const char *str);
 static void  tdirectputs(const char *str);
 static void  xy(int x, int y);
@@ -218,7 +220,7 @@ int desired_column = -1;
 static attr_t have_attr = 0;        /* available attributes */
 static int screen_mode = -1;        /* -1=unset, 0=nonvisual, 1=visual */
 static int output_disabled = 1;     /* is it safe to oflush()? */
-static int can_have_visual = FALSE;
+STATIC_TEST int can_have_visual = FALSE;
 static int can_have_expnonvis = FALSE;
 static List statusfield_list[max_status_height][1];
 static int status_left[max_status_height];  /* size of status line left part */
@@ -330,7 +332,7 @@ static int   func_putchar(int c);
  * BUFFERED OUTPUT ROUTINES *
  ****************************/
 
-static void bufflush(void)
+void bufflush(void)
 {
     int written = 0, result, n;
     while (written < outbuf->len) {
