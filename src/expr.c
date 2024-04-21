@@ -39,6 +39,10 @@
 #include "history.h"	/* log_count */
 #include "world.h"	/* new_world() */
 #include "unicode.h"
+#if WIDECHAR
+#include <unicode/uchar.h>
+#include <unicode/utf8.h>
+#endif
 
 
 #define STACKSIZE 512
@@ -1355,6 +1359,73 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
             Sstr2 = Stringnew(NULL, j, 0);
             return newSstr(CS(SStringoncat(Sstr2, constr, i, j)));
 
+        case FN_grapheme_count: {
+            int count = 0;
+            int offset = 0;
+            constr = opdstr(1);
+#if WIDECHAR
+            while (offset < constr->len) {
+                int next = tf_character_offset(constr->data, constr->len, offset, 1);
+                if (next <= offset) break;
+                offset = next;
+                count++;
+            }
+#else
+            count = constr->len;
+#endif
+            return newint(count);
+        }
+
+        case FN_grapheme_offset:
+            constr = opdstr(3);
+            i = opdint(2);
+            j = opdint(1);
+#if WIDECHAR
+            return newint(tf_character_offset(constr->data, constr->len, i, j));
+#else
+            i += j;
+            if (i < 0) i = 0;
+            if (i > constr->len) i = constr->len;
+            return newint(i);
+#endif
+
+        case FN_grapheme_substr: {
+            int total_graphemes = 0;
+            int start_grapheme, count_graphemes;
+            int start_byte, count_bytes;
+
+            constr = opdstr(n);
+#if WIDECHAR
+            {
+                int offset = 0;
+                while (offset < constr->len) {
+                    int next = tf_character_offset(constr->data, constr->len, offset, 1);
+                    if (next <= offset) break;
+                    offset = next;
+                    total_graphemes++;
+                }
+            }
+#else
+            total_graphemes = constr->len;
+#endif
+
+            start_grapheme = opdint(n - 1);
+            bound_check(start_grapheme, total_graphemes);
+
+#if WIDECHAR
+            start_byte = tf_character_offset(constr->data, constr->len, 0, start_grapheme);
+            optional_int_arg(count_graphemes, n, 3, total_graphemes - start_grapheme, total_graphemes - start_grapheme);
+            count_bytes = tf_character_offset(constr->data, constr->len, start_byte, count_graphemes) - start_byte;
+#else
+            start_byte = start_grapheme;
+            optional_int_arg(count_graphemes, n, 3, total_graphemes - start_grapheme, total_graphemes - start_grapheme);
+            count_bytes = count_graphemes;
+#endif
+
+            Sstr2 = Stringnew(NULL, count_bytes, 0);
+            return newSstr(CS(SStringoncat(Sstr2, constr, start_byte, count_bytes)));
+        }
+
         case FN_strstr:
             constr = opdstr(n);
 	    optional_int_arg(j, n, 3, constr->len, 0);
@@ -1394,18 +1465,120 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 	  }
 
         case FN_tolower:
+#if WIDECHAR
+            {
+                int limit;
+                int offset = 0;
+                constr = opdstr(n);
+                optional_int_arg(limit, n, 2, constr->len, constr->len);
+                Sstr2 = Stringnew(NULL, constr->len, constr->attrs);
+                if (constr->charattrs)
+                    check_charattrs(Sstr2, 1, 0, __FILE__, __LINE__);
+
+                while (offset < limit) {
+                    int next = tf_character_offset(constr->data, constr->len, offset, 1);
+                    if (next <= offset) break;
+                    int idx = offset;
+                    while (idx < next) {
+                        UChar32 c, lc;
+                        int prev_idx = idx;
+                        U8_NEXT(constr->data, idx, next, c);
+                        if (c < 0) {
+                            Stringadd(Sstr2, constr->data[prev_idx]);
+                            if (Sstr2->charattrs && constr->charattrs)
+                                Sstr2->charattrs[Sstr2->len - 1] = constr->charattrs[prev_idx];
+                        } else {
+                            lc = u_tolower(c);
+                            int start_len = Sstr2->len;
+                            char buf[8];
+                            int dest_len = 0;
+                            U8_APPEND_UNSAFE(buf, dest_len, lc);
+                            Stringncat(Sstr2, buf, dest_len);
+                            if (Sstr2->charattrs && constr->charattrs) {
+                                attr_t attr = constr->charattrs[prev_idx];
+                                for (int k = start_len; k < Sstr2->len; k++) {
+                                    Sstr2->charattrs[k] = attr;
+                                }
+                            }
+                        }
+                    }
+                    offset = next;
+                }
+                if (offset < constr->len) {
+                    int start_len = Sstr2->len;
+                    Stringncat(Sstr2, constr->data + offset, constr->len - offset);
+                    if (Sstr2->charattrs && constr->charattrs) {
+                        memcpy(Sstr2->charattrs + start_len, constr->charattrs + offset,
+                               (constr->len - offset) * sizeof(attr_t));
+                    }
+                }
+                return newSstr(CS(Sstr2));
+            }
+#else
             Sstr2 = opdstrdup(n);
 	    optional_int_arg(j, n, 2, Sstr2->len, Sstr2->len);
             for (i = 0; i < j; i++)
                 Sstr2->data[i] = lcase(Sstr2->data[i]);
             return newSstr(CS(Sstr2));
+#endif
 
         case FN_toupper:
+#if WIDECHAR
+            {
+                int limit;
+                int offset = 0;
+                constr = opdstr(n);
+                optional_int_arg(limit, n, 2, constr->len, constr->len);
+                Sstr2 = Stringnew(NULL, constr->len, constr->attrs);
+                if (constr->charattrs)
+                    check_charattrs(Sstr2, 1, 0, __FILE__, __LINE__);
+
+                while (offset < limit) {
+                    int next = tf_character_offset(constr->data, constr->len, offset, 1);
+                    if (next <= offset) break;
+                    int idx = offset;
+                    while (idx < next) {
+                        UChar32 c, uc;
+                        int prev_idx = idx;
+                        U8_NEXT(constr->data, idx, next, c);
+                        if (c < 0) {
+                            Stringadd(Sstr2, constr->data[prev_idx]);
+                            if (Sstr2->charattrs && constr->charattrs)
+                                Sstr2->charattrs[Sstr2->len - 1] = constr->charattrs[prev_idx];
+                        } else {
+                            uc = u_toupper(c);
+                            int start_len = Sstr2->len;
+                            char buf[8];
+                            int dest_len = 0;
+                            U8_APPEND_UNSAFE(buf, dest_len, uc);
+                            Stringncat(Sstr2, buf, dest_len);
+                            if (Sstr2->charattrs && constr->charattrs) {
+                                attr_t attr = constr->charattrs[prev_idx];
+                                for (int k = start_len; k < Sstr2->len; k++) {
+                                    Sstr2->charattrs[k] = attr;
+                                }
+                            }
+                        }
+                    }
+                    offset = next;
+                }
+                if (offset < constr->len) {
+                    int start_len = Sstr2->len;
+                    Stringncat(Sstr2, constr->data + offset, constr->len - offset);
+                    if (Sstr2->charattrs && constr->charattrs) {
+                        memcpy(Sstr2->charattrs + start_len, constr->charattrs + offset,
+                               (constr->len - offset) * sizeof(attr_t));
+                    }
+                }
+                return newSstr(CS(Sstr2));
+            }
+#else
             Sstr2 = opdstrdup(n);
 	    optional_int_arg(j, n, 2, Sstr2->len, Sstr2->len);
             for (i = 0; i < j; i++)
                 Sstr2->data[i] = ucase(Sstr2->data[i]);
             return newSstr(CS(Sstr2));
+#endif
 
         case FN_kbhead:
             return newstr(keybuf->data, keyboard_pos);
@@ -1953,4 +2126,3 @@ void free_expr(void)
     pfreepool(Value, valpool, u.next);
 }
 #endif
-

@@ -41,6 +41,9 @@ funccode(getpid,	1,	0,  0),
 #if ENABLE_GMCP
 funccode(gmcp,		0,	1,  2),
 #endif
+funccode(grapheme_count, 1,	1,  1),
+funccode(grapheme_offset, 1,	3,  3),
+funccode(grapheme_substr, 1,	2,  3),
 funccode(idle,		0,	0,  1),
 funccode(is_connected,	0,	0,  1),
 funccode(is_open,	0,	0,  1),
