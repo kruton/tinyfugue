@@ -26,6 +26,10 @@
 #include "cmdlist.h"
 #include "variable.h"	/* unsetvar() */
 #include "unicode.h"
+#if WIDECHAR
+#include <unicode/utf8.h>
+#include <unicode/uchar.h>
+#endif
 
 static int literal_next = FALSE;
 static TrieNode *keynode = NULL;	/* current node matched by input */
@@ -414,8 +418,58 @@ int do_kbdel(int place)
 
 #define is_inword(c) (is_alnum(c) || (wordpunct && strchr(wordpunct, (c))))
 
+#if WIDECHAR
+static int grapheme_is_word(const char *str, int start, int end)
+{
+    int index = start;
+    UChar32 c;
+    U8_NEXT(str, index, end, c);
+    if (c < 0) {
+        return is_inword(str[start]);
+    }
+    if (c <= 127) {
+        return is_alnum((char)c) || (wordpunct && strchr(wordpunct, (char)c));
+    }
+    return u_isalnum(c);
+}
+#endif
+
 int do_kbword(int start, int dir)
 {
+#if WIDECHAR
+    int current = start;
+    if (current < 0) current = 0;
+    if (current > keybuf->len) current = keybuf->len;
+
+    if (dir > 0) {
+        while (current < keybuf->len) {
+            int next = tf_character_offset(keybuf->data, keybuf->len, current, 1);
+            if (next <= current) break;
+            if (grapheme_is_word(keybuf->data, current, next)) break;
+            current = next;
+        }
+        while (current < keybuf->len) {
+            int next = tf_character_offset(keybuf->data, keybuf->len, current, 1);
+            if (next <= current) break;
+            if (!grapheme_is_word(keybuf->data, current, next)) break;
+            current = next;
+        }
+    } else if (dir < 0) {
+        while (current > 0) {
+            int prev = tf_character_offset(keybuf->data, keybuf->len, current, -1);
+            if (prev >= current) break;
+            if (grapheme_is_word(keybuf->data, prev, current)) break;
+            current = prev;
+        }
+        while (current > 0) {
+            int prev = tf_character_offset(keybuf->data, keybuf->len, current, -1);
+            if (prev >= current) break;
+            if (!grapheme_is_word(keybuf->data, prev, current)) break;
+            current = prev;
+        }
+    }
+    return current;
+#else
     int stop = (dir < 0) ? -1 : keybuf->len;
     int place = start<0 ? 0 : start>keybuf->len ? keybuf->len : start;
     place -= (dir < 0);
@@ -423,6 +477,7 @@ int do_kbword(int start, int dir)
     while (place != stop && !is_inword(keybuf->data[place])) place += dir;
     while (place != stop && is_inword(keybuf->data[place])) place += dir;
     return place + (dir < 0);
+#endif
 }
 
 int do_kbmatch(int start)
