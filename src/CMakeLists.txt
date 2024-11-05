@@ -30,3 +30,8 @@ target_sources(tf
         ${src_dir}/variable.c
         ${src_dir}/world.c
 )
+
+target_sources(makehelp
+    PRIVATE
+        ${src_dir}/makehelp.c
+)

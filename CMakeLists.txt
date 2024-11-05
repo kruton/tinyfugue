@@ -19,6 +19,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 add_executable(tf "")
 
+add_executable(makehelp "")
+
 include(GNUInstallDirs)
 include(CheckIncludeFiles)
 include(CheckFunctionExists)

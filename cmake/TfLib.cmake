@@ -35,3 +35,11 @@ while(compat_links)
         COMMAND ln -s ${new} ${TFLIB_INTERMEDIATE}/${old}
     )
 endwhile()
+
+# Create the help index file
+add_custom_target(tf-help-idx
+    COMMAND "${CMAKE_CURRENT_BINARY_DIR}/makehelp" < "${TFLIB_SOURCE}/tf-help" > "${TFLIB_INTERMEDIATE}/tf-help.idx"
+    DEPENDS makehelp
+)
+
+add_dependencies(tf tf-help-idx)
