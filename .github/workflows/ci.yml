@@ -3,9 +3,9 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [widechar]
+    branches: [widechar, cmake]
   pull_request:
-    branches: [widechar]
+    branches: [widechar, cmake]
   schedule:
     - cron: '31 5 * * *'
 
@@ -15,8 +15,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: configure
-        run: ./configure
-      - name: make
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install required packages
+        run: sudo apt-get install -q -y make cmake g++ libssl-dev libncurses-dev libicu-dev libpcre3-dev
+
+      - name: Run build
         run: make
