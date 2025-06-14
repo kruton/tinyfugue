@@ -19,7 +19,16 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Install required packages
-        run: sudo apt-get install -q -y make cmake g++ libssl-dev libncurses-dev libicu-dev libpcre3-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -q -y \
+              make \
+              cmake \
+              g++ \
+              libssl-dev \
+              libncurses-dev \
+              libicu-dev \
+              libpcre3-dev
 
       - name: Run build
         run: make
