@@ -12,13 +12,34 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+
+    strategy:
+      matrix:
+        runner: [ubuntu-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Install required packages
-        run: sudo apt-get install -q -y make cmake g++ libssl-dev libncurses-dev libicu-dev libpcre3-dev
-      - name: configure
-        run: ./configure
-      - name: make
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install required packages (apt)
+        if: matrix.runner == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -q -y \
+              make \
+              cmake \
+              g++ \
+              libssl-dev \
+              libncurses-dev \
+              libicu-dev \
+              libpcre3-dev
+
+      - name: Install required packages (Homebrew)
+        if: matrix.runner == 'macos-latest'
+        run: |
+          brew install icu4c pcre
+          echo "ICU_ROOT=$(brew list icu4c | awk '/\/bin\//{sub(/\/bin\/.*/,"");print;exit}')" >> "$GITHUB_ENV"
+
+      - name: Run build
         run: make

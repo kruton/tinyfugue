@@ -1,0 +1,10 @@
+# Searches directories for header file
+FUNCTION(SEARCH_FOR_HEADER dirs result)
+    FOREACH(file ${dirs})
+        CHECK_INCLUDE_FILE(${file} HAVE_${file})
+        IF (HAVE_${file})
+            SET(${result} ${file} PARENT_SCOPE)
+            RETURN()
+        ENDIF()
+    ENDFOREACH()
+ENDFUNCTION()
