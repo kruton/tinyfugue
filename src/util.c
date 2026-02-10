@@ -189,6 +189,87 @@ const conString *print_to_ascii(String *dest, const char *src)
     return CS(dest);
 }
 
+/*
+ * UTF-8 helper functions
+ *
+ * These helpers operate on byte indices into UTF-8 strings and ensure that
+ * editing operations do not split multibyte sequences.  They make no attempt
+ * to validate that the underlying data is well‑formed UTF-8; they simply
+ * respect continuation byte patterns.
+ */
+
+int utf8_prev_char(const char *s, int len, int pos)
+{
+    int p;
+
+    if (!s || len <= 0 || pos <= 0)
+        return 0;
+    if (pos > len)
+        pos = len;
+
+    p = pos - 1;
+    /* Walk backwards over UTF-8 continuation bytes (10xxxxxx). */
+    while (p > 0 && ((unsigned char)s[p] & 0xC0) == 0x80)
+        --p;
+    return p;
+}
+
+int utf8_next_char(const char *s, int len, int pos)
+{
+    int p;
+
+    if (!s || len <= 0)
+        return 0;
+    if (pos < 0)
+        pos = 0;
+    if (pos >= len)
+        return len;
+
+    p = pos + 1;
+    /* Skip over any continuation bytes to reach the next character start. */
+    while (p < len && ((unsigned char)s[p] & 0xC0) == 0x80)
+        ++p;
+    return p;
+}
+
+int utf8_prev_n_chars(const char *s, int len, int pos, int n)
+{
+    int p = pos;
+
+    if (!s || len <= 0)
+        return 0;
+    if (p < 0)
+        p = 0;
+    if (p > len)
+        p = len;
+    if (n <= 0)
+        return p;
+
+    while (n-- > 0 && p > 0) {
+        p = utf8_prev_char(s, len, p);
+    }
+    return p;
+}
+
+int utf8_next_n_chars(const char *s, int len, int pos, int n)
+{
+    int p = pos;
+
+    if (!s || len <= 0)
+        return len;
+    if (p < 0)
+        p = 0;
+    if (p > len)
+        p = len;
+    if (n <= 0)
+        return p;
+
+    while (n-- > 0 && p < len) {
+        p = utf8_next_char(s, len, p);
+    }
+    return p;
+}
+
 /* String handlers
  * These are heavily used functions, so speed is favored over simplicity.
  */

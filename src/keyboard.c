@@ -26,6 +26,10 @@
 #include "cmdlist.h"
 #include "variable.h"	/* unsetvar() */
 
+#if WIDECHAR
+#include <wchar.h>
+#endif
+
 static int literal_next = FALSE;
 static TrieNode *keynode = NULL;	/* current node matched by input */
 static int kbnum_internal = 0;
@@ -140,16 +144,20 @@ int handle_keyboard_input(int read_flag)
 
     for (i = 0; i < count; i++) {
 #if !WIDECHAR
-        if (istrip) buf[i] &= 0x7F;
-        if (buf[i] & 0x80) {
-	    if (!literal_next &&
-		(meta_esc == META_ON || (!is_print(buf[i]) && meta_esc)))
-	    {
-		Stringadd(current_input, '\033');
-		buf[i] &= 0x7F;
-	    }
-	    if (!is_print(buf[i]))
-		buf[i] &= 0x7F;
+        /* Only apply 7-bit stripping to bytes 0x00-0x7F so UTF-8 (0x80-0xFF)
+         * is preserved. */
+        if ((unsigned char)buf[i] < 0x80) {
+            if (istrip) buf[i] &= 0x7F;
+            if (buf[i] & 0x80) {
+                if (!literal_next &&
+                    (meta_esc == META_ON || (!is_print(buf[i]) && meta_esc)))
+                {
+                    Stringadd(current_input, '\033');
+                    buf[i] &= 0x7F;
+                }
+                if (!is_print(buf[i]))
+                    buf[i] &= 0x7F;
+            }
         }
 #endif
         Stringadd(current_input, mapchar(buf[i]));
@@ -180,7 +188,26 @@ int handle_keyboard_input(int read_flag)
             } else if (s[key_start] == '\b' || s[key_start] == '\177') {
                 handle_input_string(s + input_start, key_start - input_start);
                 place = input_start = ++key_start;
+#if WIDECHAR
+                /*
+                 * In wide-character builds, treat backspace/delete as
+                 * operating on whole UTF-8 characters rather than raw bytes,
+                 * so we never leave the input buffer containing a partial
+                 * multibyte sequence.
+                 */
+                {
+                    int del_from = keyboard_pos;
+                    int count = kbnumval;
+
+                    if (count < 0)
+                        count = -count;
+                    del_from = utf8_prev_n_chars(keybuf->data, keybuf->len,
+                        del_from, count);
+                    do_kbdel(del_from);
+                }
+#else
                 do_kbdel(keyboard_pos - kbnumval);
+#endif
 		reset_kbnum();
             } else if (kbnum && is_digit(s[key_start]) &&
 		key_start == input_start)
@@ -388,15 +415,56 @@ int do_kbdel(int place)
 
 #define is_inword(c) (is_alnum(c) || (wordpunct && strchr(wordpunct, (c))))
 
+#if WIDECHAR
+/* Return true if the UTF-8 character at byte offset pos in s[0..len-1] is a
+ * word character (alphanumeric or in wordpunct).  pos must be at the start
+ * of a character. */
+static int is_word_char_at(const char *s, int len, int pos)
+{
+    wchar_t wc;
+    mbstate_t mbs;
+    size_t n;
+
+    if (!s || pos < 0 || pos >= len)
+        return 0;
+    memset(&mbs, 0, sizeof(mbs));
+    n = mbrtowc(&wc, s + pos, (size_t)(len - pos), &mbs);
+    if (n == (size_t)-1 || n == (size_t)-2 || n == 0)
+        return 0;
+    if (wc >= 0 && wc < 128 && wordpunct != NULL && strchr(wordpunct, (char)wc))
+        return 1;
+    return iswalnum((wint_t)wc);
+}
+#endif
+
 int do_kbword(int start, int dir)
 {
     int stop = (dir < 0) ? -1 : keybuf->len;
     int place = start<0 ? 0 : start>keybuf->len ? keybuf->len : start;
     place -= (dir < 0);
 
+#if WIDECHAR
+    /* Normalize to start of character when in the middle of a multibyte. */
+    if (place >= 0 && place < keybuf->len &&
+        ((unsigned char)keybuf->data[place] & 0xC0) == 0x80)
+        place = utf8_prev_char(keybuf->data, keybuf->len, place);
+
+    /* Skip non-word characters; stop at buffer boundary. */
+    while ((dir >= 0 ? place != stop : place > 0) &&
+           !is_word_char_at(keybuf->data, keybuf->len, place))
+        place = (dir < 0) ? utf8_prev_char(keybuf->data, keybuf->len, place)
+                         : utf8_next_char(keybuf->data, keybuf->len, place);
+    /* Skip word characters. */
+    while ((dir >= 0 ? place != stop : place > 0) &&
+           is_word_char_at(keybuf->data, keybuf->len, place))
+        place = (dir < 0) ? utf8_prev_char(keybuf->data, keybuf->len, place)
+                         : utf8_next_char(keybuf->data, keybuf->len, place);
+    return place;
+#else
     while (place != stop && !is_inword(keybuf->data[place])) place += dir;
     while (place != stop && is_inword(keybuf->data[place])) place += dir;
     return place + (dir < 0);
+#endif
 }
 
 int do_kbmatch(int start)
@@ -406,10 +474,20 @@ int do_kbmatch(int start)
     int dir, stop, depth = 0;
     int place = start<0 ? 0 : start>keybuf->len ? keybuf->len : start;
 
+#if WIDECHAR
+    /* Ensure we start at a character boundary. */
+    if (place < keybuf->len && ((unsigned char)keybuf->data[place] & 0xC0) == 0x80)
+        place = utf8_prev_char(keybuf->data, keybuf->len, place);
+#endif
+
     while (1) {
         if (place >= keybuf->len) return -1;
         if ((type = strchr(braces, keybuf->data[place]))) break;
+#if WIDECHAR
+        place = utf8_next_char(keybuf->data, keybuf->len, place);
+#else
         ++place;
+#endif
     }
     dir = ((type - braces) % 2) ? -1 : 1;
     stop = (dir < 0) ? -1 : keybuf->len;
@@ -417,7 +495,14 @@ int do_kbmatch(int start)
         if      (keybuf->data[place] == type[0])   depth++;
         else if (keybuf->data[place] == type[dir]) depth--;
         if (depth == 0) return place;
-    } while ((place += dir) != stop);
+#if WIDECHAR
+        place = (dir < 0) ? utf8_prev_char(keybuf->data, keybuf->len, place)
+                         : utf8_next_char(keybuf->data, keybuf->len, place);
+        if (dir < 0 && place <= 0) break;
+#else
+        place += dir;
+#endif
+    } while (place != stop);
     return -1;
 }
 

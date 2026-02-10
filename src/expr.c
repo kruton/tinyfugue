@@ -1415,6 +1415,14 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
         case FN_kbpoint:
             return newint(keyboard_pos);
 
+        case FN_kbpoint_prev:
+            return newint(utf8_prev_n_chars(keybuf->data, keybuf->len,
+                keyboard_pos, n > 0 ? opdint(1) : 1));
+
+        case FN_kbpoint_next:
+            return newint(utf8_next_n_chars(keybuf->data, keybuf->len,
+                keyboard_pos, n > 0 ? opdint(1) : 1));
+
         case FN_kbgoto:
             return newint(igoto(opdint(1)));
 

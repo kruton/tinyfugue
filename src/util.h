@@ -28,8 +28,9 @@ struct feature {
 #define mapchar(c)    ((c) ? (c) & 0xFF : 0x80)
 #define unmapchar(c)  ((char)(((c) == (char)0x80) ? 0x0 : (c)))
 
-/* Map character into set allowed by locale */
-#define localize(c)  ((is_print(c) || is_cntrl(c)) ? (c) : (c) & 0x7F)
+/* Map character into set allowed by locale.  Preserve bytes 0x80-0xFF so
+ * UTF-8 and other 8-bit encodings are not stripped to ASCII. */
+#define localize(c)  ((is_print(c) || is_cntrl(c) || (unsigned char)(c) >= 0x80) ? (c) : (c) & 0x7F)
 #endif
 
 /* Note STRNDUP works only if src[len] == '\0', ie. len == strlen(src) */
@@ -118,6 +119,12 @@ extern int    ch_locale(Var *var);
 extern int    ch_mailfile(Var *var);
 extern int    ch_maildelay(Var *var);
 extern void   check_mail(void);
+
+/* UTF-8 helpers for safe byte indexing */
+extern int    utf8_prev_char(const char *s, int len, int pos);
+extern int    utf8_next_char(const char *s, int len, int pos);
+extern int    utf8_prev_n_chars(const char *s, int len, int pos, int n);
+extern int    utf8_next_n_chars(const char *s, int len, int pos, int n);
 
 extern type_t string_arithmetic_type(const char *str, int typeset);
 extern Value *parsenumber(const char *str, const char **caller_endp,
