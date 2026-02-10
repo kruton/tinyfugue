@@ -1429,6 +1429,9 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
         case FN_kbdel:
             return (newint(do_kbdel(opdint(1))));
 
+        case FN_kbtranspose:
+            return newint(do_kbtranspose());
+
         case FN_kbmatch:
             return newint(do_kbmatch(n>0 ? opdint(1) : keyboard_pos));
 

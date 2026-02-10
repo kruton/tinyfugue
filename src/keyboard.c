@@ -413,6 +413,82 @@ int do_kbdel(int place)
     return keyboard_pos;
 }
 
+/* Transpose the character before the cursor with the character at (or before) the
+ * cursor.  At end of line, swaps the last two characters.  Returns new keyboard_pos
+ * or 0 on failure (beep).  UTF-8 aware when WIDECHAR. */
+int do_kbtranspose(void)
+{
+    int left_start, left_end, right_start, right_end;
+    char left_buf[8], right_buf[8];  /* UTF-8 char can be up to 4 bytes */
+    int left_len, right_len, tail_len;
+
+    if (!keybuf->len) {
+        dobell(1);
+        return 0;
+    }
+    if (keyboard_pos == 0) {
+        dobell(1);
+        return 0;
+    }
+
+#if WIDECHAR
+    left_end = keyboard_pos;
+    left_start = utf8_prev_char(keybuf->data, keybuf->len, left_end);
+    if (keyboard_pos < keybuf->len) {
+        right_start = keyboard_pos;
+        right_end = utf8_next_char(keybuf->data, keybuf->len, right_start);
+    } else {
+        /* At end of line: swap last two characters. */
+        right_start = left_start;
+        right_end = left_end;
+        left_start = utf8_prev_char(keybuf->data, keybuf->len, left_start);
+        left_end = right_start;
+    }
+#else
+    /* Single-byte: swap the byte before cursor with the byte at cursor (or last byte). */
+    left_start = keyboard_pos - 1;
+    left_end = keyboard_pos;
+    if (keyboard_pos < keybuf->len) {
+        right_start = keyboard_pos;
+        right_end = keyboard_pos + 1;
+    } else {
+        right_start = left_start;
+        right_end = left_end;
+        left_start = keyboard_pos - 2;
+        left_end = keyboard_pos - 1;
+        if (left_start < 0) {
+            dobell(1);
+            return 0;
+        }
+    }
+#endif
+
+    left_len = left_end - left_start;
+    right_len = right_end - right_start;
+    if (left_len > (int)sizeof(left_buf) || right_len > (int)sizeof(right_buf)) {
+        dobell(1);
+        return 0;
+    }
+
+    memcpy(left_buf, keybuf->data + left_start, left_len);
+    memcpy(right_buf, keybuf->data + right_start, right_len);
+    tail_len = keybuf->len - right_end;
+    if (tail_len > 0)
+        Stringncpy(scratch, keybuf->data + right_end, tail_len);
+
+    Stringtrunc(keybuf, left_start);
+    Stringncat(keybuf, right_buf, right_len);
+    Stringncat(keybuf, left_buf, left_len);
+    if (tail_len > 0)
+        SStringcat(keybuf, CS(scratch));
+
+    keyboard_pos = left_start + right_len;
+    sync_input_hist();
+    set_refresh_pending(REF_LOGICAL);
+    do_refresh();
+    return keyboard_pos;
+}
+
 #define is_inword(c) (is_alnum(c) || (wordpunct && strchr(wordpunct, (c))))
 
 #if WIDECHAR

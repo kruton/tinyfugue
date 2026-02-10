@@ -125,6 +125,10 @@ extern int    utf8_prev_char(const char *s, int len, int pos);
 extern int    utf8_next_char(const char *s, int len, int pos);
 extern int    utf8_prev_n_chars(const char *s, int len, int pos, int n);
 extern int    utf8_next_n_chars(const char *s, int len, int pos, int n);
+extern int    utf8_char_count(const char *s, int n);
+extern int    utf8_byte_to_column(const char *s, int len, int byte_offset);
+extern int    utf8_column_to_byte(const char *s, int len, int maxcol);
+extern int    utf8_bytes_for_columns(const char *s, int len, int maxcol);
 
 extern type_t string_arithmetic_type(const char *str, int typeset);
 extern Value *parsenumber(const char *str, const char **caller_endp,

@@ -270,6 +270,55 @@ int utf8_next_n_chars(const char *s, int len, int pos, int n)
     return p;
 }
 
+/* Number of complete UTF-8 characters in the first n bytes at s. */
+int utf8_char_count(const char *s, int n)
+{
+    int pos = 0, count = 0, next;
+
+    if (!s || n <= 0) return 0;
+    while (pos < n) {
+        next = utf8_next_char(s, n, pos);
+        if (next > n) break;  /* character extends past n */
+        count++;
+        pos = next;
+    }
+    return count;
+}
+
+/* Column index (0-based, 1 char = 1 column) at byte_offset in s[0..len-1]. */
+int utf8_byte_to_column(const char *s, int len, int byte_offset)
+{
+    int pos = 0, col = 0;
+
+    if (!s || len <= 0) return 0;
+    if (byte_offset > len) byte_offset = len;
+    while (pos < byte_offset) {
+        pos = utf8_next_char(s, len, pos);
+        col++;
+    }
+    return col;
+}
+
+/* Byte offset after the first maxcol complete characters in s[0..len-1]. */
+int utf8_column_to_byte(const char *s, int len, int maxcol)
+{
+    int pos = 0, col = 0;
+
+    if (!s || len <= 0) return 0;
+    if (maxcol <= 0) return 0;
+    while (col < maxcol && pos < len) {
+        pos = utf8_next_char(s, len, pos);
+        col++;
+    }
+    return pos;
+}
+
+/* Number of bytes that span at most maxcol columns (complete chars only). */
+int utf8_bytes_for_columns(const char *s, int len, int maxcol)
+{
+    return utf8_column_to_byte(s, len, maxcol);
+}
+
 /* String handlers
  * These are heavily used functions, so speed is favored over simplicity.
  */

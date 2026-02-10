@@ -102,14 +102,7 @@
     /set insert=%{_old_insert}
 
 /def -i kb_transpose_chars = \
-    /if ( kbpoint() <= 0 ) /beep 1%; /return 0%; /endif%; \
-    /let _old_insert=$[+insert]%;\
-    /set insert=0%;\
-;   Can't use /dokey_left because it would use %kbnum.
-    /@test kbgoto(kbpoint() - (kbpoint()==kblen()) - 1)%; \
-    /@test input(strcat(substr(kbtail(),1,kbnum>0?kbnum:1), \
-	substr(kbtail(),0,1)))%; \
-    /set insert=%{_old_insert}
+    /@test kbtranspose()
 
 /def -i kb_last_argument = \
     /input $(/last $(/recall -i - -$[1 + (kbnum>0?kbnum:1)]))

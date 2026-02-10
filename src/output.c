@@ -2209,25 +2209,35 @@ static void ictrl_put(const char *s, int n)
 
 /* ioutputs
  * Print string within bounds of input window.  len is the number of
- * characters to print; return value is the number actually printed,
- * which may be less than len if string doesn't fit in the input window.
+ * bytes to print; return value is the number of bytes actually printed.
  * precondition: iendx,iendy and real cursor are at the output position.
+ * When WIDECHAR, iendx and cx advance by column (character) count, not byte count.
  */
 static int ioutputs(const char *str, int len)
 {
-    int space, written;
+    int space, written, n, cols;
 
-    for (written = 0; len > 0; len -= space) {
-        if ((space = Wrap - iendx + 1) <= 0) {
+    for (written = 0; len > 0; ) {
+        space = Wrap - iendx + 1;  /* column budget */
+        if (space <= 0) {
             if (!visual || iendy == lines) break;   /* at end of window */
             if (visual) xy(iendx = 1, ++iendy);
             space = Wrap;
         }
+#if WIDECHAR
+        n = utf8_bytes_for_columns(str, len, space);
+        if (n <= 0) break;
+        cols = utf8_char_count(str, n);
+#else
         if (space > len) space = len;
-        ictrl_put(str, space);  cx += space;
-        str += space;
-        written += space;
-        iendx += space;
+        n = space;
+        cols = n;
+#endif
+        ictrl_put(str, n);  cx += cols;
+        str += n;
+        written += n;
+        len -= n;
+        iendx += cols;
     }
     return written;
 }
@@ -2256,19 +2266,67 @@ void iput(int len)
 {
     const char *s;
     int count, scrolled = 0, oiex = iendx, oiey = iendy;
+#if WIDECHAR
+    int col_adv, col_space;
+#endif
 
     s = keybuf->data + keyboard_pos - len;
 
     if (!sockecho()) return;
     if (visual) physical_refresh();
 
+#if WIDECHAR
+    col_adv = utf8_char_count(s, len);
+    col_space = Wrap - (cx - 1);
+#endif
     if (keybuf->len - keyboard_pos > 8 &&     /* faster than redisplay? */
         visual && insert && clear_to_eol &&
         (insert_char || insert_start) &&      /* can insert */
+#if WIDECHAR
+        cy + (cx - 1 + col_adv) / Wrap <= lines &&
+        Wrap - col_adv > 8)
+#else
         cy + (cx + len) / Wrap <= lines &&    /* new text will fit in window */
         Wrap - len > 8)                       /* faster than redisplay? */
+#endif
     {
         /* fast insert */
+#if WIDECHAR
+        iy = iy + (ix - 1 + col_adv) / Wrap;
+        ix = (ix - 1 + col_adv) % Wrap + 1;
+        iendy = iendy + (iendx - 1 + col_adv) / Wrap;
+        iendx = (iendx - 1 + col_adv) % Wrap + 1;
+        if (iendy > lines) { iendy = lines; iendx = Wrap + 1; }
+        if (cx - 1 + col_adv <= Wrap) {
+            if (insert_start) tp(insert_start);
+            else for (count = col_adv; count; count--) tp(insert_char);
+            ictrl_put(s, len);
+            s += utf8_bytes_for_columns(s, len, col_space);
+            cx += col_adv;
+        } else {
+            ictrl_put(s, utf8_bytes_for_columns(s, len, col_space));
+            s += utf8_bytes_for_columns(s, len, col_space);
+            cx = Wrap + 1;
+            if (insert_start) tp(insert_start);
+        }
+        while (s < keybuf->data + keybuf->len) {
+            if (Wrap < columns && cx <= Wrap) {
+                xy(Wrap + 1, cy);
+                tp(clear_to_eol);
+            }
+            if (cy == lines) break;
+            xy(1, cy + 1);
+            if (!insert_start)
+                for (count = col_adv; count; count--) tp(insert_char);
+            {
+                int chunk = (int)(keybuf->data + keybuf->len - s);
+                int n = utf8_bytes_for_columns(s, chunk, Wrap);
+                ictrl_put(s, n);
+                cx += utf8_char_count(s, n);
+                s += n;
+            }
+        }
+#else
         iy = iy + (ix - 1 + len) / Wrap;
         ix = (ix - 1 + len) % Wrap + 1;
         iendy = iendy + (iendx - 1 + len) / Wrap;
@@ -2298,6 +2356,7 @@ void iput(int len)
             ictrl_put(s, len);  cx += len;
             s += Wrap;
         }
+#endif
         if (insert_start) tp(insert_end);
         ipos();
         bufflush();
@@ -2392,11 +2451,20 @@ void idel(int place)
 {
     int len;
     int oiey = iendy;
+#if WIDECHAR
+    int col_diff, start_byte;
+#endif
 
     if ((len = place - keyboard_pos) < 0) keyboard_pos = place;
     if (!sockecho()) return;
+#if WIDECHAR
+    start_byte = (len < 0) ? place : keyboard_pos;
+    col_diff = utf8_char_count(keybuf->data + start_byte, (len < 0) ? -len : len);
+    if (len < 0) ix -= col_diff;
+#else
     if (len < 0) ix += len;
-    
+#endif
+
     if (!visual) {
 	int prompt_len = prompt ? prompt->len % Wrap : 0;
         if (ix < prompt_len + 1 || need_refresh) {
@@ -2408,7 +2476,11 @@ void idel(int place)
             physical_refresh();
             return;
         }
+#if WIDECHAR
+        if (len < 0) { bufputnc('\010', col_diff);  cx -= col_diff; }
+#else
         if (len < 0) { bufputnc('\010', -len);  cx += len; }
+#endif
 
     } else {
         /* visual */
@@ -2424,14 +2496,30 @@ void idel(int place)
     }
 
     if (len < 0) len = -len;
+#if WIDECHAR
+    /* col_diff already set; use for display operations */
+#else
+    (void)0;
+#endif
 
     if (visual && delete_char &&
         keybuf->len - keyboard_pos > 3 && len < Wrap/3)
     {
         /* hardware method */
-        int i, space, pos;
+        int i, space, pos, n;
 
         iendy = iy;
+#if WIDECHAR
+        if (ix + col_diff <= Wrap) {
+            for (i = col_diff; i; i--) tp(delete_char);
+            iendx = Wrap + 1 - col_diff;
+        } else {
+            iendx = ix;
+        }
+        /* First byte to display is after the deleted col_diff characters */
+        pos = utf8_column_to_byte(keybuf->data, keybuf->len,
+            utf8_byte_to_column(keybuf->data, keybuf->len, keyboard_pos) + col_diff);
+#else
         if (ix + len <= Wrap) {
             for (i = len; i; i--) tp(delete_char);
             iendx = Wrap + 1 - len;
@@ -2439,21 +2527,37 @@ void idel(int place)
             iendx = ix;
         }
         pos = keyboard_pos - ix + iendx;
+#endif
 
         while (pos < keybuf->len) {
             if ((space = Wrap - iendx + 1) <= 0) {
                 if (iendy == lines) break;   /* at end of window */
                 xy(iendx = 1, ++iendy);
+#if WIDECHAR
+                for (i = col_diff; i; i--) tp(delete_char);
+#else
                 for (i = len; i; i--) tp(delete_char);
                 space = Wrap - len;
-                if (space > keybuf->len - pos) space = keybuf->len - pos;
+#endif
             } else {
                 xy(iendx, iendy);
-                if (space > keybuf->len - pos) space = keybuf->len - pos;
-                ictrl_put(keybuf->data + pos, space);  cx += space;
+#if WIDECHAR
+                n = utf8_bytes_for_columns(keybuf->data + pos, keybuf->len - pos, space);
+#else
+                n = (space > keybuf->len - pos) ? keybuf->len - pos : space;
+#endif
+                if (n > keybuf->len - pos) n = keybuf->len - pos;
+                ictrl_put(keybuf->data + pos, n);
+#if WIDECHAR
+                cx += utf8_char_count(keybuf->data + pos, n);
+                iendx += utf8_char_count(keybuf->data + pos, n);
+                pos += n;
+#else
+                cx += n;
+                iendx += n;
+                pos += n;
+#endif
             }
-            iendx += space;
-            pos += space;
         }
 
         /* erase tail */
@@ -2469,6 +2573,18 @@ void idel(int place)
         ioutputs(keybuf->data + keyboard_pos, keybuf->len - keyboard_pos);
 
         /* erase tail */
+#if WIDECHAR
+        if (col_diff > Wrap - cx + 1) col_diff = Wrap - cx + 1;
+        if (visual && clear_to_eos && (col_diff > 2 || cy < oiey)) {
+            tp(clear_to_eos);
+        } else if (clear_to_eol && col_diff > 2) {
+            tp(clear_to_eol);
+            if (visual && cy < oiey) clear_lines(cy + 1, oiey);
+        } else {
+            bufputnc(' ', col_diff);  cx += col_diff;
+            if (visual && cy < oiey) clear_lines(cy + 1, oiey);
+        }
+#else
         if (len > Wrap - cx + 1) len = Wrap - cx + 1;
         if (visual && clear_to_eos && (len > 2 || cy < oiey)) {
             tp(clear_to_eos);
@@ -2479,6 +2595,7 @@ void idel(int place)
             bufputnc(' ', len);  cx += len;
             if (visual && cy < oiey) clear_lines(cy + 1, oiey);
         }
+#endif
     }
     
     /* restore cursor */
@@ -2491,12 +2608,22 @@ void idel(int place)
 int igoto(int place)
 {
     int diff;
+#if WIDECHAR
+    int diff_col;
+    int old_col, new_col;
+#endif
 
     if (place < 0)
         place = 0;
     if (place > keybuf->len)
         place = keybuf->len;
     diff = place - keyboard_pos;
+#if WIDECHAR
+    /* Compute movement in character cells, not bytes. */
+    old_col = utf8_byte_to_column(keybuf->data, keybuf->len, keyboard_pos);
+    new_col = utf8_byte_to_column(keybuf->data, keybuf->len, place);
+    diff_col = new_col - old_col;
+#endif
     keyboard_pos = place;
 
     if (!diff) {
@@ -2508,7 +2635,11 @@ int igoto(int place)
 
     } else if (!visual) {
 	int prompt_len = prompt ? prompt->len % Wrap : 0;
+#if WIDECHAR
+        ix += diff_col;
+#else
         ix += diff;
+#endif
         if (ix-1 < prompt_len) { /* off left edge of screen/prompt */
 	    if (expnonvis && insert_char && prompt_len - (ix-1) <= Wrap/2) {
 		/* can scroll, and amount of scroll needed is <= half screen */
@@ -2518,11 +2649,22 @@ int igoto(int place)
 		    hwrite(prompt, prompt->len - prompt_len, prompt_len, 0);
 		n = prompt_len - (ix-1); /* get ix onto screen */
 		if (sidescroll > n) n = sidescroll; /* bring up to minimum */
+#if WIDECHAR
+		/* Don't scroll more columns than exist to the left of the cursor. */
+		{ int maxcol = old_col;
+		  if (n > maxcol) n = maxcol; }
+#else
 		if (n > keyboard_pos-diff) n = keyboard_pos-diff; /* too far? */
+#endif
 		for (i = 0; i < n; i++)
 		    tp(insert_char);
 		ix += i;
+#if WIDECHAR
+		ictrl_put(keybuf->data + keyboard_pos,
+		    utf8_bytes_for_columns(keybuf->data + keyboard_pos, keybuf->len - keyboard_pos, i));
+#else
 		ictrl_put(keybuf->data + keyboard_pos + prompt_len - (ix-1), i);
+#endif
                 bufputnc('\010', (prompt_len + i) - (ix - 1));
 		cx = ix;
 		cy = lines;
@@ -2535,8 +2677,15 @@ int igoto(int place)
 		    physical_refresh();
 		} else {
 		    /* amount of scroll needed is <= half screen */
-		    int offset = place - ix + iendx;
 		    int i;
+		    int offset;
+#if WIDECHAR
+		    int col_place = utf8_byte_to_column(keybuf->data, keybuf->len, place);
+		    int start_col = col_place - (ix - 1) + (iendx - 1);
+		    offset = utf8_column_to_byte(keybuf->data, keybuf->len, start_col);
+#else
+		    offset = place - ix + iendx;
+#endif
 		    bufputc('\r');
 		    if (prompt)
 			hwrite(prompt, prompt->len - prompt_len, prompt_len, 0);
@@ -2548,8 +2697,13 @@ int igoto(int place)
 		    cy = lines;
 		    xy(iendx, lines);
 		    ioutputs(keybuf->data + offset, keybuf->len - offset);
+#if WIDECHAR
+		    diff_col -= i;
+		    offset = utf8_column_to_byte(keybuf->data, keybuf->len, utf8_byte_to_column(keybuf->data, keybuf->len, offset) + i);
+#else
 		    diff -= i;
 		    offset += i;
+#endif
 		    xy(ix, lines);
 		}
 	    } else {
@@ -2557,22 +2711,41 @@ int igoto(int place)
 		physical_refresh();
 	    }
         } else { /* on screen */
+#if WIDECHAR
+            cx += diff_col;
+            if (diff < 0)
+                bufputnc('\010', diff_col);
+            else
+                ictrl_put(keybuf->data + place - diff, diff);
+#else
             cx += diff;
             if (diff < 0)
                 bufputnc('\010', -diff);
             else 
                 ictrl_put(keybuf->data + place - diff, diff);
+#endif
         }
 
     /* visual */
     } else {
+#if WIDECHAR
+        int new = (ix - 1) + diff_col;
+#else
         int new = (ix - 1) + diff;
+#endif
         iy += ndiv(new, Wrap);
         ix = nmod(new, Wrap) + 1;
 
         if ((iy > lines) && (iy - lines < isize) && scroll) {
             scroll_input(iy - lines);
+#if WIDECHAR
+            { int col_place = utf8_byte_to_column(keybuf->data, keybuf->len, place);
+              int start_col = col_place - (ix - 1) - (iy - lines - 1) * Wrap;
+              ioutall(utf8_column_to_byte(keybuf->data, keybuf->len, start_col));
+            }
+#else
             ioutall(place - (ix - 1) - (iy - lines - 1) * Wrap);
+#endif
             iy = lines;
             ipos();
         } else if ((iy < in_top) || (iy > lines)) {
@@ -2607,10 +2780,34 @@ void physical_refresh(void)
 	    hwrite(prompt, prompt->len - prompt_len, prompt_len, 0);
 	    iendx = prompt_len + 1;
 	}
+#if WIDECHAR
+	if (sockecho() && keybuf->len > 0) {
+	    int col = utf8_byte_to_column(keybuf->data, keybuf->len, keyboard_pos);
+	    int vis_cols = Wrap - prompt_len;
+	    ix = col % vis_cols + 1 + prompt_len;
+	    start = utf8_column_to_byte(keybuf->data, keybuf->len, col - (ix - 1) + prompt_len);
+	} else {
+	    ix = 1 + prompt_len;
+	    start = 0;
+	}
+#else
 	ix = (sockecho()?keyboard_pos:0) % (Wrap - prompt_len) + 1 + prompt_len;
         start = (sockecho()?keyboard_pos:0) - (ix - 1) + prompt_len;
+#endif
 	if (start == keybuf->len && keybuf->len > 0) { /* would print nothing */
 	    /* slide window so something is visible */
+#if WIDECHAR
+	    { int total_cols = utf8_byte_to_column(keybuf->data, keybuf->len, keybuf->len);
+	      int vis_cols = Wrap - prompt_len;
+	      if (total_cols > vis_cols) {
+		  start = utf8_column_to_byte(keybuf->data, keybuf->len, total_cols - vis_cols);
+		  ix = Wrap + 1;
+	      } else {
+		  start = 0;
+		  ix = total_cols + 1 + prompt_len;
+	      }
+	    }
+#else
 	    if (start > Wrap - prompt_len) {
 		ix += Wrap - prompt_len;
 		start -= Wrap - prompt_len;
@@ -2618,6 +2815,7 @@ void physical_refresh(void)
 		ix += start;
 		start = 0;
 	    }
+#endif
 	}
 	ioutall(start);
         bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
@@ -2630,16 +2828,28 @@ void physical_refresh(void)
 void logical_refresh(void)
 {
     int kpos, nix, niy;
+#if WIDECHAR
+    int col;
+#endif
 
     if (!visual)
         oflush();  /* no sense refreshing if there's going to be output after */
 
     kpos = prompt ? -(prompt->len % Wrap) : 0;
+#if WIDECHAR
+    col = sockecho() ? utf8_byte_to_column(keybuf->data, keybuf->len, keyboard_pos) : 0;
+    nix = (col - kpos) % Wrap + 1;
+#else
     nix = ((sockecho() ? keyboard_pos : 0) - kpos) % Wrap + 1;
+#endif
 
     if (visual) {
         setscroll(1, lines);
+#if WIDECHAR
+        niy = istarty + (col - kpos) / Wrap;
+#else
         niy = istarty + (keyboard_pos - kpos) / Wrap;
+#endif
         if (niy <= lines) {
             clear_input_line();
         } else {
@@ -2647,7 +2857,11 @@ void logical_refresh(void)
             kpos += (niy - lines) * Wrap;
             niy = lines;
         }
+#if WIDECHAR
+        ioutall(kpos < 0 ? kpos : utf8_column_to_byte(keybuf->data, keybuf->len, kpos));
+#else
         ioutall(kpos);
+#endif
         ix = nix;
         iy = niy;
         ipos();
@@ -2660,6 +2874,27 @@ void logical_refresh(void)
 		hwrite(prompt, prompt->len - plen, plen, 0);
 		iendx = plen + 1;
 	    }
+#if WIDECHAR
+	    if (sockecho() && keybuf->len > 0) {
+		col = utf8_byte_to_column(keybuf->data, keybuf->len, keyboard_pos);
+		ix = (old_ix >= iendx && old_ix <= Wrap) ? old_ix : col % (Wrap - plen) + 1 + plen;
+		kpos = utf8_column_to_byte(keybuf->data, keybuf->len, col - (ix - 1) + plen);
+	    } else {
+		ix = 1 + plen;
+		kpos = 0;
+	    }
+	    old_ix = -1;
+	    if (kpos == keybuf->len && keybuf->len > 0) {
+		int total_cols = utf8_byte_to_column(keybuf->data, keybuf->len, keybuf->len);
+		if (total_cols > Wrap/2) {
+		    ix += Wrap/2;
+		    kpos = utf8_column_to_byte(keybuf->data, keybuf->len, total_cols - Wrap/2);
+		} else {
+		    ix += total_cols;
+		    kpos = 0;
+		}
+	    }
+#else
 	    ix = (old_ix >= iendx && old_ix <= Wrap) ? old_ix :
 		(sockecho()?keyboard_pos:0) % (Wrap - plen) + 1 + plen;
 	    old_ix = -1; /* invalid */
@@ -2674,16 +2909,26 @@ void logical_refresh(void)
 		    kpos -= kpos;
 		}
 	    }
+#endif
 	    ioutall(kpos);
 	} else {
 	    ioutall(kpos);
 	    kpos += Wrap;
+#if WIDECHAR
+	    while ((sockecho() && kpos <= col) || kpos < 0) {
+		crnl(1);  cx = 1;
+		iendx = 1;
+		ioutall(kpos < 0 ? kpos : utf8_column_to_byte(keybuf->data, keybuf->len, kpos));
+		kpos += Wrap;
+	    }
+#else
 	    while ((sockecho() && kpos <= keyboard_pos) || kpos < 0) {
 		crnl(1);  cx = 1;
 		iendx = 1;
 		ioutall(kpos);
 		kpos += Wrap;
 	    }
+#endif
 	    ix = nix;
 	}
 	bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
