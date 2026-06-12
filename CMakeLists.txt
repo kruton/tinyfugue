@@ -10,6 +10,21 @@ project(tinyfugue C)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(CheckCCompilerFlag)
+set(_saved_cmake_required_flags "${CMAKE_REQUIRED_FLAGS}")
+if (MSVC)
+    string(APPEND CMAKE_REQUIRED_FLAGS " /WX")
+else ()
+    string(APPEND CMAKE_REQUIRED_FLAGS " -Werror")
+endif ()
+check_c_compiler_flag("-Wincompatible-pointer-types"
+    HAVE_WINCOMPATIBLE_POINTER_TYPES)
+set(CMAKE_REQUIRED_FLAGS "${_saved_cmake_required_flags}")
+unset(_saved_cmake_required_flags)
+if (HAVE_WINCOMPATIBLE_POINTER_TYPES)
+    add_compile_options("-Wincompatible-pointer-types")
+endif ()
+
 file(STRINGS "src/vars.mak" TFVER_LINE REGEX "^TFVER=")
 string(REGEX REPLACE "^TFVER=" "" TFVER "${TFVER_LINE}")
 file(STRINGS "src/main.c" TFVERSION_LINE REGEX "Fugue version")
