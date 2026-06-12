@@ -188,8 +188,8 @@ endif (FLOAT)
 
 if (WIDECHAR)
     find_package(ICU 51.0 COMPONENTS uc i18n data REQUIRED)
-    target_include_directories(tflib PRIVATE ${ICU_INCLUDE_DIRS})
-    target_link_libraries(tflib PRIVATE ICU::uc ICU::i18n ICU::data)
+    target_include_directories(tflib PUBLIC ${ICU_INCLUDE_DIRS})
+    target_link_libraries(tflib PUBLIC ICU::uc ICU::i18n ICU::data)
 endif (WIDECHAR)
 
 find_package(ZLIB)
