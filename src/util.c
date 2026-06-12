@@ -435,8 +435,8 @@ void startopt(const conString *args, const char *opts)
 
 char nextopt(const char **arg, ValueUnion *uval, int *type, int *offp)
 {
-    char *q, opt;
-    const char *end;
+    char opt;
+    const char *end, *q;
     STATIC_BUFFER(buffer);
 
     current_opt = '\0';
@@ -1100,4 +1100,3 @@ void die(const char *why, int err)
     }
     exit(1);
 }
-
