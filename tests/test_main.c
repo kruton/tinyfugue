@@ -377,12 +377,12 @@ static void test_hwrite_column_tracking(void)
     hwrite(CS(str), 0, str->len, 0);
     EXPECT_INT(3, cx); // should advance by 3 (grapheme width), not 4 (byte length)
 
-    /* Test tab handling: tab should advance to next tab stop */
+    /* cx is one-based, so a tab in terminal column 1 occupies 8 columns. */
     cx = 1;
     Stringtrunc(str, 0);
     Stringcat(str, "\t");
     hwrite(CS(str), 0, str->len, 0);
-    EXPECT_INT(8, cx); // should advance to 8 from 1 (7 columns)
+    EXPECT_INT(9, cx);
 
     Stringfree(str);
     cx = old_cx;
@@ -626,6 +626,14 @@ static int get_captured_stdout(char *buf, int max_len)
     return n;
 }
 
+extern void (*tp)(const char *str);
+static void test_tp(const char *str)
+{
+    if (str) {
+        printf("%s", str);
+    }
+}
+
 static void test_pseudo_terminal_rendering(void)
 {
     conString *old_prompt = prompt;
@@ -638,7 +646,10 @@ static void test_pseudo_terminal_rendering(void)
     char buf[1024];
     int n;
 
+    tp = test_tp;
+
     special_var[VAR_visual].val.u.ival = 0;
+    special_var[VAR_wrapsize].val.u.ival = 80;
     prompt = (conString *)owned_string("a\xc3\xa9", 3, 0);
     keyboard_pos = 0;
 
@@ -657,8 +668,9 @@ static void test_pseudo_terminal_rendering(void)
     special_var[VAR_visual].val.u.ival = 1;
     keyboard_pos = 0;
 
+    extern void logical_refresh(void);
     start_capturing_stdout();
-    physical_refresh();
+    logical_refresh();
     n = get_captured_stdout(buf, sizeof(buf));
 
     EXPECT_TRUE(n > 0);
@@ -676,11 +688,24 @@ static void test_pseudo_terminal_rendering(void)
     clear_to_eol = NULL;
     cursor_address = NULL;
     can_have_visual = 0;
+    tp = NULL;
 }
 #endif
 
+extern void init_util1(void);
+extern void init_expand(void);
+extern void init_variables(void);
+extern void init_macros(void);
+extern void init_util2(void);
+
 int main(void)
 {
+    init_util1();
+    init_expand();
+    init_variables();
+    init_macros();
+    init_util2();
+
     test_encode_ansi();
     test_string_shift_attributes();
 #if WIDECHAR

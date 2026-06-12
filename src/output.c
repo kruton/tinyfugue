@@ -164,7 +164,7 @@ static void  output_noscroll(PhysLine *pl);
 static void  output_scroll(PhysLine *pl);
 #endif
 
-static void  (*tp)(const char *str);
+void  (*tp)(const char *str);
 
 #if TERMCAP
 #define tpgoto(seq,x,y)  tp(tgoto(seq, (x)-1+origin, (y)-1+origin))
@@ -2960,7 +2960,7 @@ void hwrite(conString *line, int start, int len, int indent)
     attr_t current = 0;
     attr_t new;
     int i, ctrl;
-    int col = 0;
+    int col = cx > 0 ? cx - 1 : 0;
     int total_width = 0;
     char c;
 

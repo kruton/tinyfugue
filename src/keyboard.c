@@ -265,7 +265,7 @@ void handle_input_string(const char *input, unsigned int len)
     if (keybuf->len) sync_input_hist();
 
     /* Build the full replacement string 'repl' */
-    repl = Stringnew(NULL, 0, 0);
+    (repl = Stringnew(NULL, 0, 0))->links++;
     for (r = 0; r < repl_count; r++) {
         Stringncat(repl, input, len);
     }
