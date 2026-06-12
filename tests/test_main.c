@@ -89,6 +89,16 @@ static void test_string_shift_attributes(void)
 }
 
 #if WIDECHAR
+static void test_character_offsets(void)
+{
+    EXPECT_INT(3, tf_character_offset("ascii", 5, 1, 2));
+    EXPECT_INT(0, tf_character_offset("ascii", 5, 1, -2));
+
+    /* CRLF is one grapheme cluster and must still use ICU segmentation. */
+    EXPECT_INT(2, tf_character_offset("\r\nX", 3, 0, 1));
+    EXPECT_INT(0, tf_character_offset("\r\nX", 3, 2, -1));
+}
+
 static void test_decode_ansi_utf8(void)
 {
     String *actual;
@@ -328,18 +338,13 @@ static void test_overwrite_and_insert(void)
     expect_bytes("a\xc3\xa9X", 4, keybuf);
     EXPECT_INT(3, keyboard_pos);
 
-    fprintf(stderr, "TEST: Starting Test 2\n"); fflush(stderr);
     /* Test 2: Overwrite mode, overwriting a 2-byte character with a 1-byte character */
     special_var[VAR_insert].val.u.ival = 0;
-    fprintf(stderr, "TEST: Truncating keybuf\n"); fflush(stderr);
     Stringtrunc(keybuf, 0);
-    fprintf(stderr, "TEST: Catting to keybuf\n"); fflush(stderr);
     Stringcat(keybuf, "a\xc3\xa9X"); // a, é (2 bytes), X
-    fprintf(stderr, "TEST: Setting keyboard_pos\n"); fflush(stderr);
     keyboard_pos = 1; // start of 'é'
 
     /* Simulate typing 'u' (1 byte) in overwrite mode */
-    fprintf(stderr, "TEST: Calling handle_input_string\n"); fflush(stderr);
     handle_input_string("u", 1);
     expect_bytes("auX", 3, keybuf);
     EXPECT_INT(2, keyboard_pos);
@@ -709,6 +714,7 @@ int main(void)
     test_encode_ansi();
     test_string_shift_attributes();
 #if WIDECHAR
+    test_character_offsets();
     test_decode_ansi_utf8();
     test_unicode_wrapping();
     test_display_positions();
