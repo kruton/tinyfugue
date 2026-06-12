@@ -20,7 +20,7 @@ const char version[] =
 #if DEVELOPMENT
     "DEVELOPMENT VERSION: "
 #endif
-    "TinyFugue version 5.0 beta 8";
+    TF_VERSION_STRING;
 
 const char mods[] = "";
 

@@ -173,8 +173,12 @@ struct tfaddrinfo {
     struct addrinfo  *ai_next; /* next structure in linked list */
 };
 
-#define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
-#define AI_ADDRCONFIG   0x00000400 /* only if any address is assigned */
+#ifndef AI_NUMERICHOST
+# define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
+#endif
+#ifndef AI_ADDRCONFIG
+# define AI_ADDRCONFIG   0x00000400 /* only if any address is assigned */
+#endif
 
 # if !HAVE_HSTRERROR
 static const char *h_errlist[] = {
@@ -1972,9 +1976,22 @@ static int establish(Sock *sock)
 
 #if HAVE_SSL
     if (xsock->ssl) {
-	int sslret;
+	int sslret = 1;
+#if HAVE_GNUTLS_OPENSSL_H
+	if (xsock->host != NULL) {
+	    sslret = gnutls_server_name_set(xsock->ssl->gnutls_state,
+		GNUTLS_NAME_DNS, xsock->host, strlen(xsock->host));
+	    if (sslret < 0) {
+		eprintf("Unable to set TLS server name: %s",
+		    gnutls_strerror(sslret));
+	    } else {
+		sslret = 1;
+	    }
+	}
+#elif HAVE_SSL_SET_TLSEXT_HOST_NAME
 	if (xsock->host != NULL)
 	    sslret = SSL_set_tlsext_host_name(xsock->ssl, xsock->host);
+#endif
 
 	if (sslret == 1)
 	    sslret = SSL_connect(xsock->ssl);
@@ -3345,7 +3362,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    (rawchar == TN_GMCP && gmcp) ||
 #endif
 #if ENABLE_OPTION102
-		    (rawchar == TN_102 && option102) ||
+		    (rawchar == TN_102 && OPTION102) ||
 #endif
                     rawchar == TN_ECHO ||
                     rawchar == TN_SEND_EOR ||

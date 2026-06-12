@@ -6,7 +6,8 @@
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
 
-#define UNAME "generic"
+#define UNAME "@UNAME@"
+#define TF_VERSION_STRING "@TF_VERSION_STRING@"
 #define stringify_token(s) #s
 #define stringify_value(s) stringify_token(s)
 #define DEFAULT_TFLIBD stringify_value(DATADIR) "/@LIBNAME@"
