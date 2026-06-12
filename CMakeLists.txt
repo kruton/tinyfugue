@@ -22,6 +22,10 @@ include(SearchForHeader)
 include(cmake/FeatureMode.cmake)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Only enable link-path-derived install RPATH on platforms that require it.
+if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD" OR CMAKE_SYSTEM_NAME STREQUAL "SunOS")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 
 option(TF_256COLORS "Enable 256 color support" ON)
 option(TF_ATCP "Enable ATCP support" OFF)
@@ -205,6 +209,10 @@ endif()
 
 if(TF_FLOAT)
     search_for_function(sqrt "m" tflib HAVE_SQRT)
+    find_library(TF_MATH_LIBRARY m)
+    if(TF_MATH_LIBRARY)
+        target_link_libraries(tflib PRIVATE "${TF_MATH_LIBRARY}")
+    endif()
 endif()
 
 set(WIDECHAR 0)
