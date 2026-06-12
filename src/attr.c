@@ -557,7 +557,7 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 	    if (dst->len > 0) {
 #if WIDECHAR
 		int previous = dst->len;
-		U8_BACK_1(dst->data, 0, previous);
+		U8_BACK_1((const uint8_t *)dst->data, 0, previous);
 		Stringtrunc(dst, previous);
 #else
 		Stringtrunc(dst, dst->len - 1);
