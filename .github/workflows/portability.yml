@@ -35,7 +35,7 @@ jobs:
         uses: vmactions/netbsd-vm@99816dccf75edf233ed6cd00a159e3a5b85ea373 # v1.4.0
         with:
           usesh: true
-          prepare: pkgin -y install cmake ninja-build pcre icu openssl ncurses
+          prepare: /usr/sbin/pkg_add cmake ninja-build pcre icu openssl ncurses
           run: |
             cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
             cmake --build build
@@ -55,8 +55,9 @@ jobs:
         if: matrix.action == 'solaris'
         uses: vmactions/solaris-vm@d30dd6c228c8661ade859e36ead7660b9a62efcc # v1.3.7
         with:
+          release: 11.4-gcc
           usesh: true
-          prepare: pkg install cmake ninja pcre icu openssl ncurses
+          prepare: pkg install cmake ninja pcre developer/icu openssl ncurses
           run: |
             cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
             cmake --build build
