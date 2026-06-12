@@ -13,6 +13,19 @@
 #include <unicode/ubrk.h>
 #include <unicode/utext.h>
 static int cluster_width(const char *str, int start, int end);
+
+static int is_simple_ascii(const char *str, int len)
+{
+    int i;
+
+    for (i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)str[i];
+
+        if (c >= 0x80 || c == '\r')
+            return 0;
+    }
+    return 1;
+}
 #endif
 
 int tf_character_offset(const char *str, int len, int position, int count)
@@ -25,6 +38,9 @@ int tf_character_offset(const char *str, int len, int position, int count)
         position = len;
 
 #if WIDECHAR
+    if (is_simple_ascii(str, len))
+        goto byte_fallback;
+
     {
         UBreakIterator *characters;
         UText *text;
