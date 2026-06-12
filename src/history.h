@@ -37,17 +37,21 @@ extern int log_count, norecord, nolog;
 # else /* NO_HISTORY */
 
 #define init_histories()               /* do nothing */
+#define init_history(hist, maxsize)    (hist)
 #define free_history(hist)             /* do nothing */
 #define recordline(hist, line)         /* do nothing */
 #define record_global(line)            /* do nothing */
 #define record_local(line)             /* do nothing */
-#define record_input(line, tv)         /* do nothing */
+#define record_input(line)             /* do nothing */
+#define sync_input_hist()              /* do nothing */
 #define recall_history(args, file)     (eprintf("history disabled"), 0)
-#define recall_input(n, mode)          (eprintf("history disabled"), 0)
+#define recall_input(n, mode)          (eprintf("history disabled"), (String *)0)
 #define check_watch(hist, line)        /* do nothing */
 #define history_sub(pattern)           (0)
 #define is_watchdog(hist, line)        (0)
 #define is_watchname(hist, line)       (0)
+#define do_recall(args, offset)        (eprintf("history disabled"), 0)
+#define hist_getsize(hist)             (0L)
 
 #define log_count                      (0)
 static int norecord = 0, nolog = 0;

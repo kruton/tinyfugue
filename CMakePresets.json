@@ -1,0 +1,128 @@
+{
+  "version": 2,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default release build",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON"
+      }
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug build",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "full",
+      "displayName": "Strict full-feature build",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/full",
+      "cacheVariables": {
+        "TF_WIDECHAR": "ON",
+        "TF_TLS": "ON",
+        "TF_TERMCAP": "ON",
+        "TF_ZLIB": "ON"
+      }
+    },
+    {
+      "name": "minimal",
+      "displayName": "Minimal dependency build",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/minimal",
+      "cacheVariables": {
+        "TF_WIDECHAR": "OFF",
+        "TF_TLS": "OFF",
+        "TF_TERMCAP": "OFF",
+        "TF_ZLIB": "OFF",
+        "TF_INET6": "OFF",
+        "TF_GETADDRINFO": "OFF",
+        "TF_HISTORY": "OFF",
+        "TF_PROCESS": "OFF",
+        "TF_FLOAT": "OFF"
+      }
+    },
+    {
+      "name": "protocols",
+      "displayName": "Optional protocol build",
+      "inherits": "default",
+      "binaryDir": "${sourceDir}/build/protocols",
+      "cacheVariables": {
+        "TF_ATCP": "ON",
+        "TF_GMCP": "ON",
+        "TF_OPTION102": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "full",
+      "configurePreset": "full"
+    },
+    {
+      "name": "minimal",
+      "configurePreset": "minimal"
+    },
+    {
+      "name": "protocols",
+      "configurePreset": "protocols"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "full",
+      "configurePreset": "full",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "minimal",
+      "configurePreset": "minimal",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "protocols",
+      "configurePreset": "protocols",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

@@ -1,5 +1,11 @@
-                      TinyFugue for Mac OS X
+TinyFugue on macOS
+==================
 
-You must have the developer tools installed on your system.
-Open a shell window, and follow the instructions in unix/README.
+Install Xcode command-line tools, CMake, PCRE, and any desired optional
+dependencies. With Homebrew:
 
+    brew install cmake ninja pcre icu4c openssl@3
+
+Then follow the build instructions in ../README. Homebrew prefixes can be
+passed through `CMAKE_PREFIX_PATH` when CMake does not discover them
+automatically.

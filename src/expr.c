@@ -239,7 +239,11 @@ Value *valval_fl(Value *val, const char *file, int line)
 		result = NULL;
 	    break;
 	case TYPE_FLOAT:
+#if !NO_FLOAT
 	    result = newfloat_fl(valfloat(result), file, line); break;
+#else
+	    result = newSstr_fl(valstr(result), file, line); break;
+#endif
 	default:
 	    result = newSstr_fl(valstr(result), file, line); break;
 	}
@@ -569,6 +573,7 @@ int reduce(opcode_t op, int n)
         if (!reduce_arithmetic(op, opd(n), n, &res))
 	    break;
 	switch (res.type) {
+#if !NO_FLOAT
 	case TYPE_FLOAT:
             if (res.u.fval == HUGE_VAL || res.u.fval == -HUGE_VAL) {
 		eprintf("%s operator: arithmetic overflow", oplabel(op));
@@ -576,6 +581,7 @@ int reduce(opcode_t op, int n)
 		val = newfloat(res.u.fval);
 	    }
 	    break;
+#endif
 	case TYPE_DECIMAL:
 	case TYPE_ATIME:
 	case TYPE_DTIME:
@@ -741,7 +747,9 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
 	}
 	if (neg0 == neg1 && (sum < 0) != neg0) {
 	    /* operands have same sign, but sum has different sign: overflow */
+#if !NO_FLOAT
 	    promoted_type = TYPE_FLOAT;
+#endif
 	}
     }
 
@@ -757,8 +765,12 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
         case '+':	/* fall thru to '-' */
         case '-':	return resint(sum);
         case '*':       i = valint(val[0]) * valint(val[1]);
+#if !NO_FLOAT
 			f = valfloat(val[0]) * valfloat(val[1]);
 			return (i == f) ? resint(i) : resfloat(f);
+#else
+			return resint(i);
+#endif
         case '/':       if ((i = valint(val[1])) != 0)
                             return resint(valint(val[0]) / i);
                         eprintf("division by zero");
@@ -778,8 +790,10 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
         switch (op & ~OPF_SIDE) {
         case '+':  tvadd(&t, &t, &t1);
 		   return restime(t.tv_sec, t.tv_usec, promoted_type);
+#if !NO_FLOAT
         case '*':  return resfloat(valfloat(val[0]) * valfloat(val[1]));
         case '/':  return resfloat(valfloat(val[0]) / valfloat(val[1]));
+#endif
         default:   break;
         }
 
@@ -796,6 +810,7 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
         default:       return 0;
         }
 
+#if !NO_FLOAT
     case TYPE_FLOAT:
 	f = valfloat(val[0]);
 	switch (op & ~OPF_SIDE) {
@@ -811,6 +826,7 @@ static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
 	case '/':       return resfloat(f / valfloat(val[1]));
 	default:        return 0;
 	}
+#endif
 
     default:
         internal_error(__FILE__, __LINE__,
@@ -1205,11 +1221,15 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 
         case FN_cputime:
 	    {
-		clock_t t;
-		t = clock();
-		return t == -1 ? newint(-1) :
-		    newfloat(t / (double)CLOCKS_PER_SEC);
-	    }
+		    clock_t t;
+		    t = clock();
+#if !NO_FLOAT
+		    return t == -1 ? newint(-1) :
+			newfloat(t / (double)CLOCKS_PER_SEC);
+#else
+		    return newint(t == -1 ? -1 : t / CLOCKS_PER_SEC);
+#endif
+		  }
 
         case FN_idle:
         case FN_sidle:

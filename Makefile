@@ -1,46 +1,37 @@
 CMAKE ?= cmake
+BUILD_DIR ?= build
+BUILD_TYPE ?= Release
+PREFIX ?=
+CMAKE_ARGS ?=
+BUILD_ARGS ?=
+ACT ?= act
+ACT_RUNNER_IMAGE ?= catthehacker/ubuntu:act-latest
+ACT_ARGS ?=
 
-GENERATOR ?= $(shell (which ninja > /dev/null 2> /dev/null && echo Ninja) || \
-						 echo 'Unix Makefiles')
-prefix ?= 
-PREFIX ?= $(prefix)
-
-ifeq ($(GENRATOR),Ninja)
-	BUILDFILE = build.ninja
-else
-	BUILDFILE = Makefile
+CONFIGURE_ARGS = -S . -B "$(BUILD_DIR)" -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)"
+ifneq ($(strip $(PREFIX)),)
+CONFIGURE_ARGS += -DCMAKE_INSTALL_PREFIX="$(PREFIX)"
 endif
 
-all: .begin build/tf
+.PHONY: all configure test ci-local install clean
 
-.PHONY: .begin
-.begin:
-	@which $(CMAKE) > /dev/null 2> /dev/null || \
-		(echo 'Please install CMake and then re-run the "make" command!' 1>&2 && false)
+all: configure
+	$(CMAKE) --build "$(BUILD_DIR)" $(BUILD_ARGS)
 
-.PHONY: build/tf
-build/tf: build/$(BUILDFILE)
-	$(CMAKE) --build build
+configure:
+	$(CMAKE) $(CONFIGURE_ARGS) $(CMAKE_ARGS)
 
-build/$(BUILDFILE): | build
-	cd build; $(CMAKE) .. -G "$(GENERATOR)" \
-		$(if $(PREFIX),-DCMAKE_INSTALL_PREFIX="$(PREFIX)",) -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+test:
+	$(CMAKE) $(CONFIGURE_ARGS) -DBUILD_TESTING=ON $(CMAKE_ARGS)
+	$(CMAKE) --build "$(BUILD_DIR)" $(BUILD_ARGS)
+	ctest --test-dir "$(BUILD_DIR)" --output-on-failure
 
-build:
-	mkdir -p build
+ci-local:
+	$(ACT) push -W .github/workflows/ci.yml -j linux \
+		-P ubuntu-latest=$(ACT_RUNNER_IMAGE) $(ACT_ARGS)
 
-.PHONY: clean
+install: all
+	$(CMAKE) --install "$(BUILD_DIR)"
+
 clean:
-	rm -rf build
-
-.PHONY: install
-install: build/tf
-	$(CMAKE) --build build --target install
-
-.PHONY: test
-test: .begin | build
-	cd build; $(CMAKE) .. -G "$(GENERATOR)" \
-		$(if $(PREFIX),-DCMAKE_INSTALL_PREFIX="$(PREFIX)",) \
-		-DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=1
-	$(CMAKE) --build build --target tf_test
-	cd build; ctest --output-on-failure
+	$(CMAKE) -E remove_directory "$(BUILD_DIR)"

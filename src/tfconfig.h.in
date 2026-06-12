@@ -6,15 +6,9 @@
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
 
-/* This file must not have trailing carriage returns on lines:  they will
- * confuse configure.  (With autoconf 2.13, a trailing space and comment
- * on these lines let them work as intended.  But in 2.59, the trailing
- * comment causes problems too.)
- */
-
 #define PLATFORM_UNIX 1
 
-#undef MAILDIR
+#cmakedefine MAILDIR "@MAILDIR@"
 #undef pid_t
 #undef size_t
 #undef time_t
@@ -22,18 +16,18 @@
 
 #cmakedefine01 HAVE_UNISTD_H
 #cmakedefine01 HAVE_SYS_WAIT_H
-#cmakedefine STDC_HEADERS @STDC_HEADERS@
+#cmakedefine01 STDC_HEADERS
 #cmakedefine01 HAVE_MEMORY_H
 #cmakedefine01 HAVE_SYS_SELECT_H
 #cmakedefine01 HAVE_LOCALE_H
-#cmakedefine NETINET_IN_H "@NETINET_IN_H@"
-#cmakedefine ARPA_INET_H "@ARPA_INET_H@"
-#cmakedefine NETDB_H "@NETDB_H@"
+#cmakedefine NETINET_IN_H <@NETINET_IN_H@>
+#cmakedefine ARPA_INET_H <@ARPA_INET_H@>
+#cmakedefine NETDB_H <@NETDB_H@>
 #cmakedefine01 HAVE_PWD_H
 #cmakedefine01 NEED_PTEM_H
 #cmakedefine01 HAVE_ZLIB_H
 #cmakedefine01 HAVE_LIBZ
-#cmakedefine01 SOCKS
+#define SOCKS 0
 #cmakedefine01 HAVE_SSL
 #cmakedefine01 HAVE_GNUTLS_OPENSSL_H
 
@@ -41,6 +35,7 @@
 #cmakedefine01 HAVE_BZERO
 #cmakedefine01 HAVE_CONNECT
 #cmakedefine01 HAVE_ERR_PEEK_ERROR
+#cmakedefine01 HAVE_SSL_SET_TLSEXT_HOST_NAME
 #cmakedefine01 HAVE_FILENO
 #cmakedefine01 HAVE_GETCWD
 #cmakedefine01 HAVE_GETHOSTBYNAME
@@ -74,9 +69,9 @@
 #cmakedefine01 HAVE_TZSET
 #cmakedefine01 HAVE_WAITPID
 
-#cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
-#cmakedefine SIZEOF_INT @SIZEOF_INT@
-#cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+#define SIZEOF_SHORT @SIZEOF_SHORT@
+#define SIZEOF_INT @SIZEOF_INT@
+#define SIZEOF_LONG @SIZEOF_LONG@
 
 #cmakedefine01 TERMCAP
 #cmakedefine HARDCODE @HARDCODE@
@@ -93,20 +88,19 @@
 #cmakedefine01 NO_HISTORY
 #cmakedefine01 NO_PROCESS
 #cmakedefine01 NO_FLOAT
-#cmakedefine NCOLORS @NCOLORS@
+#define NCOLORS @NCOLORS@
 #cmakedefine01 WIDECHAR
-#cmakedefine USE_DMALLOC @USE_DMALLOC@
+#define USE_DMALLOC 0
 #define USE_MMALLOC 0
+#cmakedefine01 DEVELOPMENT
 
-#cmakedefine ENABLE_ATCP @ENABLE_ACTP@
-#cmakedefine ENABLE_GMCP @ENABLE_GMCP@
-#cmakedefine ENABLE_OPTION102 @ENABLE_OPTION102@
+#cmakedefine01 ENABLE_ATCP
+#cmakedefine01 ENABLE_GMCP
+#cmakedefine01 ENABLE_OPTION102
 
 #define HAVE_MCCP (HAVE_ZLIB_H && HAVE_LIBZ)
 
 #undef inline
 
 #include "tfdefs.h"
-
 #include <assert.h>
-
