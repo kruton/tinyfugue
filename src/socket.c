@@ -2692,11 +2692,11 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 static void handle_socket_lines(void)
 {
     static int depth = 0;
-    conString *line;
+    String *line;
     int is_prompt;
 
     if (depth) return;	/* don't recurse */
-    if (!(line = dequeue(&xsock->queue)))
+    if (!(line = (String *)dequeue(&xsock->queue)))
 	return;
     depth++;
     do {
@@ -2704,9 +2704,7 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-        // XXX: This should be cleaner. Adding cast to avoid warning,
-        // But really we should have a copy function or something, right?
-	    incoming_text = (String *) line;
+	    incoming_text = line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}
@@ -2715,7 +2713,7 @@ static void handle_socket_lines(void)
 	    &xsock->attrs);
 	incoming_text->time = line->time;
 	is_prompt = line->attrs & F_SERVPROMPT;
-	conStringfree(line);
+	Stringfree(line);
 	incoming_text->links++;
 
 	if (is_prompt) {
@@ -2746,7 +2744,7 @@ static void handle_socket_lines(void)
 	    world_output(xsock->world, CS(incoming_text));
 	    Stringfree(incoming_text);
 	}
-    } while ((line = dequeue(&xsock->queue)));
+    } while ((line = (String *)dequeue(&xsock->queue)));
     depth--;
 
     /* We just emptied the queue; there may be a partial line pending */
