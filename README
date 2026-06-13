@@ -68,6 +68,14 @@ Packaging tools may use `DESTDIR` with the install command. The executable,
 macro library, generated help index, compatibility links, change log, and man
 page are installed.
 
+Native packages
+---------------
+
+Package definitions for Debian/Ubuntu, Fedora/RHEL, Homebrew, FreeBSD, and
+Cygwin are maintained in `debian/` and `packaging/`. See
+`packaging/README.md` for build commands, source archive handling, and release
+updates. The package workflow builds and tests each native artifact.
+
 Configuration
 -------------
 

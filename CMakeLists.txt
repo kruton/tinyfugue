@@ -8,6 +8,7 @@ set(TF_VERSION_STRING "TinyFugue version 5.0 beta 8")
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 include(GNUInstallDirs)
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 include(CTest)
 include(CheckFunctionExists)
 include(CheckIncludeFile)

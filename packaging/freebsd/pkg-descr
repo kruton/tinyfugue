@@ -1,0 +1,4 @@
+TinyFugue is a flexible, screen-oriented client for MUDs and other
+line-based network services. It provides a macro language, triggers,
+history, multiple worlds, Unicode, TLS, and MCCP support.
+

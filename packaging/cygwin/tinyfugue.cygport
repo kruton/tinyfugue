@@ -1,0 +1,44 @@
+NAME="tinyfugue"
+VERSION="5.0.8"
+RELEASE="1"
+CATEGORY="Net Games"
+SUMMARY="Programmable MUD client"
+DESCRIPTION="TinyFugue is a flexible, screen-oriented client for MUDs and
+other line-based network services. It provides a macro language, triggers,
+history, multiple worlds, Unicode, TLS, and MCCP support."
+HOMEPAGE="https://github.com/kruton/tinyfugue"
+
+COMMIT="02b048204c5ffd1704b48541724b8ecebc9aee4c"
+SRC_URI="https://github.com/kruton/tinyfugue/archive/${COMMIT}.tar.gz"
+SRC_DIR="${NAME}-${COMMIT}"
+
+BUILD_REQUIRES="cmake gcc-core libicu-devel libncurses-devel libpcre-devel
+libssl-devel ninja zlib-devel"
+
+src_compile()
+{
+    mkdir -p "${B}"
+    cd "${B}"
+    cmake -G Ninja \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -DTF_WIDECHAR=ON \
+        -DTF_TLS=ON \
+        -DTF_TERMCAP=ON \
+        -DTF_ZLIB=ON \
+        "${S}"
+    ninja
+}
+
+src_test()
+{
+    cd "${B}"
+    ctest --output-on-failure
+}
+
+src_install()
+{
+    cd "${B}"
+    DESTDIR="${D}" ninja install
+    dodoc "${S}/README" "${S}/CHANGES" "${S}/CREDITS" "${S}/COPYING"
+}

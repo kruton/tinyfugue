@@ -1,0 +1,248 @@
+---
+name: Native packages
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_COMMIT: 02b048204c5ffd1704b48541724b8ecebc9aee4c
+
+jobs:
+  debian:
+    name: Debian package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Install package tools and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -q -y \
+            build-essential cmake debhelper devscripts \
+            libicu-dev libncurses-dev libpcre3-dev libssl-dev ninja-build \
+            zlib1g-dev
+      - name: Build source and binary packages
+        run: |
+          chmod +x debian/rules packaging/make-source-archive.sh
+          packaging/make-source-archive.sh \
+            --exclude-debian \
+            ../tinyfugue_5.0.8.orig.tar.gz
+          dpkg-buildpackage --build=source --no-sign
+          dpkg-buildpackage --build=binary --no-sign
+      - name: Install and verify package
+        run: |
+          sudo apt-get install -q -y ../tinyfugue_5.0.8-1_*.deb
+          packaging/verify-install.sh / /usr
+      - name: Collect Debian packages
+        run: |
+          mkdir -p artifacts/debian
+          find .. -maxdepth 1 -type f \
+            \( -name 'tinyfugue_*.buildinfo' \
+            -o -name 'tinyfugue_*.changes' \
+            -o -name 'tinyfugue_*.deb' \
+            -o -name 'tinyfugue_*.ddeb' \
+            -o -name 'tinyfugue_*.debian.tar.*' \
+            -o -name 'tinyfugue_*.dsc' \
+            -o -name 'tinyfugue_*.orig.tar.*' \) \
+            -exec cp {} artifacts/debian/ \;
+          test -n "$(find artifacts/debian -type f -print -quit)"
+      - name: Upload Debian packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: debian-packages
+          path: artifacts/debian/
+
+  rpm:
+    name: RPM package
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install checkout tools
+        run: dnf install -y findutils git gzip tar
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Install package tools and dependencies
+        run: |
+          dnf install -y \
+            cmake gcc libicu-devel ncurses-devel ninja-build openssl-devel \
+            pcre-devel rpm-build zlib-devel
+      - name: Build source and binary packages
+        run: |
+          install -d "$HOME/rpmbuild/SOURCES"
+          packaging/make-source-archive.sh \
+            --prefix "tinyfugue-${SOURCE_COMMIT}" \
+            "$HOME/rpmbuild/SOURCES/${SOURCE_COMMIT}.tar.gz"
+          rpmbuild -ba packaging/rpm/tinyfugue.spec
+      - name: Install and verify package
+        run: |
+          dnf --setopt=tsflags= install -y \
+            "$HOME"/rpmbuild/RPMS/*/tinyfugue-*.rpm
+          packaging/verify-install.sh / /usr
+      - name: Upload RPM packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: rpm-packages
+          path: |
+            /github/home/rpmbuild/RPMS/**/*.rpm
+            /github/home/rpmbuild/SRPMS/*.rpm
+
+  homebrew:
+    name: Homebrew package
+    runs-on: macos-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Install dependencies
+        run: brew install cmake icu4c ncurses ninja openssl@3 pcre zlib
+      - name: Prepare checkout formula
+        id: source
+        run: |
+          archive="$RUNNER_TEMP/tinyfugue-5.0.8.tar.gz"
+          tap_name="tinyfugue/ci"
+          formula_name="$tap_name/tinyfugue"
+          packaging/make-source-archive.sh "$archive"
+          sha=$(shasum -a 256 "$archive" | awk '{print $1}')
+          brew tap-new --no-git "$tap_name"
+          formula="$(brew --repository "$tap_name")/Formula/tinyfugue.rb"
+          cp packaging/homebrew/tinyfugue.rb "$formula"
+          ruby -e '
+            path, url, sha = ARGV
+            text = File.read(path)
+            text.sub!(/  url ".*"/, "  url \"file://#{url}\"")
+            text.sub!(/  sha256 ".*"/, "  sha256 \"#{sha}\"")
+            File.write(path, text)
+          ' "$formula" "$archive" "$sha"
+          echo "formula=$formula_name" >> "$GITHUB_OUTPUT"
+      - name: Build, test, and bottle formula
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: |
+          brew install --build-bottle "${{ steps.source.outputs.formula }}"
+          brew test "${{ steps.source.outputs.formula }}"
+          mkdir -p artifacts/homebrew
+          cd artifacts/homebrew
+          brew bottle --json "${{ steps.source.outputs.formula }}"
+      - name: Verify package
+        run: |
+          packaging/verify-install.sh \
+            "$(brew --prefix "${{ steps.source.outputs.formula }}")" ""
+      - name: Upload Homebrew bottle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: homebrew-bottle
+          path: artifacts/homebrew/
+
+  freebsd:
+    name: FreeBSD package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Build and verify package
+        uses: vmactions/freebsd-vm@a6de9343ef5747433d9c25784c90e84998b9d69a  # v1.4.6
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y cmake git icu ninja pcre pkgconf
+            git clone --depth 1 https://git.FreeBSD.org/ports.git /usr/ports
+          run: |
+            set -eu
+            port=/tmp/tinyfugue-port
+            distdir=/tmp/tinyfugue-distfiles
+            rm -rf "$port" "$distdir"
+            cp -R packaging/freebsd "$port"
+            mkdir -p "$distdir" artifacts/freebsd
+            source_commit=$(make -C "$port" -V GH_TAGNAME)
+            distfile=$(make -C "$port" -V DISTFILES)
+            packaging/make-source-archive.sh \
+              --prefix "tinyfugue-${source_commit}" \
+              "$distdir/$distfile"
+            cd "$port"
+            make makesum DISTDIR="$distdir"
+            test -f "$distdir/$distfile"
+            make test DISTDIR="$distdir"
+            make package DISTDIR="$distdir"
+            package_file=$(make -V WRKDIR_PKGFILE)
+            test -f "$package_file"
+            pkg add -f "$package_file"
+            cd "$GITHUB_WORKSPACE"
+            packaging/verify-install.sh / /usr/local
+            cp "$package_file" artifacts/freebsd/
+      - name: Upload FreeBSD package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: freebsd-package
+          path: artifacts/freebsd/
+
+  cygwin:
+    name: Cygwin package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
+      - name: Install Cygwin
+        uses: cygwin/cygwin-install-action@3f0a3f9f988f7e96b8c18098ae05eaec175f5b52  # v6.1
+        with:
+          packages: >-
+            cmake cygport gcc-core git libicu-devel libncurses-devel
+            libpcre-devel libssl-devel ninja python3 zlib-devel
+      - name: Build and inspect package
+        shell: C:\cygwin\bin\bash.exe --login -o igncr '{0}'
+        run: |
+          set -eu
+          cd "$(cygpath "$GITHUB_WORKSPACE")"
+          work=/tmp/tinyfugue-cygport
+          archive="$work/${SOURCE_COMMIT}.tar.gz"
+          recipe="$work/tinyfugue.cygport"
+          rm -rf "$work"
+          mkdir -p "$work"
+          packaging/make-source-archive.sh \
+            --prefix "tinyfugue-${SOURCE_COMMIT}" "$archive"
+          cp packaging/cygwin/tinyfugue.cygport "$recipe"
+          sed -i \
+            "s|^SRC_URI=.*|SRC_URI=\"http://127.0.0.1:8765/${SOURCE_COMMIT}.tar.gz\"|" \
+            "$recipe"
+          cd "$work"
+          python3 -m http.server 8765 >http-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT HUP INT TERM
+          cygport "$recipe" download
+          kill "$server_pid"
+          trap - EXIT HUP INT TERM
+          cygport "$recipe" prep compile check install package
+          mkdir -p "$OLDPWD/artifacts/cygwin"
+          find tinyfugue-5.0.8-1.* -path '*/dist/*' \
+            \( -name '*.hint' -o -name '*.tar.*' \) \
+            -exec cp {} "$OLDPWD/artifacts/cygwin/" \;
+          cd "$OLDPWD"
+          test -n "$(find artifacts/cygwin -name '*.tar.*' -print -quit)"
+          stage=/tmp/tinyfugue-cygwin-stage
+          rm -rf "$stage"
+          mkdir -p "$stage"
+          found=
+          for package in artifacts/cygwin/*.tar.*
+          do
+            tar -tf "$package" >/dev/null
+            if tar -tf "$package" | grep -q 'usr/bin/tf.exe'
+            then
+              tar -xf "$package" -C "$stage"
+              found=yes
+              break
+            fi
+          done
+          test "$found" = yes
+          packaging/verify-install.sh "$stage" /usr
+      - name: Upload Cygwin packages
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: cygwin-packages
+          path: artifacts/cygwin/

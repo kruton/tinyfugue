@@ -1,0 +1,16 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: TinyFugue
+Source: https://github.com/kruton/tinyfugue
+
+Files: *
+Copyright: 1993-2007 Ken Keys and contributors
+License: GPL-2+
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ On Debian systems, the complete text of version 2 of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-2`.

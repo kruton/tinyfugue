@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE "${STAGE_DIR}")
 
 execute_process(
-    COMMAND "${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${STAGE_DIR}"
+    COMMAND "${CMAKE_COMMAND}" -E env --unset=DESTDIR
+        "${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${STAGE_DIR}"
     RESULT_VARIABLE install_result)
 if(NOT install_result EQUAL 0)
     message(FATAL_ERROR "Staged installation failed with status ${install_result}")
@@ -39,7 +40,8 @@ endif()
 set(local_file "${library_dir}/local.tf")
 file(WRITE "${local_file}" "site-local configuration\n")
 execute_process(
-    COMMAND "${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${STAGE_DIR}"
+    COMMAND "${CMAKE_COMMAND}" -E env --unset=DESTDIR
+        "${CMAKE_COMMAND}" --install "${BUILD_DIR}" --prefix "${STAGE_DIR}"
     RESULT_VARIABLE reinstall_result
     OUTPUT_QUIET)
 if(NOT reinstall_result EQUAL 0)
