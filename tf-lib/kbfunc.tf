@@ -25,17 +25,17 @@
 
 ;;; /dokey functions.
 
-/def -i dokey_bspc	= /@test kbdel(kbpoint() - (kbnum?:1))
+/def -i dokey_bspc	= /dokey bspc
 /def -i dokey_bword	= /@test regmatch("[^ ]* *$$", kbhead()), \
 			        kbdel(kbpoint() - strlen({P0}))
-/def -i dokey_dch	= /@test kbdel(kbpoint() + (kbnum?:1))
+/def -i dokey_dch	= /dokey dch
 /def -i dokey_deol	= /@test kbdel(kblen())
 /def -i dokey_dline	= /@test kbgoto(0), kbdel(kblen())
-/def -i dokey_down	= /@test kbgoto(kbpoint() + wrapsize * (kbnum?:1))
+/def -i dokey_down	= /@test kb_visual_move(kbnum?:1)
 /def -i dokey_dword	= /kb_kill_word
 /def -i dokey_end	= /@test kbgoto(kblen())
 /def -i dokey_home	= /@test kbgoto(0)
-/def -i dokey_left	= /@test kbgoto(kbpoint() - (kbnum?:1))
+/def -i dokey_left	= /dokey left
 /def -i dokey_lnext	= /dokey lnext
 /def -i dokey_newline	= /dokey newline
 /def -i dokey_pause	= /dokey pause
@@ -44,12 +44,12 @@
 /def -i dokey_recallend	= /dokey recallend
 /def -i dokey_recallf	= /dokey recallf
 /def -i dokey_redraw	= /dokey redraw
-/def -i dokey_right	= /@test kbgoto(kbpoint() + (kbnum?:1))
+/def -i dokey_right	= /dokey right
 /def -i dokey_searchb	= /dokey searchb
 /def -i dokey_searchf	= /dokey searchf
 /def -i dokey_socketb	= /fg -c$[-kbnum?:-1]
 /def -i dokey_socketf	= /fg -c$[+kbnum?:1]
-/def -i dokey_up	= /@test kbgoto(kbpoint() - wrapsize * (kbnum?:1))
+/def -i dokey_up	= /@test kb_visual_move(-(kbnum?:1))
 /def -i dokey_wleft	= /test kbgoto(kb_nth_word(-(kbnum?:1)))
 /def -i dokey_wright	= /test kbgoto(kb_nth_word(kbnum?:1))
 /def -i dokey_page	= /test morescroll(winlines() * (kbnum?:1))
@@ -83,8 +83,9 @@
     /repeat -S $[kbnum>0?+kbnum:1] \
 	/@test kbgoto(kbwordright()), kbgoto(kbwordleft()) %%;\
 	/let end=$$[kbwordright()]%%;\
-	/@test input(toupper(substr(kbtail(), 0, 1))) %%;\
-	/@test input(tolower(substr(kbtail(), 0, end - kbpoint()))) %;\
+	/let _g1=$$[grapheme_offset(kbtail(), 0, 1)]%%;\
+	/@test input(toupper(substr(kbtail(), 0, _g1))) %%;\
+	/@test input(tolower(substr(kbtail(), _g1, end - kbpoint() - _g1))) %;\
     /set insert=%{_old_insert}
 
 /def -i kb_downcase_word = \
@@ -102,13 +103,12 @@
     /set insert=%{_old_insert}
 
 /def -i kb_transpose_chars = \
-    /if ( kbpoint() <= 0 ) /beep 1%; /return 0%; /endif%; \
+    /if (grapheme_count(kbhead()) < (kbpoint() == kblen() ? 2 : 1)) /beep 1%; /return 0%; /endif%; \
     /let _old_insert=$[+insert]%;\
     /set insert=0%;\
-;   Can't use /dokey_left because it would use %kbnum.
-    /@test kbgoto(kbpoint() - (kbpoint()==kblen()) - 1)%; \
-    /@test input(strcat(substr(kbtail(),1,kbnum>0?kbnum:1), \
-	substr(kbtail(),0,1)))%; \
+    /@test kbgoto(grapheme_offset(kbhead(), kbpoint(), - (kbpoint() == kblen()) - 1))%; \
+    /@test input(strcat(grapheme_substr(kbtail(), 1, kbnum>0?kbnum:1), \
+	grapheme_substr(kbtail(), 0, 1)))%; \
     /set insert=%{_old_insert}
 
 /def -i kb_last_argument = \
@@ -133,17 +133,17 @@
     /if /limit%; /then /unlimit%; /else /relimit%; /endif
 
 /def -i kb_up_or_recallb = \
-    /if (kbpoint() < wrapsize) \
+    /let _old=$[kbpoint()]%; \
+    /@test kb_visual_move(-1)%; \
+    /if (kbpoint() == _old) \
 	/dokey_recallb%; \
-    /else \
-	/dokey_up%; \
     /endif
 
 /def -i kb_down_or_recallf = \
-    /if (kbpoint() == kblen()) \
+    /let _old=$[kbpoint()]%; \
+    /@test kb_visual_move(1)%; \
+    /if (kbpoint() == _old) \
 	/dokey_recallf%; \
-    /else \
-	/dokey_down%; \
     /endif
 
 /eval /def -ip%maxpri -mregexp -h'REDEF macro (dokey|kb)_' ~hook_redef_dokey = \

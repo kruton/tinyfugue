@@ -23,6 +23,8 @@ extern int           do_kbword(int start, int dir);
 extern int           do_kbmatch(int start);
 extern int           handle_keyboard_input(int read_flag);
 extern int           handle_input_line(void);
+extern void          handle_input_string(const char *input, unsigned int len);
+extern int           kb_visual_move(int delta);
 
 #if USE_DMALLOC
 extern void   free_keyboard(void);

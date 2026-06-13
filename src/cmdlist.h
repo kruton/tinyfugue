@@ -7,10 +7,12 @@
  */
 
 #if !defined(defcmd)
+#define TF_DECLARING_COMMANDS
 #define defcmd(name, func, reserved) \
     extern struct Value *func(String *args, int offset);
 #endif
 
+#if !defined(TF_DECLARING_COMMANDS)
 #if NO_PROCESS
 # define handle_kill_command         NULL
 # define handle_ps_command           NULL
@@ -24,6 +26,7 @@
 # define handle_recordline_command   NULL
 # define handle_watchdog_command     NULL
 # define handle_watchname_command    NULL
+#endif
 #endif
 
 
@@ -93,3 +96,4 @@ defcmd("WATCHNAME"   , handle_watchname_command   , 0)
 
 #undef defcmd
 #undef defvarcmd
+#undef TF_DECLARING_COMMANDS

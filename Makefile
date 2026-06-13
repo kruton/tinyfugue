@@ -1,30 +1,37 @@
-########################################################################
-#
-#  TinyFugue - programmable mud client
-#  Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2002, 2003, 2004, 2005, 2006-2007 Ken Keys
-#
-#  TinyFugue (aka "tf") is protected under the terms of the GNU
-#  General Public Licence.  See the file "COPYING" for details.
-#
-########################################################################
+CMAKE ?= cmake
+BUILD_DIR ?= build
+BUILD_TYPE ?= Release
+PREFIX ?=
+CMAKE_ARGS ?=
+BUILD_ARGS ?=
+ACT ?= act
+ACT_RUNNER_IMAGE ?= catthehacker/ubuntu:act-latest
+ACT_ARGS ?=
 
-# Note: the space on the end of the next line is intentional, so it will
-# still work in unix for idiots who got ^M on the end of every line.
-default:  all 
+CONFIGURE_ARGS = -S . -B "$(BUILD_DIR)" -DCMAKE_BUILD_TYPE="$(BUILD_TYPE)"
+ifneq ($(strip $(PREFIX)),)
+CONFIGURE_ARGS += -DCMAKE_INSTALL_PREFIX="$(PREFIX)"
+endif
 
-all:
-	@echo :
-	@echo : To build TinyFugue, use one of the following commands
-	@echo : appropriate to your system.  For more information, see
-	@echo : the README file in the directory for your system.
-	@echo :
-	@echo : UNIX, CYGWIN, MACOS X:
-	@echo : ./configure [options]
-	@echo : make install
-	@echo :
+.PHONY: all configure test ci-local install clean
 
-install files tf clean uninstall: all
+all: configure
+	$(CMAKE) --build "$(BUILD_DIR)" $(BUILD_ARGS)
 
-# The next line is a hack to get around a bug in BSD/386 make.
-make:
+configure:
+	$(CMAKE) $(CONFIGURE_ARGS) $(CMAKE_ARGS)
 
+test:
+	$(CMAKE) $(CONFIGURE_ARGS) -DBUILD_TESTING=ON $(CMAKE_ARGS)
+	$(CMAKE) --build "$(BUILD_DIR)" $(BUILD_ARGS)
+	ctest --test-dir "$(BUILD_DIR)" --output-on-failure
+
+ci-local:
+	$(ACT) push -W .github/workflows/ci.yml -j linux \
+		-P ubuntu-latest=$(ACT_RUNNER_IMAGE) $(ACT_ARGS)
+
+install: all
+	$(CMAKE) --install "$(BUILD_DIR)"
+
+clean:
+	$(CMAKE) -E remove_directory "$(BUILD_DIR)"

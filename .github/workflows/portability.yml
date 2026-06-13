@@ -1,0 +1,64 @@
+---
+name: Portability
+
+on:
+  schedule:
+    - cron: '31 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: portability-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: NetBSD
+            action: netbsd
+          - name: OpenBSD
+            action: openbsd
+          - name: Solaris
+            action: solaris
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: NetBSD build
+        if: matrix.action == 'netbsd'
+        uses: vmactions/netbsd-vm@99816dccf75edf233ed6cd00a159e3a5b85ea373 # v1.4.0
+        with:
+          usesh: true
+          prepare: /usr/sbin/pkg_add cmake ninja-build pcre icu openssl ncurses
+          run: |
+            cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
+            cmake --build build
+            ctest --test-dir build --output-on-failure
+      - name: OpenBSD build
+        if: matrix.action == 'openbsd'
+        uses: vmactions/openbsd-vm@fcf799d7ce9c305ad89eabef1fb2fa5c1c42d0ee # v1.4.3
+        with:
+          usesh: true
+          prepare: pkg_add cmake ninja pcre icu4c
+          run: |
+            cmake -S . -B build -G Ninja -DBUILD_TESTING=ON \
+              -DTF_TLS=OFF
+            cmake --build build
+            ctest --test-dir build --output-on-failure
+      - name: Solaris build
+        if: matrix.action == 'solaris'
+        uses: vmactions/solaris-vm@d30dd6c228c8661ade859e36ead7660b9a62efcc # v1.3.7
+        with:
+          release: 11.4-gcc
+          usesh: true
+          prepare: pkg install cmake ninja pcre developer/icu openssl ncurses
+          run: |
+            cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
+            cmake --build build
+            ctest --test-dir build --output-on-failure

@@ -9,10 +9,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#if TERMCAP
-# define SCREEN
-#endif
-#if HARDCODE
+#if TERMCAP || HARDCODE
 # define SCREEN
 #endif
 
@@ -28,6 +25,11 @@ extern ref_type_t need_refresh;		/* Input needs refresh? */
 extern int need_more_refresh;		/* Visual more prompt needs refresh? */
 extern struct timeval alert_timeout;	/* when to clear alert */
 extern unsigned long alert_id;
+extern conString *prompt;
+extern int in_visual_move;
+extern int desired_column;
+extern int ix;
+extern int iendx;
 
 extern void dobell(int n);
 extern void init_output(void);
@@ -73,6 +75,7 @@ extern void enscreen(Screen *screen, conString *line);
 extern void screenout(conString *line);
 extern void update_prompt(conString *newprompt, int display);
 extern int  wraplen(const char *str, int len, int indent);
+extern void hwrite(conString *line, int start, int len, int indent);
 extern const char *get_keycode(const char *name);
 
 extern int moresize(Screen *screen);

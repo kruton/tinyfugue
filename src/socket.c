@@ -31,7 +31,6 @@
 
 #if WIDECHAR
 #include <unicode/ucnv.h>
-#include <unicode/ustring.h>
 #endif
 
 #if HAVE_SSL
@@ -77,6 +76,7 @@ struct sockaddr_in {
 #include "tfselect.h"
 #include "history.h"
 #include "world.h"
+#include "unicode.h"
 #include "socket.h"
 #include "output.h"
 #include "attr.h"
@@ -173,8 +173,12 @@ struct tfaddrinfo {
     struct addrinfo  *ai_next; /* next structure in linked list */
 };
 
-#define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
-#define AI_ADDRCONFIG   0x00000400 /* only if any address is assigned */
+#ifndef AI_NUMERICHOST
+# define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
+#endif
+#ifndef AI_ADDRCONFIG
+# define AI_ADDRCONFIG   0x00000400 /* only if any address is assigned */
+#endif
 
 # if !HAVE_HSTRERROR
 static const char *h_errlist[] = {
@@ -357,8 +361,8 @@ static void  test_prompt(void);
 static void  schedule_prompt(Sock *sock);
 static void  handle_socket_lines(void);
 #if WIDECHAR
-static int   inbound_decode_str(String *outut, String *input, UConverter *conv, const char cflush);
-static int   inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush);
+static int   inbound_decode_str(String *output, String *input,
+    UConverter *converter, int flush);
 #endif
 static int   handle_socket_input(const char *simbuffer, int simlen, const char* encoding);
 static void  handle_socket_input_queue_lines(Sock *sock);
@@ -389,6 +393,15 @@ static void  killsock(Sock *sock);
 #endif
 
 #define BUFFSIZE (4*1024)	/* how big are our byte-buffers? */
+
+#if WIDECHAR
+static int inbound_decode_str(String *output, String *input,
+    UConverter *converter, int flush)
+{
+    UErrorCode error;
+    return tf_to_utf8(output, input, converter, flush, &error);
+}
+#endif
 #define SPAM (4*1024)		/* break loop if this many chars are received */
 
 static fd_set readers;		/* input file descriptors */
@@ -582,7 +595,9 @@ static void ssl_io_err(Sock *sock, int ret, int hook)
 
 static void init_ssl(void)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     SSL_load_error_strings();
+#endif
     SSL_library_init();
     /* XXX seed PRNG */
     ssl_ctx = SSL_CTX_new(SSLv23_client_method());
@@ -1961,9 +1976,22 @@ static int establish(Sock *sock)
 
 #if HAVE_SSL
     if (xsock->ssl) {
-	int sslret;
+	int sslret = 1;
+#if HAVE_GNUTLS_OPENSSL_H
+	if (xsock->host != NULL) {
+	    sslret = gnutls_server_name_set(xsock->ssl->gnutls_state,
+		GNUTLS_NAME_DNS, xsock->host, strlen(xsock->host));
+	    if (sslret < 0) {
+		eprintf("Unable to set TLS server name: %s",
+		    gnutls_strerror(sslret));
+	    } else {
+		sslret = 1;
+	    }
+	}
+#elif HAVE_SSL_SET_TLSEXT_HOST_NAME
 	if (xsock->host != NULL)
 	    sslret = SSL_set_tlsext_host_name(xsock->ssl, xsock->host);
+#endif
 
 	if (sslret == 1)
 	    sslret = SSL_connect(xsock->ssl);
@@ -2183,7 +2211,11 @@ static void dc(Sock *s)
     Sock *oldxsock = xsock;
     xsock = s;
 #if WIDECHAR
-    inbound_decode_str(s->buffer, s->incomingposttelnet, s->incomingfsm, 1);
+    {
+        UErrorCode error;
+        tf_to_utf8(s->buffer, s->incomingposttelnet, s->incomingfsm, 1,
+            &error);
+    }
     handle_socket_input_queue_lines(xsock);
 #endif
     flushxsock();
@@ -2584,13 +2616,8 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     static int bufferlen = 0;
     static char *buffer2 = NULL;
 #if WIDECHAR
-    /* utf16buf could take less space if it was a union with buffer2 */
-    /* For now, I just want it to work. :) */
-    static UChar *utf16buf = NULL;
-    const UChar *utf16_source;
-    char *target;
     UErrorCode err;
-    UBool ubool_true = TRUE;
+    String *encoded;
 #endif
 
 
@@ -2622,12 +2649,8 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 	world_output(xsock->world, CS(str));
     }
 
-    /* Steps:
-     * 1) Copy src to buffer1, add newline endings
-     * 2) Convert string to UTF-16 -> buffer2
-     * 3) Convert string to xsock->charset -> buffer1
-     * 4) Double all Telnet IAC -> buffer2
-     * 5) Transmit buffer2.
+    /* Copy src, append line endings, convert to the world charset, then
+     * double Telnet IAC bytes before transmission.
      */
 
     needed = (len + 3) * 8;
@@ -2635,10 +2658,6 @@ int send_line(const char *src, unsigned int len, int eol_flag)
         bufferlen = needed;
         buffer1 = XREALLOC(buffer1, bufferlen);
         buffer2 = XREALLOC(buffer2, bufferlen);
-#if WIDECHAR
-        /* 'needed' calculated as 8-bit wide, not 16-bit */
-        utf16buf = XREALLOC(utf16buf, bufferlen / 2);
-#endif
     }
 
     memcpy(buffer1, src, len);
@@ -2654,34 +2673,21 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     }
 
 #if WIDECHAR
-    /* Buf1 -> Buf2  [UTF8  -> UTF16] */
-    /* Buf2 -> Buf1  [UTF16 -> XCHAR] */
-    err = U_ZERO_ERROR;
-    target = buffer1;
-    utf16_source = utf16buf;
-    /* First attempt at fixing. Probably better to make this one stick
-     * around longer but enh. */
-    UConverter *utf8_conv = ucnv_open("UTF8", &err);
-    ucnv_setToUCallBack(utf8_conv, UCNV_TO_U_CALLBACK_ESCAPE,
-                        UCNV_ESCAPE_XML_HEX, NULL, NULL, &err);
-    j = ucnv_toUChars(utf8_conv, utf16buf, bufferlen / 2, buffer1, len, &err);
-    ucnv_close(utf8_conv);
-    /* dest, dest_len, written_units, src, src_len, errors */
-    /* u_strFromUTF8(utf16buf, bufferlen / 2, &j, buffer1, len, &err); */
-    /* 'incomingfsm' has an outgoing state machine, as well. Used here. */
-    ucnv_resetFromUnicode(xsock->incomingfsm);
-    ucnv_fromUnicode(xsock->incomingfsm,  /* Converter */
-            &target, buffer1 + bufferlen, /* target, limit_ptr */
-            &utf16_source, utf16buf + j,  /* source, limit_ptr */
-            NULL, ubool_true, &err);      /* offsets, flush, errors */
-    len = target - buffer1; /* 'target' is moved to end during conversion */
-
-    if (U_FAILURE(err))
-    {
+    (encoded = Stringnew(NULL, len * 12 + 8, 0))->links++;
+    if (tf_from_utf8(encoded, buffer1, len, xsock->incomingfsm, &err) < 0) {
+        Stringfree(encoded);
         eprintf("Broken characters found. Line not sent.");
         return 0;
-        /* core("outbound_decode U_FAILURE", __FILE__, __LINE__, 0); */
     }
+    len = encoded->len;
+    needed = (len + 1) * 2;
+    if (bufferlen < needed) {
+        bufferlen = needed;
+        buffer1 = XREALLOC(buffer1, bufferlen);
+        buffer2 = XREALLOC(buffer2, bufferlen);
+    }
+    memcpy(buffer1, encoded->data, len);
+    Stringfree(encoded);
 #endif
 
     /* Buf1 -> Buf2  [Telnet escape]   */
@@ -2703,11 +2709,11 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 static void handle_socket_lines(void)
 {
     static int depth = 0;
-    conString *line;
+    String *line;
     int is_prompt;
 
     if (depth) return;	/* don't recurse */
-    if (!(line = dequeue(&xsock->queue)))
+    if (!(line = (String *)dequeue(&xsock->queue)))
 	return;
     depth++;
     do {
@@ -2715,9 +2721,7 @@ static void handle_socket_lines(void)
 	    socks_with_lines--;
 
 	if (line->attrs & (F_TFPROMPT)) {
-        // XXX: This should be cleaner. Adding cast to avoid warning,
-        // But really we should have a copy function or something, right?
-	    incoming_text = (String *) line;
+	    incoming_text = line;
 	    handle_prompt(incoming_text, 0, TRUE);
 	    continue;
 	}
@@ -2726,7 +2730,7 @@ static void handle_socket_lines(void)
 	    &xsock->attrs);
 	incoming_text->time = line->time;
 	is_prompt = line->attrs & F_SERVPROMPT;
-	conStringfree(line);
+	Stringfree(line);
 	incoming_text->links++;
 
 	if (is_prompt) {
@@ -2757,7 +2761,7 @@ static void handle_socket_lines(void)
 	    world_output(xsock->world, CS(incoming_text));
 	    Stringfree(incoming_text);
 	}
-    } while ((line = dequeue(&xsock->queue)));
+    } while ((line = (String *)dequeue(&xsock->queue)));
     depth--;
 
     /* We just emptied the queue; there may be a partial line pending */
@@ -3045,74 +3049,6 @@ static z_stream *new_zstream(void)
 }
 #endif /* HAVE_MCCP */
 
-#if WIDECHAR
-static int inbound_decode_str(String *output, String *input, UConverter *conv, const char cflush)
-{
-    int shiftby = 0;
-    if (input->data < input->data + input->len) {
-        shiftby = inbound_decode(output, input->data, input->data + input->len, conv, cflush);
-    }
-    if (shiftby > 0) {
-        if (cflush == 0) {
-            Stringshift(input, shiftby);
-        } else {
-            Stringtrunc(input, 0);
-        }
-    }
-    return shiftby;
-}
-/* Take input of a particular encoding and Stringcat it into 'output'.
- * Flush shold be FALSE(0) unless the socket is being shut down.
- * Returns number of bytes the input pointer should increment.
- * Only modifies 'output' and 'conv' arguments.
- */
-static int inbound_decode(String *output, const char *input, const char *iendptr, UConverter *conv, const char cflush)
-{
-    /* This definitely, definitely needs optimizations for
-          * ISO-8859-1 -> UTF-8, and UTF-8 -> UTF-8. */
-    const char *iptr = input;
-
-    UChar outbufferUTF16[BUFFSIZE*4];
-    UChar *optr = outbufferUTF16;
-    const UChar *oendptr = outbufferUTF16 + BUFFSIZE*4;
-    UErrorCode err16 = U_ZERO_ERROR;
-
-    char outbufferUTF8[BUFFSIZE*8];
-    UErrorCode err8 = U_ZERO_ERROR;
-    int32_t utf8written = 0;
-
-    UBool flush = cflush ? TRUE : FALSE;
-    
-    /* xcharset -> UTF-16 -> UTF-8 */
-    ucnv_toUnicode(conv, &optr, oendptr, &iptr, iendptr, NULL, flush, &err16);
-/*
-void ucnv_toUnicode 	( 	UConverter *  	converter,
-		UChar **  	target,
-		const UChar *  	targetLimit,
-		const char **  	source,
-		const char *  	sourceLimit,
-		int32_t *  	offsets,
-		UBool  	flush,
-		UErrorCode *  	err 
-	)
-*/
-    u_strToUTF8(outbufferUTF8, BUFFSIZE*8, &utf8written, outbufferUTF16, (int32_t)(optr - outbufferUTF16), &err8);
-/*
-char* u_strToUTF8 	( 	char *  	dest,
-		int32_t  	destCapacity,
-		int32_t *  	pDestLength,
-		const UChar *  	src,
-		int32_t  	srcLength,
-		UErrorCode *  	pErrorCode 
-	) 	
-*/
-    Stringfncat(output, outbufferUTF8, utf8written);
-    if (U_FAILURE(err16) || U_FAILURE(err8))
-        core("inbound_decode U_FAILURE", __FILE__, __LINE__, 0);
-    return (iptr - input); /* return number of input bytes consumed */
-
-}
-#endif
 /* handle input from current socket
  * simbuffer and simlen are 'simulation', used when recursing (from MCCP)
  * or when we're simulating input, such as from local echo from send_line.
@@ -3426,7 +3362,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		    (rawchar == TN_GMCP && gmcp) ||
 #endif
 #if ENABLE_OPTION102
-		    (rawchar == TN_102 && option102) ||
+		    (rawchar == TN_102 && OPTION102) ||
 #endif
                     rawchar == TN_ECHO ||
                     rawchar == TN_SEND_EOR ||
@@ -3934,4 +3870,3 @@ int nactive(const char *worldname)
         return 0;
     return w->screen->active ? w->screen->nnew : 0;
 }
-

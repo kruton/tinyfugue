@@ -25,6 +25,11 @@
 #include "expand.h"	/* macro_run() */
 #include "cmdlist.h"
 #include "variable.h"	/* unsetvar() */
+#include "unicode.h"
+#if WIDECHAR
+#include <unicode/utf8.h>
+#include <unicode/uchar.h>
+#endif
 
 static int literal_next = FALSE;
 static TrieNode *keynode = NULL;	/* current node matched by input */
@@ -36,7 +41,7 @@ struct timeval keyboard_time;
 
 static int  dokey_newline(void);
 static int  replace_input(String *line);
-static void handle_input_string(const char *input, unsigned int len);
+void handle_input_string(const char *input, unsigned int len);
 
 
 STATIC_BUFFER(scratch);                 /* buffer for manipulating text */
@@ -155,10 +160,15 @@ int handle_keyboard_input(int read_flag)
         Stringadd(current_input, mapchar(buf[i]));
     }
 
+    int limit = current_input->len;
+#if WIDECHAR
+    limit -= tf_utf8_incomplete_bytes(current_input->data, current_input->len);
+#endif
+
     s = current_input->data;
     if (!s) /* no good chars; current_input not yet allocated */
 	goto end;
-    while (place < current_input->len) {
+    while (place < limit) {
         if (!keynode) keynode = keytrie;
         if ((pending_input = pending_line))
             break;
@@ -168,7 +178,7 @@ int handle_keyboard_input(int read_flag)
             literal_next = FALSE;
             continue;
         }
-        while (place < current_input->len && keynode && keynode->children)
+        while (place < limit && keynode && keynode->children)
             keynode = keynode->u.child[(unsigned char)s[place++]];
         if (!keynode) {
             /* No keybinding match; check for builtins. */
@@ -180,7 +190,8 @@ int handle_keyboard_input(int read_flag)
             } else if (s[key_start] == '\b' || s[key_start] == '\177') {
                 handle_input_string(s + input_start, key_start - input_start);
                 place = input_start = ++key_start;
-                do_kbdel(keyboard_pos - kbnumval);
+                do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+                    keyboard_pos, -kbnumval));
 		reset_kbnum();
             } else if (kbnum && is_digit(s[key_start]) &&
 		key_start == input_start)
@@ -221,6 +232,10 @@ int handle_keyboard_input(int read_flag)
     if (key_start >= current_input->len) {
         Stringtrunc(current_input, 0);
         place = key_start = 0;
+    } else if (key_start > 0) {
+        Stringshift(current_input, key_start);
+        place -= key_start;
+        key_start = 0;
     }
     input_start = key_start;
     if (pending_line && !read_depth)
@@ -229,18 +244,18 @@ end:
     return eof < 100;
 }
 
-/* Update the input window and keyboard buffer. */
-static void handle_input_string(const char *input, unsigned int len)
+void handle_input_string(const char *input, unsigned int len)
 {
-    int putlen = len, extra = 0;
+    int repl_count = 1;
+    String *repl;
+    int r;
 
     if (len == 0) return;
     if (kbnum) {
-	if (kbnumval > 1) {
-	    extra = kbnumval - 1;
-	    putlen = len + extra;
-	}
-	reset_kbnum();
+        if (kbnumval > 1) {
+            repl_count = kbnumval;
+        }
+        reset_kbnum();
     }
 
     /* if this is a fresh line, input history is already synced;
@@ -249,37 +264,49 @@ static void handle_input_string(const char *input, unsigned int len)
      */
     if (keybuf->len) sync_input_hist();
 
+    /* Build the full replacement string 'repl' */
+    (repl = Stringnew(NULL, 0, 0))->links++;
+    for (r = 0; r < repl_count; r++) {
+        Stringncat(repl, input, len);
+    }
+
     if (keyboard_pos == keybuf->len) {                    /* add to end */
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-	Stringncat(keybuf, input, len);
+        Stringncat(keybuf, repl->data, repl->len);
+        keyboard_pos += repl->len;
     } else if (insert) {                                  /* insert in middle */
         Stringcpy(scratch, keybuf->data + keyboard_pos);
         Stringtrunc(keybuf, keyboard_pos);
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-        Stringncat(keybuf, input, len);
+        Stringncat(keybuf, repl->data, repl->len);
         SStringcat(keybuf, CS(scratch));
-    } else if (keyboard_pos + len + extra < keybuf->len) {    /* overwrite */
-	while (extra) {
-	    keybuf->data[keyboard_pos++] = *input;
-	    extra--;
-	}
-	memcpy(keybuf->data + keyboard_pos, input, len);
-    } else {                                              /* write past end */
+        keyboard_pos += repl->len;
+    } else {                                              /* overwrite */
+        int repl_graphemes = 0;
+        int offset = 0;
+        int overwrite_end;
+        /* Count graphemes in the replacement string */
+        while (offset < repl->len) {
+            int next_offset = tf_character_offset(repl->data, repl->len, offset, 1);
+            if (next_offset <= offset) {
+                offset++;
+            } else {
+                offset = next_offset;
+            }
+            repl_graphemes++;
+        }
+
+        /* Find how many bytes to overwrite in keybuf */
+        overwrite_end = tf_character_offset(keybuf->data, keybuf->len, keyboard_pos, repl_graphemes);
+
+        /* Replace range [keyboard_pos, overwrite_end] with repl */
+        Stringcpy(scratch, keybuf->data + overwrite_end);
         Stringtrunc(keybuf, keyboard_pos);
-	if (extra) {
-	    Stringnadd(keybuf, *input, extra);
-	    keyboard_pos += extra;
-	}
-        Stringncat(keybuf, input, len);
-    }                      
-    keyboard_pos += len;
-    iput(putlen);
+        Stringncat(keybuf, repl->data, repl->len);
+        SStringcat(keybuf, CS(scratch));
+        keyboard_pos += repl->len;
+    }
+
+    iput(repl->len);
+    Stringfree(repl);
 }
 
 
@@ -324,8 +351,17 @@ struct Value *handle_dokey_command(String *args, int offset)
 
     switch (ptr - efunc_table) {
 
+    case DOKEY_BSPC:
+        return newint(do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, -n)));
     case DOKEY_CLEAR:      return newint(clear_display_screen());
+    case DOKEY_DCH:
+        return newint(do_kbdel(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, n)));
     case DOKEY_FLUSH:      return newint(screen_end(0));
+    case DOKEY_LEFT:
+        return newint(igoto(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, -n)));
     case DOKEY_LNEXT:      return newint(literal_next = TRUE);
     case DOKEY_NEWLINE:    return newint(dokey_newline());
     case DOKEY_PAUSE:      return newint(pause_screen());
@@ -335,6 +371,9 @@ struct Value *handle_dokey_command(String *args, int offset)
     case DOKEY_RECALLF:    return newint(replace_input(recall_input(n,0)));
     case DOKEY_REDRAW:     return newint(redraw());
     case DOKEY_REFRESH:    return newint((logical_refresh(), keyboard_pos));
+    case DOKEY_RIGHT:
+        return newint(igoto(tf_character_offset(keybuf->data, keybuf->len,
+            keyboard_pos, n)));
     case DOKEY_SEARCHB:    return newint(replace_input(recall_input(-n,1)));
     case DOKEY_SEARCHF:    return newint(replace_input(recall_input(n,1)));
     case DOKEY_SELFLUSH:   return newint(selflush());
@@ -388,8 +427,58 @@ int do_kbdel(int place)
 
 #define is_inword(c) (is_alnum(c) || (wordpunct && strchr(wordpunct, (c))))
 
+#if WIDECHAR
+static int grapheme_is_word(const char *str, int start, int end)
+{
+    int index = start;
+    UChar32 c;
+    U8_NEXT(str, index, end, c);
+    if (c < 0) {
+        return is_inword(str[start]);
+    }
+    if (c <= 127) {
+        return is_alnum((char)c) || (wordpunct && strchr(wordpunct, (char)c));
+    }
+    return u_isalnum(c);
+}
+#endif
+
 int do_kbword(int start, int dir)
 {
+#if WIDECHAR
+    int current = start;
+    if (current < 0) current = 0;
+    if (current > keybuf->len) current = keybuf->len;
+
+    if (dir > 0) {
+        while (current < keybuf->len) {
+            int next = tf_character_offset(keybuf->data, keybuf->len, current, 1);
+            if (next <= current) break;
+            if (grapheme_is_word(keybuf->data, current, next)) break;
+            current = next;
+        }
+        while (current < keybuf->len) {
+            int next = tf_character_offset(keybuf->data, keybuf->len, current, 1);
+            if (next <= current) break;
+            if (!grapheme_is_word(keybuf->data, current, next)) break;
+            current = next;
+        }
+    } else if (dir < 0) {
+        while (current > 0) {
+            int prev = tf_character_offset(keybuf->data, keybuf->len, current, -1);
+            if (prev >= current) break;
+            if (grapheme_is_word(keybuf->data, prev, current)) break;
+            current = prev;
+        }
+        while (current > 0) {
+            int prev = tf_character_offset(keybuf->data, keybuf->len, current, -1);
+            if (prev >= current) break;
+            if (!grapheme_is_word(keybuf->data, prev, current)) break;
+            current = prev;
+        }
+    }
+    return current;
+#else
     int stop = (dir < 0) ? -1 : keybuf->len;
     int place = start<0 ? 0 : start>keybuf->len ? keybuf->len : start;
     place -= (dir < 0);
@@ -397,6 +486,7 @@ int do_kbword(int start, int dir)
     while (place != stop && !is_inword(keybuf->data[place])) place += dir;
     while (place != stop && is_inword(keybuf->data[place])) place += dir;
     return place + (dir < 0);
+#endif
 }
 
 int do_kbmatch(int start)
@@ -451,6 +541,74 @@ int handle_input_line(void)
     readsafe = 0;
     return result;
 }
+
+int kb_visual_move(int delta)
+{
+    int prompt_rows = 0, prompt_column = 0;
+    int input_rows = 0, input_column = 0;
+    int target_row;
+    int best_offset = keyboard_pos;
+    int min_row_diff = -1;
+    int min_col_diff = -1;
+    int offset = 0;
+    int wrap_val = (wrapsize ? wrapsize : columns);
+
+    if (prompt) {
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, wrap_val, tabsize, &prompt_rows, &prompt_column);
+    }
+    tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+        prompt_column, wrap_val, tabsize, &input_rows, &input_column);
+
+    if (desired_column < 0) {
+        desired_column = input_column;
+    }
+
+    target_row = input_rows + delta;
+
+    while (offset <= keybuf->len) {
+        int row = 0, col = 0;
+        int row_diff, col_diff;
+        int next_offset;
+
+        tf_display_position(keybuf->data, keybuf->len, offset,
+            prompt_column, wrap_val, tabsize, &row, &col);
+
+        row_diff = row - target_row;
+        if (row_diff < 0) row_diff = -row_diff;
+        col_diff = col - desired_column;
+        if (col_diff < 0) col_diff = -col_diff;
+
+        if (min_row_diff == -1 || row_diff < min_row_diff) {
+            min_row_diff = row_diff;
+            min_col_diff = col_diff;
+            best_offset = offset;
+        } else if (row_diff == min_row_diff) {
+            if (min_col_diff == -1 || col_diff < min_col_diff) {
+                min_col_diff = col_diff;
+                best_offset = offset;
+            }
+        }
+
+        if (offset == keybuf->len) {
+            break;
+        }
+
+        next_offset = tf_character_offset(keybuf->data, keybuf->len, offset, 1);
+        if (next_offset <= offset) {
+            offset++;
+        } else {
+            offset = next_offset;
+        }
+    }
+
+    in_visual_move = TRUE;
+    igoto(best_offset);
+    in_visual_move = FALSE;
+
+    return keyboard_pos;
+}
+
 
 #if USE_DMALLOC
 void free_keyboard(void)

@@ -35,16 +35,10 @@
 #include "parse.h"	/* expr_value_safe() */
 #include "keyboard.h"	/* keyboard_pos */
 #include "cmdlist.h"
+#include "unicode.h"
 
 #if WIDECHAR
 #include <wchar.h>
-#include <unicode/uchar.h>
-#include <unicode/utext.h>
-#include <unicode/ubrk.h>
-#endif
-
-#if HAVE_SETLOCALE
-static char *lang = NULL;
 #endif
 
 /* Terminal codes and capabilities.
@@ -63,7 +57,9 @@ static char *lang = NULL;
 #define DEFAULT_LINES   24
 #define DEFAULT_COLUMNS 80
 
-#if HARDCODE
+#define STATIC_TEST
+
+#if !TERMCAP && HARDCODE
 # define origin 1      /* top left corner is (1,1) */
 # if HARDCODE == TERM_vt100
 #  define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = (vt100);
@@ -72,10 +68,10 @@ static char *lang = NULL;
 # elif HARDCODE == TERM_ansi
 #  define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = (ansi);
 # endif
-#else /* !HARDCODE */
+#else /* TERMCAP || !HARDCODE */
 # define origin 0      /* top left corner is (0,0) */
-# define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = NULL;
-#endif /* HARDCODE */
+# define TERMCODE(id, vt100, vt220, ansi)   STATIC_TEST const char *(id) = NULL;
+#endif /* !TERMCAP && HARDCODE */
 
 /*				vt100		vt220		ansi */
 /*				-----		-----		---- */
@@ -118,6 +114,16 @@ TERMCODE (standout_off,		NULL,		NULL,		NULL)
 
 /* end HARDCODE section */
 
+static void append_status_padding(String *dest, char c, int n, attr_t attr)
+{
+    int oldlen = dest->len;
+    int i;
+
+    Stringnadd(dest, c, n);
+    check_charattrs(dest, oldlen, dest->attrs, __FILE__, __LINE__);
+    for (i = oldlen; i < dest->len; i++)
+	dest->charattrs[i] = attr;
+}
 
 /* If var==NULL and internal<0, the status is a constant string */
 typedef struct statusfield {
@@ -142,7 +148,7 @@ static Var bogusvar;   /* placeholder for StatusField->var */
 
 static void  init_term(void);
 static int   fbufputc(int c);
-static void  bufflush(void);
+void  bufflush(void);
 static void  tbufputs(const char *str);
 static void  tdirectputs(const char *str);
 static void  xy(int x, int y);
@@ -159,7 +165,7 @@ static void  ioutall(int kpos);
 static void  attributes_off(attr_t attrs);
 static void  attributes_on(attr_t attrs);
 static void  color_on(const char *prefix, long color);
-static void  hwrite(conString *line, int start, int len, int indent);
+void  hwrite(conString *line, int start, int len, int indent);
 static int   check_more(Screen *screen);
 static int   next_physline(Screen *screen);
 static void  output_novisual(PhysLine *pl);
@@ -168,7 +174,7 @@ static void  output_noscroll(PhysLine *pl);
 static void  output_scroll(PhysLine *pl);
 #endif
 
-static void  (*tp)(const char *str);
+void  (*tp)(const char *str);
 
 #if TERMCAP
 #define tpgoto(seq,x,y)  tp(tgoto(seq, (x)-1+origin, (y)-1+origin))
@@ -207,20 +213,24 @@ static StatusField *variable_width_field[max_status_height];
 
 STATIC_BUFFER(outbuf);              /* output buffer */
 static int top_margin = -1, bottom_margin = -1;	/* scroll region */
-static int cx = -1, cy = -1;        /* Real cursor ((-1,-1)==unknown) */
+int cx = -1, cy = -1;        /* Real cursor ((-1,-1)==unknown) */
 static int ox = 1, oy = 1;          /* Output cursor */
-static int ix, iy;                  /* Input cursor */
+int ix;
+static int iy;                  /* Input cursor */
 static int old_ix = -1;		    /* original ix before output clobbered it */
 static int in_top, in_bot;	    /* top & bottom line # of input window */
 #define out_top 1		    /* top line # of output window */
 static int out_bot;		    /* bottom line # of output window */
 static int stat_top, stat_bot;	    /* top & bottom line # of status area */
-static int istarty, iendy, iendx;   /* start/end of current input line */
-static conString *prompt;           /* current prompt */
+static int istarty, iendy;
+int iendx;   /* start/end of current input line */
+conString *prompt;                  /* current prompt */
+int in_visual_move = FALSE;
+int desired_column = -1;
 static attr_t have_attr = 0;        /* available attributes */
 static int screen_mode = -1;        /* -1=unset, 0=nonvisual, 1=visual */
 static int output_disabled = 1;     /* is it safe to oflush()? */
-static int can_have_visual = FALSE;
+STATIC_TEST int can_have_visual = FALSE;
 static int can_have_expnonvis = FALSE;
 static List statusfield_list[max_status_height][1];
 static int status_left[max_status_height];  /* size of status line left part */
@@ -234,7 +244,7 @@ STATIC_STRING(moreprompt, "--More--", F_BOLD | F_REVERSE);  /* pager prompt */
 #define has_scroll_region (1)
 
 
-#if HARDCODE
+#if !TERMCAP && HARDCODE
 # if HARDCODE == TERM_vt100
 #  define KEYCODE(vt100, vt220, ansi)   (vt100)
 # else
@@ -332,7 +342,7 @@ static int   func_putchar(int c);
  * BUFFERED OUTPUT ROUTINES *
  ****************************/
 
-static void bufflush(void)
+void bufflush(void)
 {
     int written = 0, result, n;
     while (written < outbuf->len) {
@@ -1733,13 +1743,13 @@ int handle_status_width_func(const char *name)
     return field ? status_width(field, statusfield_column(field)) : 0;
 }
 
-static int format_statusfield(StatusField *field)
+static int format_statusfield(StatusField *field, String *dest)
 {
     STATIC_BUFFER(scratch);
     const char *old_command;
     Value *fmtval, *val = NULL;
     Program *prog;
-    int width, x, i;
+    int width, x;
 
     output_disabled++;
     Stringtrunc(scratch, 0);
@@ -1780,33 +1790,35 @@ static int format_statusfield(StatusField *field)
 
     x = statusfield_column(field);
     width = status_width(field, x);
-    if (scratch->len > width)
-        Stringtrunc(scratch, width);
 
-    if (field->rightjust && scratch->len < width) {          /* left pad */
-	for (i = 0; i < width - scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = true_status_pad;
-	    status_line[field->row]->charattrs[x] = status_attr;
-	}
+    int scratch_width = tf_string_width(scratch->data, scratch->len, x,
+					tabsize);
+    if (scratch_width > width) {
+	int trunc_bytes = tf_bytes_for_width(scratch->data, scratch->len,
+					     0, x, width, tabsize);
+	Stringtrunc(scratch, trunc_bytes);
+	scratch_width = tf_string_width(scratch->data, scratch->len, x,
+					tabsize);
+    }
+
+    if (field->rightjust && scratch_width < width) { /* left pad */
+	append_status_padding(dest, true_status_pad, width - scratch_width,
+			      status_attr);
     }
 
     if (scratch->len) {                                      /* value */
-        attr_t attrs = scratch->attrs;
+	conString styled = *CS(scratch);
+	attr_t attrs = scratch->attrs;
         attrs = adj_attr(attrs, status_attr);
         attrs = adj_attr(attrs, field->attrs);
         attrs = adj_attr(attrs, field->vattrs);
-	for (i = 0; i < scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = scratch->data[i];
-	    status_line[field->row]->charattrs[x] = scratch->charattrs ?
-		adj_attr(attrs, scratch->charattrs[i]) : attrs;
-	}
+	styled.attrs = attrs;
+	SStringcat(dest, &styled);
     }
 
-    if (!field->rightjust && scratch->len < width) {         /* right pad */
-	for (i = 0; i < width - scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = true_status_pad;
-	    status_line[field->row]->charattrs[x] = status_attr;
-	}
+    if (!field->rightjust && scratch_width < width) { /* right pad */
+	append_status_padding(dest, true_status_pad, width - scratch_width,
+			      status_attr);
     }
 
     if (field->internal == STAT_MORE)
@@ -1834,18 +1846,31 @@ static void display_status_segment(int row, int start, int width)
     {
 	/* no overlap with alert */
 	xy(start + 1, stat_top + row);
-	hwrite(CS(status_line[row]), start, width, 0);
+	int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						  status_line[row]->len, start, tabsize);
+	int len_byte = tf_bytes_for_width(status_line[row]->data,
+					  status_line[row]->len, start_byte, start, width, tabsize);
+	hwrite(CS(status_line[row]), start_byte, len_byte, 0);
     } else {
 	if (start < alert_pos) {
 	    /* segment starts left of alert */
 	    xy(start + 1, stat_top + row);
-	    hwrite(CS(status_line[row]), start, alert_pos - start, 0);
+	    int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, start, tabsize);
+	    int len_byte = tf_bytes_for_width(status_line[row]->data,
+					      status_line[row]->len, start_byte, start, alert_pos - start,
+					      tabsize);
+	    hwrite(CS(status_line[row]), start_byte, len_byte, 0);
 	}
 	if (start + width >= alert_pos) {
 	    /* segment ends right of alert */
 	    xy(alert_pos + alert_len + 1, stat_top + row);
-	    hwrite(CS(status_line[row]), alert_pos + alert_len,
-		start + width - (alert_pos + alert_len), 0);
+	    int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, alert_pos + alert_len, tabsize);
+	    int len_byte = tf_bytes_for_width(status_line[row]->data,
+					      status_line[row]->len, start_byte, alert_pos + alert_len,
+					      start + width - (alert_pos + alert_len), tabsize);
+	    hwrite(CS(status_line[row]), start_byte, len_byte, 0);
 	}
     }
 }
@@ -1882,7 +1907,26 @@ void update_status_field(Var *var, stat_id_t internal)
 	    if (column >= columns) /* doesn't fit, nor will any later fields */
 		break;
 	    count++;
-	    width = format_statusfield(field);
+	    width = status_width(field, column);
+	    {
+		AUTO_BUFFER(replacement);
+		AUTO_BUFFER(updated);
+		int start_byte, end_byte;
+
+		Stringzero(replacement);
+		Stringzero(updated);
+		format_statusfield(field, replacement);
+		start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, column, tabsize);
+		end_byte = tf_column_to_byte_offset(status_line[row]->data,
+						    status_line[row]->len, column + width, tabsize);
+		SStringoncat(updated, CS(status_line[row]), 0, start_byte);
+		SStringcat(updated, CS(replacement));
+		SStringocat(updated, CS(status_line[row]), end_byte);
+		SStringcpy(status_line[row], CS(updated));
+		Stringfree(updated);
+		Stringfree(replacement);
+	    }
 	    display_status_segment(row, column, width);
 	}
     }
@@ -1900,19 +1944,31 @@ void format_status_line(void)
     int row, column, width;
 
     for (row = 0; row < status_height; row++) {
+	Stringtrunc(status_line[row], 0);
+
 	column = 0;
 	width = 0;
 	for (node = statusfield_list[row]->head; node; node = node->next) {
-	    field = (StatusField*)node->datum;
+	    field = (StatusField *)node->datum;
 
 	    if ((column = statusfield_column(field)) >= columns)
 		break;
-	    width = format_statusfield(field);
+
+	    int current_col = tf_string_width(status_line[row]->data,
+					      status_line[row]->len, 0, tabsize);
+	    if (column > current_col) {
+		append_status_padding(status_line[row], true_status_pad,
+				      column - current_col, status_attr);
+	    }
+
+	    width = format_statusfield(field, status_line[row]);
 	}
 
-	for (column += width; column < columns; column++) {
-	    status_line[row]->data[column] = true_status_pad;
-	    status_line[row]->charattrs[column] = status_attr;
+	int current_col = tf_string_width(status_line[row]->data,
+					  status_line[row]->len, 0, tabsize);
+	if (current_col < columns) {
+	    append_status_padding(status_line[row], true_status_pad,
+				  columns - current_col, status_attr);
 	}
     }
 }
@@ -1959,9 +2015,10 @@ void alert(conString *msg)
     } else {
 	/* default to position 0 */
 	new_pos = 0;
-	new_len = msg->len > Wrap ? Wrap : msg->len;
-	if (msg->len < Wrap) {
-            /* use the @alert field */
+	int msg_width = tf_string_width(msg->data, msg->len, 0, tabsize);
+	new_len = msg_width > Wrap ? Wrap : msg_width;
+	if (msg_width < Wrap) {
+	    /* use the @alert field */
             for (node = statusfield_list[row]->head; node; node = node->next) {
  		field = (StatusField*)node->datum;
                 if (field->internal == STAT_ALERT) {
@@ -1992,7 +2049,9 @@ void alert(conString *msg)
 	xy(alert_pos + 1, stat_top + alert_row);
 	orig_attrs = msg->attrs;
 	msg->attrs = adj_attr(msg->attrs, alert_attr);
-	hwrite(msg, 0, alert_len, 0);
+	int alert_len_bytes = tf_bytes_for_width(msg->data, msg->len, 0,
+						 alert_pos, alert_len, tabsize);
+	hwrite(msg, 0, alert_len_bytes, 0);
 	msg->attrs = orig_attrs;
 
 	bufflush();
@@ -2005,7 +2064,11 @@ void clear_alert(void)
 {
     if (!alert_len) return;
     xy(alert_pos + 1, stat_top + alert_row);
-    hwrite(CS(status_line[alert_row]), alert_pos, alert_len, 0);
+    int start_byte = tf_column_to_byte_offset(status_line[alert_row]->data,
+					      status_line[alert_row]->len, alert_pos, tabsize);
+    int len_byte = tf_bytes_for_width(status_line[alert_row]->data,
+				      status_line[alert_row]->len, start_byte, alert_pos, alert_len, tabsize);
+    hwrite(CS(status_line[alert_row]), start_byte, len_byte, 0);
     bufflush();
     set_refresh_pending(REF_PHYSICAL);
     alert_timeout = tvzero;
@@ -2020,9 +2083,16 @@ int ch_visual(Var *var)
     int need_redraw = 0, resized = 0, row;
 
     for (row = 0; row < status_height; row++) {
-	if (status_line[row]->len < columns)
-	    Stringnadd(status_line[row], '?', columns - status_line[row]->len);
-	Stringtrunc(status_line[row], columns);
+	int current_col = tf_string_width(status_line[row]->data,
+					  status_line[row]->len, 0, tabsize);
+	if (current_col < columns) {
+	    append_status_padding(status_line[row], '?', columns - current_col,
+				  status_attr);
+	} else if (current_col > columns) {
+	    int trunc_bytes = tf_bytes_for_width(status_line[row]->data,
+						 status_line[row]->len, 0, 0, columns, tabsize);
+	    Stringtrunc(status_line[row], trunc_bytes);
+	}
     }
 
     if (screen_mode < 0) {                /* e.g., called by init_variables() */
@@ -2208,13 +2278,39 @@ static void ictrl_put(const char *s, int n)
 }
 
 /* ioutputs
- * Print string within bounds of input window.  len is the number of
- * characters to print; return value is the number actually printed,
- * which may be less than len if string doesn't fit in the input window.
+ * Print string within bounds of input window.  len and the return value are
+ * byte counts; wide-character builds advance and wrap by grapheme width.
+ * The return value may be less than len if the string does not fit.
  * precondition: iendx,iendy and real cursor are at the output position.
  */
 static int ioutputs(const char *str, int len)
 {
+#if WIDECHAR
+    int written = 0;
+
+    while (written < len) {
+        int end;
+        int width = tf_grapheme_width(str, len, written, iendx - 1,
+            tabsize, &end);
+
+        if (iendx > 1 && iendx - 1 + width > Wrap) {
+            if (!visual || iendy == lines)
+                break;
+            xy(iendx = 1, ++iendy);
+            width = tf_grapheme_width(str, len, written, 0, tabsize, &end);
+        }
+
+        if (end - written == 1 && is_cntrl(str[written])) {
+            ictrl_put(str + written, 1);
+        } else {
+            bufputns(str + written, end - written);
+        }
+        cx += width;
+        iendx += width;
+        written = end;
+    }
+    return written;
+#else
     int space, written;
 
     for (written = 0; len > 0; len -= space) {
@@ -2230,6 +2326,7 @@ static int ioutputs(const char *str, int len)
         iendx += space;
     }
     return written;
+#endif
 }
 
 /* ioutall
@@ -2241,11 +2338,25 @@ static void ioutall(int kpos)
     int ppos;
 
     if (kpos < 0) {                  /* posible only if there's a prompt */
+#if WIDECHAR
+        int prompt_rows = 0, prompt_column = 0;
+        int start_row = -kpos - 1;
+        int start_offset;
+
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, Wrap, tabsize, &prompt_rows, &prompt_column);
+        start_offset = tf_display_row_offset(prompt->data, prompt->len,
+            start_row, 0, Wrap, tabsize);
+
+        hwrite(prompt, start_offset, prompt->len - start_offset, 0);
+        iendx = prompt_column + 1;
+#else
         kpos = -(-kpos % Wrap);
         ppos = prompt->len + kpos;
         if (ppos < 0) ppos = 0;
         hwrite(prompt, ppos, prompt->len - ppos, 0);
         iendx = -kpos + 1;
+#endif
         kpos = 0;
     }
     if (sockecho())
@@ -2260,6 +2371,10 @@ void iput(int len)
     s = keybuf->data + keyboard_pos - len;
 
     if (!sockecho()) return;
+#if WIDECHAR
+    logical_refresh();
+    return;
+#endif
     if (visual) physical_refresh();
 
     if (keybuf->len - keyboard_pos > 8 &&     /* faster than redisplay? */
@@ -2395,6 +2510,10 @@ void idel(int place)
 
     if ((len = place - keyboard_pos) < 0) keyboard_pos = place;
     if (!sockecho()) return;
+#if WIDECHAR
+    logical_refresh();
+    return;
+#endif
     if (len < 0) ix += len;
     
     if (!visual) {
@@ -2506,6 +2625,11 @@ int igoto(int place)
     } else if (!sockecho()) {
         /* no physical change */
 
+#if WIDECHAR
+    } else {
+        logical_refresh();
+    }
+#else
     } else if (!visual) {
 	int prompt_len = prompt ? prompt->len % Wrap : 0;
         ix += diff;
@@ -2581,6 +2705,7 @@ int igoto(int place)
             ipos();
         }
     }
+#endif
 
     bufflush();
     return keyboard_pos;
@@ -2593,6 +2718,56 @@ void do_refresh(void)
     else if (need_refresh >= REF_PHYSICAL) physical_refresh();
 }
 
+#if WIDECHAR
+static void get_scroll_info(int *start_byte, int *ix, int plen)
+{
+    int cursor_rows = 0, cursor_col = 0;
+    int wrap_val = Wrap;
+    int input_width = wrap_val - plen;
+
+    if (input_width < 1) input_width = 1;
+
+    tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+        0, 100000, tabsize, &cursor_rows, &cursor_col);
+
+    if (cursor_col < input_width) {
+        *start_byte = 0;
+        *ix = cursor_col + plen + 1;
+    } else {
+        int target_cursor_col = input_width / 2;
+        int window_start_col = cursor_col - target_cursor_col;
+        int offset = 0;
+        int best_offset = 0;
+        int best_col = 0;
+
+        while (offset <= keybuf->len) {
+            int r = 0, c = 0;
+            tf_display_position(keybuf->data, keybuf->len, offset,
+                0, 100000, tabsize, &r, &c);
+
+            if (c <= window_start_col) {
+                best_offset = offset;
+                best_col = c;
+            } else {
+                break;
+            }
+
+            if (offset == keybuf->len) {
+                break;
+            }
+            int next_offset = tf_character_offset(keybuf->data, keybuf->len, offset, 1);
+            if (next_offset <= offset) {
+                offset++;
+            } else {
+                offset = next_offset;
+            }
+        }
+        *start_byte = best_offset;
+        *ix = cursor_col - best_col + plen + 1;
+    }
+}
+#endif
+
 void physical_refresh(void)
 {
     if (visual) {
@@ -2602,6 +2777,21 @@ void physical_refresh(void)
 	int start;
 	int prompt_len = 0;
         clear_input_line();
+#if WIDECHAR
+	if (prompt) {
+            int prompt_rows = 0, prompt_column = 0;
+            int last_row_start = 0;
+            tf_display_position(prompt->data, prompt->len, prompt->len,
+                0, Wrap, tabsize, &prompt_rows, &prompt_column);
+            last_row_start = tf_display_row_offset(prompt->data, prompt->len,
+                prompt_rows, 0, Wrap, tabsize);
+            hwrite(prompt, last_row_start, prompt->len - last_row_start, 0);
+            prompt_len = prompt_column;
+            iendx = prompt_len + 1;
+	}
+        get_scroll_info(&start, &ix, prompt_len);
+        ioutall(start);
+#else
 	if (prompt) {
 	    prompt_len = (prompt->len + 1) % Wrap - 1;
 	    hwrite(prompt, prompt->len - prompt_len, prompt_len, 0);
@@ -2620,7 +2810,10 @@ void physical_refresh(void)
 	    }
 	}
 	ioutall(start);
-        bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+#endif
+	if (iendx - ix > 0) {
+	    bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	}
     }
     bufflush();
     if (need_refresh <= REF_PHYSICAL) need_refresh = 0;
@@ -2630,21 +2823,56 @@ void physical_refresh(void)
 void logical_refresh(void)
 {
     int kpos, nix, niy;
+#if WIDECHAR
+    int prompt_rows = 0, prompt_column = 0;
+    int input_rows = 0, input_column = 0;
+#endif
 
     if (!visual)
         oflush();  /* no sense refreshing if there's going to be output after */
 
+#if WIDECHAR
+    if (prompt) {
+        tf_display_position(prompt->data, prompt->len, prompt->len,
+            0, Wrap, tabsize, &prompt_rows, &prompt_column);
+    }
+    kpos = prompt ? -1 : 0;
+    if (sockecho()) {
+        tf_display_position(keybuf->data, keybuf->len, keyboard_pos,
+            prompt_column, Wrap, tabsize, &input_rows, &input_column);
+    } else {
+        input_column = prompt_column;
+    }
+    if (!in_visual_move) {
+        desired_column = input_column;
+    }
+    nix = input_column + 1;
+    niy = istarty + prompt_rows + input_rows;
+#else
     kpos = prompt ? -(prompt->len % Wrap) : 0;
     nix = ((sockecho() ? keyboard_pos : 0) - kpos) % Wrap + 1;
+#endif
 
     if (visual) {
         setscroll(1, lines);
+#if !WIDECHAR
         niy = istarty + (keyboard_pos - kpos) / Wrap;
+#endif
         if (niy <= lines) {
             clear_input_line();
         } else {
+            int skipped_rows = niy - lines;
             clear_input_window();
+#if WIDECHAR
+            if (skipped_rows > prompt_rows) {
+                kpos = tf_display_row_offset(keybuf->data, keybuf->len,
+                    skipped_rows - prompt_rows, prompt_column, Wrap, tabsize);
+            } else {
+                kpos = -1 - skipped_rows;
+            }
+#else
             kpos += (niy - lines) * Wrap;
+#endif
             niy = lines;
         }
         ioutall(kpos);
@@ -2655,6 +2883,22 @@ void logical_refresh(void)
         clear_input_line();
 	if (expnonvis) {
 	    int plen = 0;
+#if WIDECHAR
+            int start_byte = 0;
+            if (prompt) {
+                int prompt_rows = 0, prompt_column = 0;
+                int last_row_start = 0;
+                tf_display_position(prompt->data, prompt->len, prompt->len,
+                    0, Wrap, tabsize, &prompt_rows, &prompt_column);
+                last_row_start = tf_display_row_offset(prompt->data, prompt->len,
+                    prompt_rows, 0, Wrap, tabsize);
+                hwrite(prompt, last_row_start, prompt->len - last_row_start, 0);
+                plen = prompt_column;
+                iendx = plen + 1;
+            }
+            get_scroll_info(&start_byte, &ix, plen);
+            ioutall(start_byte);
+#else
 	    if (prompt) {
 		plen = (prompt->len + 1) % Wrap - 1;
 		hwrite(prompt, prompt->len - plen, plen, 0);
@@ -2675,6 +2919,7 @@ void logical_refresh(void)
 		}
 	    }
 	    ioutall(kpos);
+#endif
 	} else {
 	    ioutall(kpos);
 	    kpos += Wrap;
@@ -2686,7 +2931,9 @@ void logical_refresh(void)
 	    }
 	    ix = nix;
 	}
-	bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	if (iendx - ix > 0) {
+	    bufputnc('\010', iendx - ix);  cx -= (iendx - ix);
+	}
     }
     bufflush();
     if (need_refresh <= REF_LOGICAL) need_refresh = 0;
@@ -2777,21 +3024,15 @@ static void color_on(const char *prefix, long color)
     }
 }
 
-static void hwrite(conString *line, int start, int len, int indent)
+void hwrite(conString *line, int start, int len, int indent)
 {
     attr_t attrs = line->attrs & F_HWRITE;
     attr_t current = 0;
     attr_t new;
     int i, ctrl;
-    int col = 0;
+    int col = cx > 0 ? cx - 1 : 0;
+    int total_width = 0;
     char c;
-#if WIDECHAR
-    size_t ret;
-    mbstate_t is, os;
-
-    memset(&is, 0, sizeof(is));
-    memset(&os, 0, sizeof(os));
-#endif
 
     if (line->attrs & F_BELL && start == 0) {
         dobell(1);
@@ -2800,14 +3041,44 @@ static void hwrite(conString *line, int start, int len, int indent)
     if (indent) {
         bufputnc(' ', indent);
         cx += indent;
+        col += indent;
     }
-
-    cx += len;
 
     if (!line->charattrs && hilite && attrs)
         attributes_on(current = attrs);
 
-    for (i = start; i < start + len; ++i) {
+    for (i = start; i < start + len; ) {
+#if WIDECHAR
+        int end_idx;
+        int width;
+        int j;
+
+        width = tf_grapheme_width((char *)line->data, start + len, i, col, tabsize, &end_idx);
+        if (end_idx <= i) {
+            end_idx = i + 1;
+        }
+
+        for (j = i; j < end_idx; ++j) {
+            new = line->charattrs ? adj_attr(attrs, line->charattrs[j]) : attrs;
+            c = unmapchar(localize(line->data[j]));
+            ctrl = (emulation > EMUL_RAW && is_cntrl(c) && c != '\t');
+            if (ctrl)
+                new |= F_BOLD | F_REVERSE;
+            if (new != current) {
+                if (current) attributes_off(current);
+                current = new;
+                if (current) attributes_on(current);
+            }
+            if (c == '\t') {
+                bufputnc(' ', tabsize - col % tabsize);
+            } else {
+                bufputc(ctrl ? CTRL(c) : c);
+            }
+        }
+        col += width;
+        total_width += width;
+        i = end_idx;
+#else
         new = line->charattrs ? adj_attr(attrs, line->charattrs[i]) : attrs;
         c = unmapchar(localize(line->data[i]));
         ctrl = (emulation > EMUL_RAW && is_cntrl(c) && c != '\t');
@@ -2820,28 +3091,23 @@ static void hwrite(conString *line, int start, int len, int indent)
         }
         if (c == '\t') {
             bufputnc(' ', tabsize - col % tabsize);
+            total_width += tabsize - col % tabsize;
             col += tabsize - col % tabsize;
         } else {
-#if WIDECHAR
-	    ret = mbrtowc(NULL, (char *)line->data+i, len - i, &is);
-	    if (ret >= (size_t) -2) {
-		/* Invalid character. Punt. */
-		bufputc(ctrl ? CTRL(c) : c);
-	    } else {
-		int j = 1;
-		bufputc(c);
-		while (j++ < ret) {
-		  c = line->data[++i];
-		  bufputc(c);
-		}
-	    }
-#else
             bufputc(ctrl ? CTRL(c) : c);
-#endif
+            total_width++;
             col++;
         }
+        ++i;
+#endif
     }
     if (current) attributes_off(current);
+
+#if WIDECHAR
+    cx += total_width;
+#else
+    cx += len;
+#endif
 }
 
 void reset_outcount(Screen *screen)
@@ -3066,15 +3332,9 @@ static int next_physline(Screen *screen)
 /* returns length of prefix of str that will fit in {wrapsize} */
 int wraplen(const char *str, int len, int indent)
 {
-    int total, max, visible;
-#if WIDECHAR
-    UText *ut = NULL;
-    UBreakIterator *lineBI = NULL;
-    UBreakIterator *charBI = NULL;
-    UErrorCode icuerr = U_ZERO_ERROR;
-    UChar32 c;
-    UEastAsianWidth ea;
-    int nativeIndex = 0;
+    int max;
+#if !WIDECHAR
+    int total, visible;
 #endif
 
     if (emulation == EMUL_RAW) return len;
@@ -3082,97 +3342,7 @@ int wraplen(const char *str, int len, int indent)
     max = Wrap - indent;
 
 #if WIDECHAR
-    ut = utext_openUTF8(ut, str, len, &icuerr);
-    if (!U_SUCCESS(icuerr))
-	return len;
-
-    c = UTEXT_NEXT32(ut);
-    for (visible = 0; visible < max && c != U_SENTINEL; c = UTEXT_NEXT32(ut)) {
-	if (c == '\t')
-	    visible += tabsize - visible % tabsize;
-	else {
-	    ea = (UEastAsianWidth)u_getIntPropertyValue(c,
-		UCHAR_EAST_ASIAN_WIDTH);
-	    switch (ea) {
-		case U_EA_NEUTRAL:
-		case U_EA_AMBIGUOUS:
-		case U_EA_HALFWIDTH:
-		    ++visible;
-		    break;
-		case U_EA_FULLWIDTH:
-		    visible += 2;
-		    break;
-		case U_EA_NARROW:
-		    ++visible;
-		    break;
-		case U_EA_WIDE:
-		    visible += 2;
-		    break;
-		default:
-		    ++visible;
-	    }
-	}
-    }
-
-    if (c == U_SENTINEL) {
-	utext_close(ut);
-	return len;
-    }
-
-    /* If we had a full width character as the last UChar32, go
-     * back one to fit within our max length.
-     */
-    if (visible >= max)
-	UTEXT_PREVIOUS32(ut);
-
-    lineBI = ubrk_open(UBRK_LINE, lang, NULL, 0, &icuerr);
-    if (!U_SUCCESS(icuerr)) {
-	utext_close(ut);
-	return len;
-    }
-
-    ubrk_setUText(lineBI, ut, &icuerr);
-    if (!U_SUCCESS(icuerr)) {
-	nativeIndex = utext_getNativeIndex(ut);
-	ubrk_close(lineBI);
-	utext_close(ut);
-	return nativeIndex;
-    }
-
-    total = ubrk_preceding(lineBI, utext_getNativeIndex(ut));
-
-    /* If we can't break at an acceptable "line break" point.
-     * Break at the previous glyph.
-     */
-    if (total == 0) {
-	charBI = ubrk_open(UBRK_CHARACTER, lang, NULL, 0, &icuerr);
-	if (!U_SUCCESS(icuerr)) {
-	    nativeIndex = utext_getNativeIndex(ut);
-	    ubrk_close(lineBI);
-	    utext_close(ut);
-	    return nativeIndex;
-	}
-
-	ubrk_setUText(charBI, ut, &icuerr);
-	if (!U_SUCCESS(icuerr)) {
-	    nativeIndex = utext_getNativeIndex(ut);
-	    ubrk_close(charBI);
-	    ubrk_close(lineBI);
-	    utext_close(ut);
-	    return nativeIndex;
-	}
-
-	total = ubrk_preceding(charBI, utext_getNativeIndex(ut));
-
-	/* Return the position we're at if there's no good break. */
-	if (total == 0)
-	    total = utext_getNativeIndex(ut);
-	ubrk_close(charBI);
-    }
-
-    ubrk_close(lineBI);
-    utext_close(ut);
-    return total;
+    return tf_utf8_wraplen(str, len, max, tabsize);
 #else
     for (visible = total = 0; total < len && visible < max; total++) {
 	if (str[total] == '\t')
@@ -3465,4 +3635,3 @@ void free_output(void)
     pfreepool(PhysLine, plpool, str);
 }
 #endif
-

@@ -265,6 +265,10 @@ String *dSshift(String *str, int start, const char *file, int line)
     str->len = str->len - start;
     lcheck(str, file, line); /* Don't really need this... */
     memmove(str->data, str->data + start, str->len + 1);
+    if (str->charattrs) {
+        memmove(str->charattrs, str->charattrs + start,
+            sizeof(cattr_t) * (str->len + 1));
+    }
     return str;
 }
 
@@ -432,4 +436,3 @@ void free_dstring(void)
     pfreepool(String, Stringpool, data);
 }
 #endif
-

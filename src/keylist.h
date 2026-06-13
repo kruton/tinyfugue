@@ -6,8 +6,11 @@
  *  General Public License.  See the file "COPYING" for details.
  ************************************************************************/
 
+gencode(BSPC),
 gencode(CLEAR),
+gencode(DCH),
 gencode(FLUSH),
+gencode(LEFT),
 gencode(LNEXT),
 gencode(NEWLINE),
 gencode(PAUSE),
@@ -17,6 +20,7 @@ gencode(RECALLEND),
 gencode(RECALLF),
 gencode(REDRAW),
 gencode(REFRESH),
+gencode(RIGHT),
 gencode(SEARCHB),
 gencode(SEARCHF),
 gencode(SELFLUSH)
