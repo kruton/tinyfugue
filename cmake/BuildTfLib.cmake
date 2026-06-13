@@ -1,12 +1,8 @@
 file(MAKE_DIRECTORY "${OUTPUT_DIR}")
-file(REMOVE "${OUTPUT_DIR}/tf-help.reference")
 
 file(GLOB source_files LIST_DIRECTORIES false "${SOURCE_DIR}/*")
 foreach(source_file IN LISTS source_files)
     get_filename_component(file_name "${source_file}" NAME)
-    if(file_name STREQUAL "tf-help.reference")
-        continue()
-    endif()
     configure_file("${source_file}" "${OUTPUT_DIR}/${file_name}" COPYONLY)
 endforeach()
 
