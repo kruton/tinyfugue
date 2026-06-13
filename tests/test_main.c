@@ -63,9 +63,17 @@ static void expect_bytes(const char *expected, int expected_len,
 
 static void test_encode_ansi(void)
 {
-    String *input = owned_string("test", 4, F_BOLD);
-    String *actual = encode_ansi(CS(input), 0);
+    String *input;
+    String *actual;
 
+    input = owned_string("test", 4, F_BOLD);
+    actual = encode_ansi(CS(input), 0);
+    expect_bytes("\033[1mtest\033[m", 11, actual);
+    release_string(actual);
+    Stringfree(input);
+
+    input = owned_string("test", 4, F_HILITE);
+    actual = encode_ansi(CS(input), 0);
     expect_bytes("\033[1mtest\033[m", 11, actual);
     release_string(actual);
     Stringfree(input);
@@ -894,6 +902,7 @@ int main(void)
     init_variables();
     init_macros();
     init_util2();
+    init_attrs();
 
     test_encode_ansi();
     test_string_shift_attributes();
