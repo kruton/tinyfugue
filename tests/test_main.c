@@ -88,6 +88,19 @@ static void test_string_shift_attributes(void)
     Stringfree(value);
 }
 
+static void test_display_width_helpers(void)
+{
+    int end_idx;
+
+    EXPECT_INT(5, tf_grapheme_width("\t", 1, 0, 3, 8, &end_idx));
+    EXPECT_INT(1, end_idx);
+    EXPECT_INT(6, tf_string_width("\tX", 2, 3, 8));
+    EXPECT_INT(1, tf_column_to_byte_offset("\tX", 2, 4, 8));
+    EXPECT_INT(0, tf_bytes_for_width("\tX", 2, 0, 0, 7, 8));
+    EXPECT_INT(1, tf_bytes_for_width("\tX", 2, 0, 0, 8, 8));
+    EXPECT_INT(2, tf_bytes_for_width("\tX", 2, 0, 3, 6, 8));
+}
+
 #if WIDECHAR
 static void test_character_offsets(void)
 {
@@ -145,10 +158,8 @@ static void test_unicode_wrapping(void)
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 2, 8));
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 1, 8));
     EXPECT_INT(3, tf_string_width("A\xe7\x95\x8c", 4, 0, 8));
-    EXPECT_INT(6, tf_string_width("\tX", 2, 3, 8));
     EXPECT_INT(4, tf_column_to_byte_offset("A\xe7\x95\x8cX", 5, 2, 8));
     EXPECT_INT(1, tf_bytes_for_width("A\xe7\x95\x8cX", 5, 0, 0, 2, 8));
-    EXPECT_INT(2, tf_bytes_for_width("\tX", 2, 0, 3, 6, 8));
 
     {
         int end_idx;
@@ -842,6 +853,7 @@ int main(void)
 
     test_encode_ansi();
     test_string_shift_attributes();
+    test_display_width_helpers();
 #if WIDECHAR
     test_character_offsets();
     test_decode_ansi_utf8();
