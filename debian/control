@@ -1,0 +1,26 @@
+Source: tinyfugue
+Section: net
+Priority: optional
+Maintainer: TinyFugue Maintainers <kruton@users.noreply.github.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake (>= 3.20),
+ ninja-build,
+ libicu-dev,
+ libncurses-dev,
+ libpcre3-dev,
+ libssl-dev,
+ zlib1g-dev
+Standards-Version: 4.7.2
+Homepage: https://github.com/kruton/tinyfugue
+Vcs-Browser: https://github.com/kruton/tinyfugue
+Vcs-Git: https://github.com/kruton/tinyfugue.git
+Rules-Requires-Root: no
+
+Package: tinyfugue
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: programmable MUD client
+ TinyFugue is a flexible, screen-oriented client for MUDs and other
+ line-based network services. It provides a macro language, triggers,
+ history, multiple worlds, Unicode, TLS, and MCCP support.
