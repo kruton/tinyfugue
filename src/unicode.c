@@ -114,11 +114,11 @@ int tf_grapheme_width(const char *str, int len, int start, int column,
         next = start + 1;
     *end = next;
 
-#if WIDECHAR
     if (str[start] == '\t') {
         int effective_tab_width = tab_width > 0 ? tab_width : 1;
         return effective_tab_width - column % effective_tab_width;
     }
+#if WIDECHAR
     return cluster_width(str, start, next);
 #else
     return 1;
