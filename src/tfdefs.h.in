@@ -8,6 +8,4 @@
 
 #define UNAME "@UNAME@"
 #define TF_VERSION_STRING "@TF_VERSION_STRING@"
-#define stringify_token(s) #s
-#define stringify_value(s) stringify_token(s)
-#define DEFAULT_TFLIBD stringify_value(DATADIR) "/@LIBNAME@"
+#define DEFAULT_TFLIBD "@CMAKE_INSTALL_FULL_DATAROOTDIR@/@LIBNAME@"

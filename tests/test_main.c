@@ -101,6 +101,11 @@ static void test_display_width_helpers(void)
     EXPECT_INT(2, tf_bytes_for_width("\tX", 2, 0, 3, 6, 8));
 }
 
+static void test_default_tflibdir(void)
+{
+    EXPECT_TRUE(strcmp(DEFAULT_TFLIBD, EXPECTED_TFLIBDIR) == 0);
+}
+
 #if WIDECHAR
 static void test_character_offsets(void)
 {
@@ -854,6 +859,7 @@ int main(void)
     test_encode_ansi();
     test_string_shift_attributes();
     test_display_width_helpers();
+    test_default_tflibdir();
 #if WIDECHAR
     test_character_offsets();
     test_decode_ansi_utf8();

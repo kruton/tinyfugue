@@ -400,8 +400,6 @@ set_target_properties(tf PROPERTIES OUTPUT_NAME "${EXENAME}")
 cmake_host_system_information(RESULT TF_HOSTNAME QUERY HOSTNAME)
 set(UNAME "${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION} ${CMAKE_SYSTEM_PROCESSOR}")
 
-target_compile_definitions(tflib PRIVATE
-    DATADIR="${CMAKE_INSTALL_FULL_DATAROOTDIR}")
 target_include_directories(tflib PRIVATE
     "${CMAKE_CURRENT_BINARY_DIR}/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/src")

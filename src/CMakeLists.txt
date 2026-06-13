@@ -32,6 +32,8 @@ if(BUILD_TESTING)
     target_include_directories(tf_test PRIVATE
         "${CMAKE_CURRENT_BINARY_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_compile_definitions(tf_test PRIVATE
+        EXPECTED_TFLIBDIR="${CMAKE_INSTALL_FULL_DATAROOTDIR}/${LIBNAME}")
     target_link_libraries(tf_test PRIVATE tflib)
     add_test(NAME unit COMMAND tf_test)
 
