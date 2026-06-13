@@ -45,6 +45,8 @@ if(BUILD_TESTING)
             -DEXPECT_ATCP=${ENABLE_ATCP}
             -DEXPECT_GMCP=${ENABLE_GMCP}
             -DEXPECT_OPTION102=${ENABLE_OPTION102}
+            -DEXPECT_TERMCAP=${TERMCAP}
+            -DEXPECT_HARDCODE=${HARDCODE}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/../tests/check_config.cmake")
 
     add_test(NAME install-layout
