@@ -1,14 +1,55 @@
 file(MAKE_DIRECTORY "${OUTPUT_DIR}")
+file(REMOVE "${OUTPUT_DIR}/tf-help.reference")
 
 file(GLOB source_files LIST_DIRECTORIES false "${SOURCE_DIR}/*")
 foreach(source_file IN LISTS source_files)
     get_filename_component(file_name "${source_file}" NAME)
+    if(file_name STREQUAL "tf-help.reference")
+        continue()
+    endif()
     configure_file("${source_file}" "${OUTPUT_DIR}/${file_name}" COPYONLY)
 endforeach()
 
+file(GLOB command_files LIST_DIRECTORIES false
+    "${HELP_SOURCE}/commands/*.html")
+file(GLOB topic_files LIST_DIRECTORIES false
+    "${HELP_SOURCE}/topics/*.html")
+list(SORT command_files)
+list(SORT topic_files)
+
+set(command_help "${OUTPUT_DIR}/tf-help.commands")
+set(topic_help "${OUTPUT_DIR}/tf-help.topics")
+execute_process(
+    COMMAND "${HTML2TF}" ${command_files}
+    OUTPUT_FILE "${command_help}"
+    RESULT_VARIABLE html2tf_commands_result)
+if(NOT html2tf_commands_result EQUAL 0)
+    message(FATAL_ERROR
+        "html2tf failed for command help with status ${html2tf_commands_result}")
+endif()
+
+execute_process(
+    COMMAND "${HTML2TF}" ${topic_files}
+    OUTPUT_FILE "${topic_help}"
+    RESULT_VARIABLE html2tf_topics_result)
+if(NOT html2tf_topics_result EQUAL 0)
+    message(FATAL_ERROR
+        "html2tf failed for topic help with status ${html2tf_topics_result}")
+endif()
+
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E cat "${command_help}" "${topic_help}"
+    OUTPUT_FILE "${OUTPUT_DIR}/tf-help"
+    RESULT_VARIABLE concatenate_result)
+file(REMOVE "${command_help}" "${topic_help}")
+if(NOT concatenate_result EQUAL 0)
+    message(FATAL_ERROR
+        "Failed to concatenate tf-help with status ${concatenate_result}")
+endif()
+
 execute_process(
     COMMAND "${MAKEHELP}"
-    INPUT_FILE "${SOURCE_DIR}/tf-help"
+    INPUT_FILE "${OUTPUT_DIR}/tf-help"
     OUTPUT_FILE "${OUTPUT_DIR}/tf-help.idx"
     RESULT_VARIABLE makehelp_result)
 if(NOT makehelp_result EQUAL 0)
