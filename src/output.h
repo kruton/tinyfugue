@@ -9,10 +9,7 @@
 #ifndef OUTPUT_H
 #define OUTPUT_H
 
-#if TERMCAP
-# define SCREEN
-#endif
-#if HARDCODE
+#if TERMCAP || HARDCODE
 # define SCREEN
 #endif
 

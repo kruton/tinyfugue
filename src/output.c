@@ -59,7 +59,7 @@
 
 #define STATIC_TEST
 
-#if HARDCODE
+#if !TERMCAP && HARDCODE
 # define origin 1      /* top left corner is (1,1) */
 # if HARDCODE == TERM_vt100
 #  define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = (vt100);
@@ -68,10 +68,10 @@
 # elif HARDCODE == TERM_ansi
 #  define TERMCODE(id, vt100, vt220, ansi)   static const char *(id) = (ansi);
 # endif
-#else /* !HARDCODE */
+#else /* TERMCAP || !HARDCODE */
 # define origin 0      /* top left corner is (0,0) */
 # define TERMCODE(id, vt100, vt220, ansi)   STATIC_TEST const char *(id) = NULL;
-#endif /* HARDCODE */
+#endif /* !TERMCAP && HARDCODE */
 
 /*				vt100		vt220		ansi */
 /*				-----		-----		---- */
@@ -244,7 +244,7 @@ STATIC_STRING(moreprompt, "--More--", F_BOLD | F_REVERSE);  /* pager prompt */
 #define has_scroll_region (1)
 
 
-#if HARDCODE
+#if !TERMCAP && HARDCODE
 # if HARDCODE == TERM_vt100
 #  define KEYCODE(vt100, vt220, ansi)   (vt100)
 # else
