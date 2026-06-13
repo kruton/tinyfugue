@@ -125,6 +125,65 @@ int tf_grapheme_width(const char *str, int len, int start, int column,
 #endif
 }
 
+int tf_string_width(const char *str, int len, int start_column, int tab_width)
+{
+    int offset = 0;
+    int column = start_column;
+
+    if (!str || len <= 0)
+	return 0;
+    while (offset < len) {
+	int end;
+
+	column += tf_grapheme_width(str, len, offset, column, tab_width,
+				    &end);
+	offset = end;
+    }
+    return column - start_column;
+}
+
+int tf_column_to_byte_offset(const char *str, int len, int target_column,
+			     int tab_width)
+{
+    int offset = 0;
+    int column = 0;
+
+    if (!str || len <= 0 || target_column <= 0)
+	return 0;
+    while (offset < len && column < target_column) {
+	int end;
+
+	column += tf_grapheme_width(str, len, offset, column, tab_width,
+				    &end);
+	offset = end;
+    }
+    return offset;
+}
+
+int tf_bytes_for_width(const char *str, int len, int start_byte,
+		       int start_column, int max_width, int tab_width)
+{
+    int offset = start_byte;
+    int column = start_column;
+    int limit = start_column + max_width;
+
+    if (!str || len <= 0 || start_byte < 0 || start_byte >= len ||
+	max_width <= 0) {
+	return 0;
+    }
+    while (offset < len && column < limit) {
+	int end;
+	int width = tf_grapheme_width(str, len, offset, column, tab_width,
+				      &end);
+
+	if (column + width > limit)
+	    break;
+	column += width;
+	offset = end;
+    }
+    return offset - start_byte;
+}
+
 void tf_display_position(const char *str, int len, int position,
     int start_column, int wrap_width, int tab_width, int *row, int *column)
 {

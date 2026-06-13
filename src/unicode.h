@@ -11,6 +11,12 @@ extern int tf_character_offset(const char *str, int len, int position,
     int count);
 extern int tf_grapheme_width(const char *str, int len, int start, int column,
     int tab_width, int *end);
+extern int tf_string_width(const char *str, int len, int start_column,
+			   int tab_width);
+extern int tf_column_to_byte_offset(const char *str, int len,
+				    int target_column, int tab_width);
+extern int tf_bytes_for_width(const char *str, int len, int start_byte,
+			      int start_column, int max_width, int tab_width);
 extern void tf_display_position(const char *str, int len, int position,
     int start_column, int wrap_width, int tab_width, int *row, int *column);
 extern int tf_display_row_offset(const char *str, int len, int target_row,

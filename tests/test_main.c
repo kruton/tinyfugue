@@ -144,6 +144,11 @@ static void test_unicode_wrapping(void)
     EXPECT_INT(3, tf_utf8_wraplen("e\xcc\x81x", 4, 0, 8));
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 2, 8));
     EXPECT_INT(11, tf_utf8_wraplen(zwj_emoji, 12, 1, 8));
+    EXPECT_INT(3, tf_string_width("A\xe7\x95\x8c", 4, 0, 8));
+    EXPECT_INT(6, tf_string_width("\tX", 2, 3, 8));
+    EXPECT_INT(4, tf_column_to_byte_offset("A\xe7\x95\x8cX", 5, 2, 8));
+    EXPECT_INT(1, tf_bytes_for_width("A\xe7\x95\x8cX", 5, 0, 0, 2, 8));
+    EXPECT_INT(2, tf_bytes_for_width("\tX", 2, 0, 3, 6, 8));
 
     {
         int end_idx;
@@ -695,6 +700,130 @@ static void test_pseudo_terminal_rendering(void)
     can_have_visual = 0;
     tp = NULL;
 }
+
+static void test_status_bar_utf8(void)
+{
+    extern int columns;
+    extern String status_line[][1];
+    extern void format_status_line(void);
+    extern struct Value *handle_status_add_command(String * args, int offset);
+
+    int old_columns = columns;
+    columns = 20;
+
+    /* Test 1: Single-byte and 2-byte UTF-8 character (visual width 3, bytes 4) */
+    {
+	Var *my_var = newglobalvar("my_status_var");
+	String *val_str = owned_string("a\xc3\xa9X", -1, 0);  // "aéX"
+	setstrvar(my_var, CS(val_str), 0);
+	Stringfree(val_str);
+
+	String *args = owned_string("-c my_status_var:0 \"hello\":5", -1, 0);
+	struct Value *ret = handle_status_add_command(args, 0);
+	Stringfree(args);
+	freeval(ret);
+
+	format_status_line();
+
+	int vis_width = tf_string_width(status_line[0]->data,
+					status_line[0]->len, 0, tabsize);
+	EXPECT_INT(20, vis_width);
+	EXPECT_INT(21, status_line[0]->len);
+	expect_bytes("a\xc3\xa9X____________hello", 21, status_line[0]);
+
+	/* Clean up status fields */
+	String *reset_args = owned_string("-c", -1, 0);
+	struct Value *reset_ret = handle_status_add_command(reset_args, 0);
+	Stringfree(reset_args);
+	freeval(reset_ret);
+
+	unsetvar(my_var);
+    }
+
+    /* Test 2: Double-width Chinese character (visual width 4, bytes 5) */
+    {
+	Var *my_var = newglobalvar("my_status_var");
+	String *val_str = owned_string("a\xe7\x95\x8cX", -1, 0);  // "a界X", '界' is 3 bytes, width 2
+	setstrvar(my_var, CS(val_str), 0);
+	Stringfree(val_str);
+
+	String *args = owned_string("-c my_status_var:0 \"hello\":5", -1, 0);
+	struct Value *ret = handle_status_add_command(args, 0);
+	Stringfree(args);
+	freeval(ret);
+
+	format_status_line();
+
+	int vis_width = tf_string_width(status_line[0]->data,
+					status_line[0]->len, 0, tabsize);
+	EXPECT_INT(20, vis_width);
+	EXPECT_INT(21, status_line[0]->len);
+	expect_bytes("a\xe7\x95\x8cX___________hello", 21, status_line[0]);
+
+	/* Clean up status fields */
+	String *reset_args = owned_string("-c", -1, 0);
+	struct Value *reset_ret = handle_status_add_command(reset_args, 0);
+	Stringfree(reset_args);
+	freeval(reset_ret);
+
+	unsetvar(my_var);
+    }
+
+    /* Test 3: A grapheme wider than the remaining field must be omitted. */
+    {
+	Var *my_var = newglobalvar("my_status_var");
+	String *val_str = owned_string("A\xe7\x95\x8c", -1, 0);	 // "A界"
+	setstrvar(my_var, CS(val_str), 0);
+	Stringfree(val_str);
+
+	String *args = owned_string("-c my_status_var:2 \"hello\":5", -1, 0);
+	struct Value *ret = handle_status_add_command(args, 0);
+	Stringfree(args);
+	freeval(ret);
+
+	format_status_line();
+
+	EXPECT_INT(20, tf_string_width(status_line[0]->data,
+				       status_line[0]->len, 0, tabsize));
+	expect_bytes("A_hello_____________", 20, status_line[0]);
+
+	String *reset_args = owned_string("-c", -1, 0);
+	struct Value *reset_ret = handle_status_add_command(reset_args, 0);
+	Stringfree(reset_args);
+	freeval(reset_ret);
+
+	unsetvar(my_var);
+    }
+
+    /* Test 4: Tabs expand from the field's actual screen column. */
+    {
+	Var *my_var = newglobalvar("my_status_var");
+	String *val_str = owned_string("\tX", -1, 0);
+	setstrvar(my_var, CS(val_str), 0);
+	Stringfree(val_str);
+
+	String *args = owned_string("-c \"abc\":3 my_status_var:6 \"z\":1",
+				    -1, 0);
+	struct Value *ret = handle_status_add_command(args, 0);
+	Stringfree(args);
+	freeval(ret);
+
+	format_status_line();
+
+	EXPECT_INT(20, tf_string_width(status_line[0]->data,
+				       status_line[0]->len, 0, tabsize));
+	expect_bytes("abc\tXz__________", 16, status_line[0]);
+
+	String *reset_args = owned_string("-c", -1, 0);
+	struct Value *reset_ret = handle_status_add_command(reset_args, 0);
+	Stringfree(reset_args);
+	freeval(reset_ret);
+
+	unsetvar(my_var);
+    }
+
+    columns = old_columns;
+}
 #endif
 
 extern void init_util1(void);
@@ -728,6 +857,7 @@ int main(void)
     test_grapheme_expr_functions();
     test_tf_utf8_incomplete_bytes();
     test_pseudo_terminal_rendering();
+    test_status_bar_utf8();
 #endif
 
     if (failures) {
