@@ -9,7 +9,9 @@
 #include "unicode.h"
 #include "keyboard.h"
 #include "parse.h"
+#include "pattern.h"
 #include "search.h"
+#include "tfio.h"
 #include "variable.h"
 
 static int failures;
@@ -717,6 +719,43 @@ static void test_pseudo_terminal_rendering(void)
     tp = NULL;
 }
 
+static void test_screen_redraw_utf8(void)
+{
+    const char box_line[] =
+	"\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x94\x90";
+    const char *old_cursor_address = cursor_address;
+    void (*old_tp)(const char *) = tp;
+    int old_visual = special_var[VAR_visual].val.u.ival;
+    int old_wrapsize = special_var[VAR_wrapsize].val.u.ival;
+    Screen *screen = new_screen(10);
+    String *line = owned_string(box_line, sizeof(box_line) - 1, 0);
+    char buf[1024];
+    int n;
+
+    tp = test_tp;
+    cursor_address = "\033[%d;%dH";
+    special_var[VAR_visual].val.u.ival = 0;
+    special_var[VAR_wrapsize].val.u.ival = 4;
+
+    enscreen(screen, CS(line));
+    Stringfree(line);
+    screen->top = screen->bot = screen->maxbot = screen->pline.head;
+    screen->viewsize = 1;
+
+    start_capturing_stdout();
+    redraw_window(screen, 1);
+    n = get_captured_stdout(buf, sizeof(buf));
+
+    EXPECT_TRUE(n > 0);
+    EXPECT_TRUE(strstr(buf, box_line) != NULL);
+
+    free_screen(screen);
+    special_var[VAR_visual].val.u.ival = old_visual;
+    special_var[VAR_wrapsize].val.u.ival = old_wrapsize;
+    cursor_address = old_cursor_address;
+    tp = old_tp;
+}
+
 static void test_status_bar_utf8(void)
 {
     extern int columns;
@@ -875,6 +914,7 @@ int main(void)
     test_grapheme_expr_functions();
     test_tf_utf8_incomplete_bytes();
     test_pseudo_terminal_rendering();
+    test_screen_redraw_utf8();
     test_status_bar_utf8();
 #endif
 
