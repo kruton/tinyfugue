@@ -86,6 +86,7 @@ endforeach()
 
 add_library(tflib STATIC)
 add_executable(tf src/main.c)
+add_executable(html2tf help/html2tf.c)
 add_executable(makehelp src/makehelp.c)
 target_link_libraries(tf PRIVATE tflib)
 
