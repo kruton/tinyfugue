@@ -114,6 +114,16 @@ TERMCODE (standout_off,		NULL,		NULL,		NULL)
 
 /* end HARDCODE section */
 
+static void append_status_padding(String *dest, char c, int n, attr_t attr)
+{
+    int oldlen = dest->len;
+    int i;
+
+    Stringnadd(dest, c, n);
+    check_charattrs(dest, oldlen, dest->attrs, __FILE__, __LINE__);
+    for (i = oldlen; i < dest->len; i++)
+	dest->charattrs[i] = attr;
+}
 
 /* If var==NULL and internal<0, the status is a constant string */
 typedef struct statusfield {
@@ -1733,13 +1743,13 @@ int handle_status_width_func(const char *name)
     return field ? status_width(field, statusfield_column(field)) : 0;
 }
 
-static int format_statusfield(StatusField *field)
+static int format_statusfield(StatusField *field, String *dest)
 {
     STATIC_BUFFER(scratch);
     const char *old_command;
     Value *fmtval, *val = NULL;
     Program *prog;
-    int width, x, i;
+    int width, x;
 
     output_disabled++;
     Stringtrunc(scratch, 0);
@@ -1780,33 +1790,35 @@ static int format_statusfield(StatusField *field)
 
     x = statusfield_column(field);
     width = status_width(field, x);
-    if (scratch->len > width)
-        Stringtrunc(scratch, width);
 
-    if (field->rightjust && scratch->len < width) {          /* left pad */
-	for (i = 0; i < width - scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = true_status_pad;
-	    status_line[field->row]->charattrs[x] = status_attr;
-	}
+    int scratch_width = tf_string_width(scratch->data, scratch->len, x,
+					tabsize);
+    if (scratch_width > width) {
+	int trunc_bytes = tf_bytes_for_width(scratch->data, scratch->len,
+					     0, x, width, tabsize);
+	Stringtrunc(scratch, trunc_bytes);
+	scratch_width = tf_string_width(scratch->data, scratch->len, x,
+					tabsize);
+    }
+
+    if (field->rightjust && scratch_width < width) { /* left pad */
+	append_status_padding(dest, true_status_pad, width - scratch_width,
+			      status_attr);
     }
 
     if (scratch->len) {                                      /* value */
-        attr_t attrs = scratch->attrs;
+	conString styled = *CS(scratch);
+	attr_t attrs = scratch->attrs;
         attrs = adj_attr(attrs, status_attr);
         attrs = adj_attr(attrs, field->attrs);
         attrs = adj_attr(attrs, field->vattrs);
-	for (i = 0; i < scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = scratch->data[i];
-	    status_line[field->row]->charattrs[x] = scratch->charattrs ?
-		adj_attr(attrs, scratch->charattrs[i]) : attrs;
-	}
+	styled.attrs = attrs;
+	SStringcat(dest, &styled);
     }
 
-    if (!field->rightjust && scratch->len < width) {         /* right pad */
-	for (i = 0; i < width - scratch->len; i++, x++) {
-	    status_line[field->row]->data[x] = true_status_pad;
-	    status_line[field->row]->charattrs[x] = status_attr;
-	}
+    if (!field->rightjust && scratch_width < width) { /* right pad */
+	append_status_padding(dest, true_status_pad, width - scratch_width,
+			      status_attr);
     }
 
     if (field->internal == STAT_MORE)
@@ -1834,18 +1846,31 @@ static void display_status_segment(int row, int start, int width)
     {
 	/* no overlap with alert */
 	xy(start + 1, stat_top + row);
-	hwrite(CS(status_line[row]), start, width, 0);
+	int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						  status_line[row]->len, start, tabsize);
+	int len_byte = tf_bytes_for_width(status_line[row]->data,
+					  status_line[row]->len, start_byte, start, width, tabsize);
+	hwrite(CS(status_line[row]), start_byte, len_byte, 0);
     } else {
 	if (start < alert_pos) {
 	    /* segment starts left of alert */
 	    xy(start + 1, stat_top + row);
-	    hwrite(CS(status_line[row]), start, alert_pos - start, 0);
+	    int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, start, tabsize);
+	    int len_byte = tf_bytes_for_width(status_line[row]->data,
+					      status_line[row]->len, start_byte, start, alert_pos - start,
+					      tabsize);
+	    hwrite(CS(status_line[row]), start_byte, len_byte, 0);
 	}
 	if (start + width >= alert_pos) {
 	    /* segment ends right of alert */
 	    xy(alert_pos + alert_len + 1, stat_top + row);
-	    hwrite(CS(status_line[row]), alert_pos + alert_len,
-		start + width - (alert_pos + alert_len), 0);
+	    int start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, alert_pos + alert_len, tabsize);
+	    int len_byte = tf_bytes_for_width(status_line[row]->data,
+					      status_line[row]->len, start_byte, alert_pos + alert_len,
+					      start + width - (alert_pos + alert_len), tabsize);
+	    hwrite(CS(status_line[row]), start_byte, len_byte, 0);
 	}
     }
 }
@@ -1882,7 +1907,26 @@ void update_status_field(Var *var, stat_id_t internal)
 	    if (column >= columns) /* doesn't fit, nor will any later fields */
 		break;
 	    count++;
-	    width = format_statusfield(field);
+	    width = status_width(field, column);
+	    {
+		AUTO_BUFFER(replacement);
+		AUTO_BUFFER(updated);
+		int start_byte, end_byte;
+
+		Stringzero(replacement);
+		Stringzero(updated);
+		format_statusfield(field, replacement);
+		start_byte = tf_column_to_byte_offset(status_line[row]->data,
+						      status_line[row]->len, column, tabsize);
+		end_byte = tf_column_to_byte_offset(status_line[row]->data,
+						    status_line[row]->len, column + width, tabsize);
+		SStringoncat(updated, CS(status_line[row]), 0, start_byte);
+		SStringcat(updated, CS(replacement));
+		SStringocat(updated, CS(status_line[row]), end_byte);
+		SStringcpy(status_line[row], CS(updated));
+		Stringfree(updated);
+		Stringfree(replacement);
+	    }
 	    display_status_segment(row, column, width);
 	}
     }
@@ -1900,19 +1944,31 @@ void format_status_line(void)
     int row, column, width;
 
     for (row = 0; row < status_height; row++) {
+	Stringtrunc(status_line[row], 0);
+
 	column = 0;
 	width = 0;
 	for (node = statusfield_list[row]->head; node; node = node->next) {
-	    field = (StatusField*)node->datum;
+	    field = (StatusField *)node->datum;
 
 	    if ((column = statusfield_column(field)) >= columns)
 		break;
-	    width = format_statusfield(field);
+
+	    int current_col = tf_string_width(status_line[row]->data,
+					      status_line[row]->len, 0, tabsize);
+	    if (column > current_col) {
+		append_status_padding(status_line[row], true_status_pad,
+				      column - current_col, status_attr);
+	    }
+
+	    width = format_statusfield(field, status_line[row]);
 	}
 
-	for (column += width; column < columns; column++) {
-	    status_line[row]->data[column] = true_status_pad;
-	    status_line[row]->charattrs[column] = status_attr;
+	int current_col = tf_string_width(status_line[row]->data,
+					  status_line[row]->len, 0, tabsize);
+	if (current_col < columns) {
+	    append_status_padding(status_line[row], true_status_pad,
+				  columns - current_col, status_attr);
 	}
     }
 }
@@ -1959,9 +2015,10 @@ void alert(conString *msg)
     } else {
 	/* default to position 0 */
 	new_pos = 0;
-	new_len = msg->len > Wrap ? Wrap : msg->len;
-	if (msg->len < Wrap) {
-            /* use the @alert field */
+	int msg_width = tf_string_width(msg->data, msg->len, 0, tabsize);
+	new_len = msg_width > Wrap ? Wrap : msg_width;
+	if (msg_width < Wrap) {
+	    /* use the @alert field */
             for (node = statusfield_list[row]->head; node; node = node->next) {
  		field = (StatusField*)node->datum;
                 if (field->internal == STAT_ALERT) {
@@ -1992,7 +2049,9 @@ void alert(conString *msg)
 	xy(alert_pos + 1, stat_top + alert_row);
 	orig_attrs = msg->attrs;
 	msg->attrs = adj_attr(msg->attrs, alert_attr);
-	hwrite(msg, 0, alert_len, 0);
+	int alert_len_bytes = tf_bytes_for_width(msg->data, msg->len, 0,
+						 alert_pos, alert_len, tabsize);
+	hwrite(msg, 0, alert_len_bytes, 0);
 	msg->attrs = orig_attrs;
 
 	bufflush();
@@ -2005,7 +2064,11 @@ void clear_alert(void)
 {
     if (!alert_len) return;
     xy(alert_pos + 1, stat_top + alert_row);
-    hwrite(CS(status_line[alert_row]), alert_pos, alert_len, 0);
+    int start_byte = tf_column_to_byte_offset(status_line[alert_row]->data,
+					      status_line[alert_row]->len, alert_pos, tabsize);
+    int len_byte = tf_bytes_for_width(status_line[alert_row]->data,
+				      status_line[alert_row]->len, start_byte, alert_pos, alert_len, tabsize);
+    hwrite(CS(status_line[alert_row]), start_byte, len_byte, 0);
     bufflush();
     set_refresh_pending(REF_PHYSICAL);
     alert_timeout = tvzero;
@@ -2020,9 +2083,16 @@ int ch_visual(Var *var)
     int need_redraw = 0, resized = 0, row;
 
     for (row = 0; row < status_height; row++) {
-	if (status_line[row]->len < columns)
-	    Stringnadd(status_line[row], '?', columns - status_line[row]->len);
-	Stringtrunc(status_line[row], columns);
+	int current_col = tf_string_width(status_line[row]->data,
+					  status_line[row]->len, 0, tabsize);
+	if (current_col < columns) {
+	    append_status_padding(status_line[row], '?', columns - current_col,
+				  status_attr);
+	} else if (current_col > columns) {
+	    int trunc_bytes = tf_bytes_for_width(status_line[row]->data,
+						 status_line[row]->len, 0, 0, columns, tabsize);
+	    Stringtrunc(status_line[row], trunc_bytes);
+	}
     }
 
     if (screen_mode < 0) {                /* e.g., called by init_variables() */
