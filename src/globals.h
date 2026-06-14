@@ -222,6 +222,8 @@ enum Vars {
 #define oldslash	getintvar(VAR_oldslash)
 #define optimize_user	getintvar(VAR_optimize)
 #define pedantic	getintvar(VAR_pedantic)
+#define pcre2_compat	getintvar(VAR_pcre2_compat)
+#define pcre2_jit	getintvar(VAR_pcre2_jit)
 #define prompt_wait	gettimevar(VAR_prompt_wait)
 #define proxy_host	getstdvar(VAR_proxy_host)
 #define proxy_port	getstdvar(VAR_proxy_port)

@@ -12,7 +12,7 @@ COMMIT="02b048204c5ffd1704b48541724b8ecebc9aee4c"
 SRC_URI="https://github.com/kruton/tinyfugue/archive/${COMMIT}.tar.gz"
 SRC_DIR="${NAME}-${COMMIT}"
 
-BUILD_REQUIRES="cmake gcc-core libicu-devel libncurses-devel libpcre-devel
+BUILD_REQUIRES="cmake gcc-core libicu-devel libncurses-devel libpcre2-devel
 libssl-devel ninja zlib-devel"
 
 src_compile()

@@ -25,14 +25,20 @@
 #include "search.h"	/* for tfio.h */
 #include "tfio.h"
 
-int pcre_info(const pcre *argument_re, int *optptr, int *first_byte) {
-    int n = 0;
-    pcre_fullinfo(argument_re, NULL, 2, &n);
-    return n;
+const char *tf_pcre_version(void)
+{
+    static char buffer[128] = "";
+    if (buffer[0] == '\0') {
+        int rc = pcre2_config(PCRE2_CONFIG_VERSION, buffer);
+        if (rc < 0) {
+            strcpy(buffer, "unknown");
+        }
+    }
+    return buffer;
 }
 
 static RegInfo *reginfo = NULL;
-static const unsigned char *re_tables = NULL;
+static const uint8_t *re_tables = NULL;
 
 static const char *cmatch(const char *pat, int ch);
 static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
@@ -44,7 +50,10 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
 
 void reset_pattern_locale(void)
 {
-    re_tables = pcre_maketables();
+    if (re_tables) {
+        pcre2_maketables_free(NULL, re_tables);
+    }
+    re_tables = pcre2_maketables(NULL);
 }
 
 int regmatch_in_scope(Value *val, const char *pattern, String *str)
@@ -96,25 +105,26 @@ int regsubstr(String *dest, int n)
     int idx;
     idx = (n < 0) ? 0 : n * 2;
 
-    if (!(reginfo && reginfo->Str && n < reginfo->ovecsize/3 && reginfo->re &&
-	reginfo->ovector[idx] >= 0))
+    if (!(reginfo && reginfo->Str && reginfo->match_data &&
+        n < (int)pcre2_get_ovector_count(reginfo->match_data) && reginfo->re &&
+	reginfo->ovector[idx] != PCRE2_UNSET))
     {
         return -1;
     }
-    if (n < -2 || reginfo->ovector[idx+1] < 0) {
+    if (n < -2 || reginfo->ovector[idx+1] == PCRE2_UNSET) {
         internal_error(__FILE__, __LINE__, "invalid subexp %d", n);
         return -1;
     }
     if (n == -1) {
-        SStringncat(dest, reginfo->Str, reginfo->ovector[0]);
-        return reginfo->ovector[0];
+        SStringncat(dest, reginfo->Str, (int)reginfo->ovector[0]);
+        return (int)reginfo->ovector[0];
     } else if (n == -2) {
-        SStringocat(dest, reginfo->Str, reginfo->ovector[1]);
-        return reginfo->Str->len - reginfo->ovector[1];
+        SStringocat(dest, reginfo->Str, (int)reginfo->ovector[1]);
+        return reginfo->Str->len - (int)reginfo->ovector[1];
     } else {
-        SStringoncat(dest, reginfo->Str, reginfo->ovector[idx],
-            reginfo->ovector[idx+1] - reginfo->ovector[idx]);
-	return reginfo->ovector[idx+1] - reginfo->ovector[idx];
+        SStringoncat(dest, reginfo->Str, (int)reginfo->ovector[idx],
+            (int)(reginfo->ovector[idx+1] - reginfo->ovector[idx]));
+	return (int)(reginfo->ovector[idx+1] - reginfo->ovector[idx]);
     }
 }
 
@@ -122,18 +132,18 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
     const char *file, int line)
 {
     RegInfo *ri;
-    const char *emsg, *s;
-    int eoffset, n;
-    /* PCRE_DOTALL optimizes patterns starting with ".*" */
-    int options = PCRE_DOLLAR_ENDONLY | PCRE_DOTALL | PCRE_CASELESS;
+    const char *s;
+    uint32_t options = PCRE2_DOLLAR_ENDONLY | PCRE2_DOTALL | PCRE2_CASELESS;
 #if WIDECHAR
-    options |= PCRE_UTF8 | PCRE_UCP;
+    options |= PCRE2_UTF | PCRE2_UCP;
 #endif
 
     ri = dmalloc(NULL, sizeof(RegInfo), file, line);
     if (!ri) return NULL;
-    ri->extra = NULL;
+    ri->re = NULL;
+    ri->match_data = NULL;
     ri->ovector = NULL;
+    ri->ovecsize = 0;
     ri->Str = NULL;
     ri->links = 1;
 
@@ -147,30 +157,47 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
 	if (*s == '\\') {
 	    if (s[1]) s++;
 	} else if (is_upper(*s)) {
-	    options &= ~PCRE_CASELESS;
+	    options &= ~PCRE2_CASELESS;
 	    break;
 	}
     }
 
-    ri->re = pcre_compile((char*)pattern, options, &emsg, &eoffset, re_tables);
+    int errorcode;
+    PCRE2_SIZE erroroffset;
+    pcre2_compile_context *ccontext = pcre2_compile_context_create(NULL);
+    if (ccontext && re_tables) {
+        pcre2_set_character_tables(ccontext, re_tables);
+    }
+    if (ccontext && pcre2_compat) {
+        pcre2_set_compile_extra_options(ccontext, PCRE2_EXTRA_BAD_ESCAPE_IS_LITERAL);
+    }
+
+    ri->re = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, options, &errorcode, &erroroffset, ccontext);
+    if (ccontext) {
+        pcre2_compile_context_free(ccontext);
+    }
+
     if (!ri->re) {
-	/* don't trust emsg to be non-NULL or NUL-terminated */
-	eprintf("regexp error: character %d: %.128s", eoffset,
-	    emsg ? emsg : "unknown error");
-	goto tf_reg_compile_error;
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(errorcode, buffer, sizeof(buffer));
+        eprintf("regexp error: character %d: %s", (int)erroroffset, (char*)buffer);
+        goto tf_reg_compile_error;
     }
-    pcre_fullinfo(ri->re, NULL, PCRE_INFO_CAPTURECOUNT, &n);
-    if (n < 0) goto tf_reg_compile_error;
-    ri->ovecsize = 3 * (n + 1);
-    ri->ovector = dmalloc(NULL, sizeof(int) * ri->ovecsize, file, line);
+
+    uint32_t n;
+    pcre2_pattern_info(ri->re, PCRE2_INFO_CAPTURECOUNT, &n);
+    ri->ovecsize = 2 * (n + 1);
+
+    ri->match_data = pcre2_match_data_create_from_pattern(ri->re, NULL);
+    if (!ri->match_data) goto tf_reg_compile_error;
+
+    ri->ovector = pcre2_get_ovector_pointer(ri->match_data);
     if (!ri->ovector) goto tf_reg_compile_error;
-    if (optimize) {
-	ri->extra = pcre_study(ri->re, 0, &emsg);
-	if (emsg) {
-	    eprintf("regexp study error: %.128s", emsg);
-	    goto tf_reg_compile_error;
-	}
+
+    if (pcre2_jit) {
+        pcre2_jit_compile(ri->re, PCRE2_JIT_COMPLETE);
     }
+
     return ri;
 
 tf_reg_compile_error:
@@ -185,10 +212,11 @@ int tf_reg_exec(RegInfo *ri,
 {
     int result, len;
 
-    /* If ovector was stolen by find_and_run_matches(), make a new one. */
-    if (!ri->ovector) {
-	ri->ovector = MALLOC(sizeof(int) * ri->ovecsize);
-	if (!ri->ovector) return 0;
+    /* If match_data was stolen by find_and_run_matches(), make a new one. */
+    if (!ri->match_data) {
+	ri->match_data = pcre2_match_data_create_from_pattern(ri->re, NULL);
+	if (!ri->match_data) return 0;
+	ri->ovector = pcre2_get_ovector_pointer(ri->match_data);
     }
 
     /* Free old saved Str. */
@@ -203,8 +231,8 @@ int tf_reg_exec(RegInfo *ri,
     } else {
 	len = strlen(str);
     }
-    result = pcre_exec(ri->re, ri->extra, str, len, startoffset,
-	startoffset ? PCRE_NOTBOL : 0, ri->ovector, ri->ovecsize);
+    result = pcre2_match(ri->re, (PCRE2_SPTR)str, len, startoffset,
+	startoffset ? PCRE2_NOTBOL : 0, ri->match_data, NULL);
     if (result < 0) {
 	result = 0;
     } else {
@@ -217,9 +245,8 @@ int tf_reg_exec(RegInfo *ri,
 void tf_reg_free(RegInfo *ri)
 {
     if (--ri->links > 0) return;
-    if (ri->ovector) FREE(ri->ovector);
-    if (ri->re) pcre_free(ri->re);
-    if (ri->extra) pcre_free(ri->extra);
+    if (ri->re) pcre2_code_free(ri->re);
+    if (ri->match_data) pcre2_match_data_free(ri->match_data);
     if (ri->Str) conStringfree(ri->Str);
     FREE(ri);
 }

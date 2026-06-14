@@ -894,13 +894,13 @@ static int complete_macro(Macro *spec, unsigned int hash, int num,
     }
     spec->attr &= ~F_NONE;
     if (spec->nsubattr) {
-      int n;
-      pcre_fullinfo(spec->trig.ri->re, NULL, PCRE_INFO_CAPTURECOUNT, &n);
+      uint32_t n;
+      pcre2_pattern_info(spec->trig.ri->re, PCRE2_INFO_CAPTURECOUNT, &n);
 	for (i = 0; i < spec->nsubattr; i++) {
 	    spec->subattr[i].attr &= ~F_NONE;
-	    if (spec->subattr[i].subexp > n) {
+	    if (spec->subattr[i].subexp > (int)n) {
 		eprintf("-P%d: trigger has only %d subexpressions",
-		    spec->subattr[i].subexp, n);
+		    spec->subattr[i].subexp, (int)n);
 		nuke_macro(spec);
 		return 0;
 	    }
@@ -1807,7 +1807,7 @@ static void apply_attrs_of_match(
     {
 	int i, x, offset = 0;
 	int start, end;
-	int *saved_ovector = NULL;
+	pcre2_match_data *saved_match_data = NULL;
 
 	if (text)
 	    old = new_reg_scope(ri, text);
@@ -1817,30 +1817,32 @@ static void apply_attrs_of_match(
 	    for (x = 0; x < macro->nsubattr; x++) {
 		if (macro->subattr[x].subexp == -1) {
 		    start = 0;
-		    end = ri->ovector[0];
+		    end = (int)ri->ovector[0];
 		} else if (macro->subattr[x].subexp == -2) {
-		    start = ri->ovector[1];
+		    start = (int)ri->ovector[1];
 		    end = line->len;
 		} else {
-		    start = ri->ovector[macro->subattr[x].subexp * 2];
-		    end = ri->ovector[macro->subattr[x].subexp * 2 + 1];
+		    start = (int)ri->ovector[macro->subattr[x].subexp * 2];
+		    end = (int)ri->ovector[macro->subattr[x].subexp * 2 + 1];
 		}
 		for (i = start; i < end; ++i)
 		    line->charattrs[i] =
 			adj_attr(line->charattrs[i], macro->subattr[x].attr);
 	    }
-	    if (offset == ri->ovector[1]) break; /* offset wouldn't move */
-	    offset = ri->ovector[1];
-	    if (!saved_ovector) {
-		saved_ovector = ri->ovector;
+	    if (offset == (int)ri->ovector[1]) break; /* offset wouldn't move */
+	    offset = (int)ri->ovector[1];
+	    if (!saved_match_data) {
+		saved_match_data = ri->match_data;
+		ri->match_data = NULL;
 		ri->ovector = NULL;
 	    }
 	} while (offset < line->len &&
 	    tf_reg_exec(ri, CS(text), NULL, offset) > 0);
 	/* restore original startp/endp */
-	if (saved_ovector) {
-	    if (ri->ovector) FREE(ri->ovector);
-	    ri->ovector = saved_ovector;
+	if (saved_match_data) {
+	    if (ri->match_data) pcre2_match_data_free(ri->match_data);
+	    ri->match_data = saved_match_data;
+	    ri->ovector = pcre2_get_ovector_pointer(ri->match_data);
 	}
 	(ri->Str = CS(line))->links++;
 

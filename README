@@ -12,7 +12,7 @@ Required:
 
 * CMake 3.20 or newer
 * An ANSI C compiler and BSD-style select()
-* PCRE 1
+* PCRE 2 (8-bit)
 
 Optional dependencies are ICU for Unicode support, OpenSSL or the GnuTLS
 OpenSSL compatibility layer for TLS, a termcap-compatible library, and zlib

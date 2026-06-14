@@ -11,7 +11,7 @@ class Tinyfugue < Formula
   depends_on "icu4c"
   depends_on "ncurses"
   depends_on "openssl@3"
-  depends_on "pcre"
+  depends_on "pcre2"
   depends_on "zlib"
 
   def install

@@ -982,6 +982,24 @@
       <dd> The ratio of a circle's circumference to its diameter.
 
 <p>
+<a name="pcre2_compat"></a>
+<a name="%pcre2_compat"></a>
+  <dt><b>pcre2_compat</b>=on
+      <dd> (flag) If on, TF will compile regular expressions using PCRE2's
+      compatibility mode, which treats unrecognized escape sequences as
+      literal characters instead of generating compilation errors. This prioritizes
+      backward compatibility for legacy scripts.
+
+<p>
+<a name="pcre2_jit"></a>
+<a name="%pcre2_jit"></a>
+  <dt><b>pcre2_jit</b>=on
+      <dd> (flag) If on, TF will use Just-In-Time (JIT) compilation for all
+      regular expression patterns, which significantly improves matching performance.
+      If JIT compilation is not supported by the environment, TF will automatically
+      fall back to standard pattern matching.
+
+<p>
 <a name="pedantic"></a>
 <a name="%pedantic"></a>
   <dt><b>pedantic</b>=off

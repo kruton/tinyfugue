@@ -889,6 +889,93 @@ static void test_status_bar_utf8(void)
 }
 #endif
 
+static void test_regex_compat(void)
+{
+    Value *val;
+
+    /* Positive matches */
+    val = expr_value("regmatch('^abc$', 'abc')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("regmatch('^abc$', 'abcd')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(0, valint(val));
+        freeval(val);
+    }
+
+    /* Caseless matching (implicitly lowercase patterns match caselessly) */
+    val = expr_value("regmatch('abc', 'ABC')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    /* Explicit case-sensitive if uppercase is present */
+    val = expr_value("regmatch('aBc', 'abc')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(0, valint(val));
+        freeval(val);
+    }
+
+    val = expr_value("regmatch('aBc', 'aBc')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    /* PCRE2 compatibility behavior: bad escape sequences */
+    /* Under default settings (pcre2_compat=on, or PCRE1 default) */
+    val = expr_value("regmatch('^\\\\q$', 'q')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+#ifdef PCRE2_CODE_UNIT_WIDTH
+    /* Test pcre2_compat=off makes bad escape fail */
+    int old_compat = special_var[VAR_pcre2_compat].val.u.ival;
+    special_var[VAR_pcre2_compat].val.u.ival = 0;
+    val = expr_value("regmatch('^\\\\q$', 'q')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(0, valint(val));
+        freeval(val);
+    }
+    special_var[VAR_pcre2_compat].val.u.ival = old_compat;
+
+    /* Test pcre2_jit=off vs on matching works */
+    int old_jit = special_var[VAR_pcre2_jit].val.u.ival;
+
+    /* Test with JIT on */
+    special_var[VAR_pcre2_jit].val.u.ival = 1;
+    val = expr_value("regmatch('^abc$', 'abc')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    /* Test with JIT off */
+    special_var[VAR_pcre2_jit].val.u.ival = 0;
+    val = expr_value("regmatch('^abc$', 'abc')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+    special_var[VAR_pcre2_jit].val.u.ival = old_jit;
+#endif
+}
+
 extern void init_util1(void);
 extern void init_expand(void);
 extern void init_variables(void);
@@ -908,6 +995,7 @@ int main(void)
     test_string_shift_attributes();
     test_display_width_helpers();
     test_default_tflibdir();
+    test_regex_compat();
 #if WIDECHAR
     test_character_offsets();
     test_decode_ansi_utf8();
