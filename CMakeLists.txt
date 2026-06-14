@@ -261,8 +261,8 @@ if(NOT HAVE_LIBZ)
     message(STATUS "MCCP support: disabled")
 endif()
 
-find_package(PCRE REQUIRED)
-target_link_libraries(tflib PUBLIC PCRE::PCRE)
+find_package(PCRE2 REQUIRED)
+target_link_libraries(tflib PUBLIC PCRE2::PCRE2)
 
 check_include_file("unistd.h" HAVE_UNISTD_H)
 check_include_file("memory.h" HAVE_MEMORY_H)

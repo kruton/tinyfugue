@@ -8,7 +8,7 @@ Build-Depends:
  ninja-build,
  libicu-dev,
  libncurses-dev,
- libpcre3-dev,
+ libpcre2-dev,
  libssl-dev,
  zlib1g-dev
 Standards-Version: 4.7.2

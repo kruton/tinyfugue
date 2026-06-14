@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     oputs("Type `/help copyright' for more information.");
     if (*contrib) oputs(contrib);
     if (*mods) oputs(mods);
-    oprintf("Using PCRE version %s", pcre_version());
+    oprintf("Using PCRE version %s", tf_pcre_version());
     oputs("Type `/help', `/help topics', or `/help intro' for help.");
     oputs("Type `/quit' to quit tf.");
     oputs("");

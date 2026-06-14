@@ -62,7 +62,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -q -y \
             cmake ninja-build libssl-dev libncurses-dev \
-            libicu-dev libpcre3-dev zlib1g-dev
+            libicu-dev libpcre2-dev zlib1g-dev
       - name: Install Clang
         if: matrix.cc == 'clang'
         run: sudo apt-get install -q -y clang
@@ -85,7 +85,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Install dependencies
-        run: brew install cmake ninja icu4c pcre openssl@3
+        run: brew install cmake ninja icu4c pcre2 openssl@3
       - name: Configure
         run: |
           cmake -S . -B build -G Ninja -DBUILD_TESTING=ON \
@@ -106,7 +106,7 @@ jobs:
         uses: vmactions/freebsd-vm@a6de9343ef5747433d9c25784c90e84998b9d69a # v1.4.6
         with:
           usesh: true
-          prepare: pkg install -y cmake ninja pcre icu openssl ncurses
+          prepare: pkg install -y cmake ninja pcre2 icu openssl ncurses
           run: |
             cmake -S . -B build -G Ninja -DBUILD_TESTING=ON
             cmake --build build
@@ -122,7 +122,7 @@ jobs:
         uses: cygwin/cygwin-install-action@3f0a3f9f988f7e96b8c18098ae05eaec175f5b52 # v6.1
         with:
           packages: >-
-            cmake gcc-core libpcre-devel libicu-devel libssl-devel
+            cmake gcc-core libpcre2-devel libicu-devel libssl-devel
             zlib-devel libncurses-devel ninja
       - name: Configure, build, and test
         shell: C:\cygwin\bin\bash.exe --login -o igncr '{0}'

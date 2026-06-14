@@ -9,14 +9,15 @@
 #ifndef PATTERN_H
 #define PATTERN_H
 
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 typedef struct RegInfo {
-    pcre *re;
-    pcre_extra *extra;
+    pcre2_code *re;
+    pcre2_match_data *match_data;
     conString *Str;
     int links;
-    int *ovector;
+    PCRE2_SIZE *ovector;
     int ovecsize;
 } RegInfo;
 
@@ -26,6 +27,7 @@ struct Pattern {
     int mflag;
 };
 
+extern const char *tf_pcre_version(void);
 extern void   reset_pattern_locale(void);
 extern void   restore_reg_scope(RegInfo *old);
 extern int    regmatch_in_scope(Value *val, const char *pattern, String *Str);

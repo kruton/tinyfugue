@@ -14,7 +14,7 @@ BuildRequires:  libicu-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  ninja-build
 BuildRequires:  openssl-devel
-BuildRequires:  pcre-devel
+BuildRequires:  pcre2-devel
 BuildRequires:  zlib-devel
 
 %description

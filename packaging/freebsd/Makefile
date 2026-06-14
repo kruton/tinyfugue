@@ -10,7 +10,7 @@ LICENSE=	GPLv2+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
 LIB_DEPENDS=	libicui18n.so:devel/icu \
-		libpcre.so:devel/pcre
+		libpcre2-8.so:devel/pcre2
 
 USES=		cmake compiler:c11 ncurses ssl
 USE_GITHUB=	yes

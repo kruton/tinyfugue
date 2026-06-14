@@ -28,7 +28,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -q -y \
             build-essential cmake debhelper devscripts \
-            libicu-dev libncurses-dev libpcre3-dev libssl-dev ninja-build \
+            libicu-dev libncurses-dev libpcre2-dev libssl-dev ninja-build \
             zlib1g-dev
       - name: Build source and binary packages
         run: |
@@ -74,7 +74,7 @@ jobs:
         run: |
           dnf install -y \
             cmake gcc libicu-devel ncurses-devel ninja-build openssl-devel \
-            pcre-devel rpm-build zlib-devel
+            pcre2-devel rpm-build zlib-devel
       - name: Build source and binary packages
         run: |
           install -d "$HOME/rpmbuild/SOURCES"
@@ -102,7 +102,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
       - name: Install dependencies
-        run: brew install cmake icu4c ncurses ninja openssl@3 pcre zlib
+        run: brew install cmake icu4c ncurses ninja openssl@3 pcre2 zlib
       - name: Prepare checkout formula
         id: source
         run: |
@@ -152,7 +152,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y cmake git icu ninja pcre pkgconf
+            pkg install -y cmake git icu ninja pcre2 pkgconf
             git clone --depth 1 https://git.FreeBSD.org/ports.git /usr/ports
           run: |
             set -eu
@@ -194,7 +194,7 @@ jobs:
         with:
           packages: >-
             cmake cygport gcc-core git libicu-devel libncurses-devel
-            libpcre-devel libssl-devel ninja python3 zlib-devel
+            libpcre2-devel libssl-devel ninja python3 zlib-devel
       - name: Build and inspect package
         shell: C:\cygwin\bin\bash.exe --login -o igncr '{0}'
         run: |
