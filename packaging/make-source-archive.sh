@@ -45,7 +45,8 @@ esac
 mkdir -p "$(dirname "$output")"
 tmp="${output}.tmp.$$"
 tmp_tar="${output}.tar.tmp.$$"
-trap 'rm -f "$tmp" "$tmp_tar"' EXIT HUP INT TERM
+tmp_dir=
+trap 'rm -f "$tmp" "$tmp_tar"; if [ -n "$tmp_dir" ]; then rm -rf "$tmp_dir"; fi' EXIT HUP INT TERM
 
 if $exclude_debian; then
     git -c "safe.directory=$repo" -C "$repo" archive \
@@ -56,6 +57,22 @@ else
         --format=tar --prefix="${prefix}/" \
         --output="$tmp_tar" HEAD
 fi
+
+# Determine the fork version to write
+if git -c "safe.directory=$repo" -C "$repo" describe --tags --exact-match --match "v*" >/dev/null 2>&1; then
+    GIT_TAG=$(git -c "safe.directory=$repo" -C "$repo" describe --tags --exact-match --match "v*")
+    FORK_VERSION="kruton-${GIT_TAG#v}"
+else
+    GIT_COMMIT_HASH=$(git -c "safe.directory=$repo" -C "$repo" rev-parse --short HEAD)
+    FORK_VERSION="kruton-dev-g${GIT_COMMIT_HASH}"
+fi
+
+# Append fork_version.txt to the tarball under the prefix directory
+tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/tinyfugue-archive.XXXXXX")
+mkdir -p "${tmp_dir}/${prefix}"
+echo "${FORK_VERSION}" > "${tmp_dir}/${prefix}/fork_version.txt"
+tar -C "$tmp_dir" -rf "$tmp_tar" "${prefix}/fork_version.txt"
+
 gzip -n <"$tmp_tar" >"$tmp"
 mv "$tmp" "$output"
 rm -f "$tmp_tar"
