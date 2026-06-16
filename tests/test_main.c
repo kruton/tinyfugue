@@ -980,7 +980,12 @@ static void test_regex_compat(void)
 extern struct Value *handle_def_command(String *args, int offset);
 extern struct Value *handle_undefn_command(String *args, int offset);
 
-static void dummy_free(void *datum, const char *file, int line) {}
+static void dummy_free(void *datum, const char *file, int line)
+{
+    (void)datum;
+    (void)file;
+    (void)line;
+}
 
 static void test_regression_fixes(void)
 {

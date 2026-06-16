@@ -266,11 +266,15 @@ struct Value *handle_sh_command(String *args, int offset)
 
 struct Value *handle_suspend_command(String *args, int offset)
 {
+    (void)args;
+    (void)offset;
     return newint(suspend());
 }
 
 struct Value *handle_version_command(String *args, int offset)
 {
+    (void)args;
+    (void)offset;
     oprintf("%% %s.", version);
     oprintf("%% %s.", copyright);
     if (*fork_version) oprintf("%% Fork version: %s.", fork_version);
@@ -459,6 +463,8 @@ struct Value *handle_relimit_command(String *args, int offset)
     Screen *screen = display_screen;
     Value *result = val_one;
 
+    (void)args;
+    (void)offset;
     if (!enable_screen_filter(screen)) {
 	alert(limit_none);
 	result = val_zero;
@@ -474,6 +480,8 @@ struct Value *handle_unlimit_command(String *args, int offset)
 {
     Screen *screen = display_screen;
 
+    (void)args;
+    (void)offset;
     if (!screen_has_filter(screen))
 	return shareval(val_zero);
     clear_screen_filter(screen);

@@ -554,9 +554,8 @@ static int debugger_dump(void)
 	    fprintf(stderr, "fork: %s\r\n", strerror(errno));
 	} else if (child_pid > 0) {
 	    /* parent */
-	    pid_t wait_pid = 0;
 	    int status = 0;
-	    wait_pid = waitpid(child_pid, &status, 0);
+	    waitpid(child_pid, &status, 0);
 	    if (shell_status(status) == 0) {
 		return 1;
 	    } else {

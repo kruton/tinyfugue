@@ -353,6 +353,7 @@ struct Value *handle_kill_command(String *args, int offset)
 
 int ch_lpquote(Var *var)
 {
+    (void)var;
     runall(lpquote, NULL);
     return 1;
 }

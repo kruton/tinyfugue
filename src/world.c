@@ -435,6 +435,7 @@ void mapworld(void (*func)(World *world))
 /* used by %{default_charset} */
 int ch_default_charset(Var *var)
 {
+    (void)var;
     UErrorCode err = U_ZERO_ERROR;
     UConverter *cnv = ucnv_open(default_charset->data, &err);
 

@@ -208,7 +208,7 @@ void  (*tp)(const char *str);
 String status_line[][1] = {	    /* formatted status lines, without alert */
     STATIC_BUFFER_INIT, STATIC_BUFFER_INIT, STATIC_BUFFER_INIT,
     STATIC_BUFFER_INIT, STATIC_BUFFER_INIT, STATIC_BUFFER_INIT };
-#define max_status_height   (sizeof(status_line)/sizeof(String))
+#define max_status_height   ((int)(sizeof(status_line)/sizeof(String)))
 static StatusField *variable_width_field[max_status_height];
 
 STATIC_BUFFER(outbuf);              /* output buffer */
@@ -317,7 +317,7 @@ static Keycode keycodes[] = {  /* this list is sorted by tolower(name)! */
     { "Up",             "ku", KEYCODE( "\033OA",   "\033[A",   "\033[A" ) }
 };
 
-#define N_KEYCODES	(sizeof(keycodes)/sizeof(Keycode))
+#define N_KEYCODES	((int)(sizeof(keycodes)/sizeof(Keycode)))
 
 int lines   = DEFAULT_LINES;
 int columns = DEFAULT_COLUMNS;
@@ -374,6 +374,7 @@ void dobell(int n)
 
 int change_term(Var *var)
 {
+    (void)var;
     fix_screen();
     init_term();
     redraw();
@@ -1331,7 +1332,7 @@ conString *status_field_text(int row)
 	    Stringcat(buf, f->var->val.name);
 	} else if (f->name) {
 	    Sappendf(buf, "\"%q\"", '"', f->name);
-	    if (width == strlen(f->name)) width = 0;
+	    if (width == (int)strlen(f->name)) width = 0;
 	}
 	if (!width && !f->attrs && !f->rightjust)
 	    continue;
@@ -1614,6 +1615,7 @@ struct Value *handle_status_add_command(String *args, int offset)
 
 int ch_status_fields(Var *var)
 {
+    (void)var;
     if (warn_status) {
 	tfwprintf("setting status_fields directly is deprecated, "
 	    "and may clobber useful new features introduced in version 5.  "
@@ -1942,13 +1944,12 @@ void format_status_line(void)
 {
     ListEntry *node;
     StatusField *field;
-    int row, column, width;
+    int row, column;
 
     for (row = 0; row < status_height; row++) {
 	Stringtrunc(status_line[row], 0);
 
 	column = 0;
-	width = 0;
 	for (node = statusfield_list[row]->head; node; node = node->next) {
 	    field = (StatusField *)node->datum;
 
@@ -1962,7 +1963,7 @@ void format_status_line(void)
 				      column - current_col, status_attr);
 	    }
 
-	    width = format_statusfield(field, status_line[row]);
+	    format_statusfield(field, status_line[row]);
 	}
 
 	int current_col = tf_string_width(status_line[row]->data,
@@ -1991,6 +1992,7 @@ int display_status_line(void)
 
 int update_status_line(Var *var)
 {
+    (void)var;
     /* XXX optimization:  some code that calls update_status_line() without
      * any change in status_line could call display_status_line() directly,
      * avoiding reformatting (in particular, status_{int,var}_* execution). */
@@ -2134,6 +2136,7 @@ int ch_status_height(Var *var)
 
 int ch_expnonvis(Var *var)
 {
+    (void)var;
     if (!can_have_expnonvis && expnonvis) {
         eprintf("expnonvis mode is not supported on this terminal.");
 	return 0;
@@ -2148,6 +2151,7 @@ int ch_expnonvis(Var *var)
 /* used by %{wrap}, %{wrappunct}, %{wrapsize}, %{wrapspace} */
 int ch_wrap(Var *var)
 {
+    (void)var;
     if (screen_mode < 0)	/* e.g., called by init_variables() */
 	return 1;
 
@@ -2336,8 +2340,6 @@ static int ioutputs(const char *str, int len)
  */
 static void ioutall(int kpos)
 {
-    int ppos;
-
     if (kpos < 0) {                  /* posible only if there's a prompt */
 #if WIDECHAR
         int prompt_rows = 0, prompt_column = 0;
@@ -2352,6 +2354,7 @@ static void ioutall(int kpos)
         hwrite(prompt, start_offset, prompt->len - start_offset, 0);
         iendx = prompt_column + 1;
 #else
+        int ppos;
         kpos = -(-kpos % Wrap);
         ppos = prompt->len + kpos;
         if (ppos < 0) ppos = 0;
@@ -3233,6 +3236,7 @@ int clear_more(int new)
 
 int tog_more(Var *var)
 {
+    (void)var;
     if (!more) clear_more(display_screen->outcount);
     else reset_outcount(display_screen);
     return 1;
@@ -3240,6 +3244,7 @@ int tog_more(Var *var)
 
 int tog_keypad(Var *var)
 {
+    (void)var;
     if (!keypad_on) {
 	if (keypad)
 	    eprintf("don't know how to enable keypad on %s terminal", TERM);

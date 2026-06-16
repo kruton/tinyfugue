@@ -769,7 +769,7 @@ Value *prog_interpret(const Program *prog, int in_expr)
 		constr = blankline;
 		if (patmatch(&looks_like_special_sub_ic, NULL, val->name)) {
 		    char upper[64];
-		    int i;
+		    size_t i;
 		    for (i = 0; i < sizeof(upper) && val->name[i]; i++)
 			upper[i] = ucase(val->name[i]);
 		    tfwprintf("\"%%{%s}\" is a variable substitution, "
