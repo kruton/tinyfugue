@@ -238,13 +238,13 @@ static Macro *macro_spec(String *args, int offset, int *xmflag, ListOpts *listop
     while (!error && (opt = nextopt(&ptr, &uval, NULL, &offset))) {
         switch (opt) {
         case 'u':
-            listopts->usedflag = 1;
+            if (listopts) listopts->usedflag = 1;
             break;
         case 's':
-            listopts->shortflag = 1;
+            if (listopts) listopts->shortflag = 1;
             break;
         case 'S':
-            listopts->cmp = cstrpppcmp;
+            if (listopts) listopts->cmp = cstrpppcmp;
             break;
         case 'm':
             if (!(error = ((i = enum2int(ptr, 0, enum_match, "-m")) < 0))) {
@@ -343,12 +343,13 @@ static Macro *macro_spec(String *args, int offset, int *xmflag, ListOpts *listop
 
 	    {
 	    char *start, *end, *buf = STRDUP(ptr); /* XXX optimize */
-	    for (i = 0, start = buf; !error && i < n; i++, start = end+1) {
+	    for (i = 0, start = buf; !error && i < n; i++) {
 		attr_t attr;
 		if ((end = strchr(start, ';')))
 		    *end = '\0';
 		if (end == start) { /* skip empty */
 		    i--;
+		    start = end + 1;
 		    continue;
 		}
 		if (*start == 'L') {
@@ -366,6 +367,7 @@ static Macro *macro_spec(String *args, int offset, int *xmflag, ListOpts *listop
 		}
 		error = !parse_attrs(start, &attr, 0);
 		spec->subattr[i].attr = attr;
+		if (end) start = end + 1;
 	    }
 	    FREE(buf);
 	    }
@@ -1568,7 +1570,7 @@ int do_hook(int hooknum, const char *fmt, const char *argfmt, ...)
         va_end(ap);
     }
 
-    if (hookflag || hilite || gag) {
+    if (args) {
         ran = find_and_run_matches(args, hooknum, &line, xworld(), TRUE, 0);
         Stringfree(args);
     }
@@ -1626,6 +1628,10 @@ int find_and_run_matches(String *text, int hooknum, String **linep,
 	worldtype = "";
     if (!text)
         text = *linep;
+    if (!text) {
+        recur_count--;
+        return 0;
+    }
     text->links++; /* in case substitute() frees text */
     recur_count++;
     if (hooknum>=0) {
@@ -1687,7 +1693,7 @@ int find_and_run_matches(String *text, int hooknum, String **linep,
 			enqueue(runq, macro);
 		    } else {
 			ran += run_match(macro, text, hooknum);
-			if (linep && hooknum<0) {
+			if (linep && *linep && hooknum<0) {
 			    /* in case of /substitute */ /* XXX */
 			    Stringfree(text);
 			    text = *linep;
@@ -1890,7 +1896,7 @@ static int run_match(
 {
     int ran = 0;
     struct Sock *callingsock = xsock;
-    RegInfo *old;
+    RegInfo *old = NULL;
 
     if (hooknum < 0) { /* trigger */
 	if (!borg) return 0;

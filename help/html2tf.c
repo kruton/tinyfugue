@@ -77,8 +77,9 @@ int main(int argc, char *argv[])
     int c, i, j;
     char *s, *t;
     long line;
-    int inlink, under, bold, inquote, inattr, iscomment, defwidth, dt;
+    int inlink, under, bold, inquote, inattr, iscomment, defwidth = 0, dt = 0;
 
+    (void)argc;
     while (*++argv) {
         line = 1;
         if (!(file = fopen(*argv, "r"))) {
@@ -118,6 +119,7 @@ int main(int argc, char *argv[])
                 tag[taglen] = '\0';
                 attr[attrlen] = '\0';
 		if (iscomment) {
+		    if (c == EOF) break;
 		    if (taglen < 5 || strcmp(tag + taglen - 2, "--") != 0)
 			goto continuetag;
 		}
@@ -379,8 +381,9 @@ int main(int argc, char *argv[])
                     }
                     /* fprintf(stderr, "longest = %d\n", maxvis); */
                     /* maxvis += 1; */
+                    if (maxvis <= 0) maxvis = 1;
                     cols = (MAX_LINE_LEN - margin - indent) / maxvis;
-                    /* fprintf(stderr, "cols = %d\n", cols); */
+                    if (cols <= 0) cols = 1;
                     rows = (dircount - 1) / cols + 1;
                     /* fprintf(stderr, "rows = %d\n", rows); */
                     for (i = 0; i < rows; i++) {
@@ -435,6 +438,7 @@ int main(int argc, char *argv[])
                     if (c == ';') break;
                     tag[taglen++] = c;
                 }
+                if (c == EOF) break;
                 tag[taglen] = '\0';
                 if (strcasecmp(tag, "amp") == 0) {
                     addc('&');

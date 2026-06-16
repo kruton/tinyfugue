@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 
-int main(int argc, char **argv)
+int main(void)
 {
     char line[240+1];
     long offset = 0;

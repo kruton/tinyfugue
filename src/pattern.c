@@ -228,8 +228,10 @@ int tf_reg_exec(RegInfo *ri,
     if (Sstr) {
 	str = Sstr->data;
 	len = Sstr->len;
-    } else {
+    } else if (str) {
 	len = strlen(str);
+    } else {
+	return 0;
     }
     result = pcre2_match(ri->re, (PCRE2_SPTR)str, len, startoffset,
 	startoffset ? PCRE2_NOTBOL : 0, ri->match_data, NULL);
@@ -440,7 +442,7 @@ int smatch(const char *pat, const char *str)
 
         case '}': case '|':
             if (inword) return (*str && !is_space(*str));
-            /* else FALL THROUGH to default case */
+            /* fallthrough */
 
         default:
             if (lcase(*pat++) != lcase(*str++)) return 1;

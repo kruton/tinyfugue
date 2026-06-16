@@ -13,6 +13,7 @@
 #include "search.h"
 #include "tfio.h"
 #include "variable.h"
+#include "util.h"
 
 static int failures;
 
@@ -976,6 +977,55 @@ static void test_regex_compat(void)
 #endif
 }
 
+extern struct Value *handle_def_command(String *args, int offset);
+extern struct Value *handle_undefn_command(String *args, int offset);
+
+static void dummy_free(void *datum, const char *file, int line) {}
+
+static void test_regression_fixes(void)
+{
+    /* Test 1: STRDUP(NULL) and STRNDUP(NULL) should safely return NULL */
+    EXPECT_TRUE(STRDUP(NULL) == NULL);
+    EXPECT_TRUE(STRNDUP(NULL, 10) == NULL);
+
+    /* Test 2: Circular queue with size 0 should not crash on encqueue */
+    {
+        CQueue cq;
+        memset(&cq, 0, sizeof(CQueue));
+        init_cqueue(&cq, 0, dummy_free);
+        encqueue(&cq, (void*)"test");
+        free_cqueue(&cq);
+    }
+
+    /* Test 3: Macro definition with -P (sub-attributes) options (semicolon pointer arithmetic fix) */
+    {
+        // With semicolon
+        String *args = owned_string("-P1bold;2red test_macro_p1 = echo hello", -1, 0);
+        struct Value *ret = handle_def_command(args, 0);
+        Stringfree(args);
+        EXPECT_TRUE(ret != NULL);
+        if (ret) freeval(ret);
+
+        // Without semicolon (single element, previously triggered NULL+1 pointer arithmetic)
+        args = owned_string("-P1bold test_macro_p2 = echo hello", -1, 0);
+        ret = handle_def_command(args, 0);
+        Stringfree(args);
+        EXPECT_TRUE(ret != NULL);
+        if (ret) freeval(ret);
+        
+        // Clean up
+        args = owned_string("test_macro_p1", -1, 0);
+        ret = handle_undefn_command(args, 0);
+        Stringfree(args);
+        if (ret) freeval(ret);
+
+        args = owned_string("test_macro_p2", -1, 0);
+        ret = handle_undefn_command(args, 0);
+        Stringfree(args);
+        if (ret) freeval(ret);
+    }
+}
+
 extern void init_util1(void);
 extern void init_expand(void);
 extern void init_variables(void);
@@ -991,6 +1041,7 @@ int main(void)
     init_util2();
     init_attrs();
 
+    test_regression_fixes();
     test_encode_ansi();
     test_string_shift_attributes();
     test_display_width_helpers();

@@ -674,7 +674,7 @@ reduce_exit:
 static int reduce_arithmetic(opcode_t op, const Value *val0, int n, Value *res)
 {
     int i;
-    int int0, int1, neg0, neg1, sum;
+    int int0, int1, neg0, neg1, sum = 0;
     double f;
     struct timeval t, t1;
     type_t type, promoted_type = 0;
@@ -1257,12 +1257,12 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
 		tm.tm_year = 0;
 		tm.tm_isdst = -1;
 		switch (n) {
-		    case 7: usec       = opdint(n-6);
-		    case 6: tm.tm_sec  = opdint(n-5);
-		    case 5: tm.tm_min  = opdint(n-4);
-		    case 4: tm.tm_hour = opdint(n-3);
-		    case 3: tm.tm_mday = opdint(n-2);
-		    case 2: tm.tm_mon  = opdint(n-1) - 1;
+		    case 7: usec       = opdint(n-6); /* fallthrough */
+		    case 6: tm.tm_sec  = opdint(n-5); /* fallthrough */
+		    case 5: tm.tm_min  = opdint(n-4); /* fallthrough */
+		    case 4: tm.tm_hour = opdint(n-3); /* fallthrough */
+		    case 3: tm.tm_mday = opdint(n-2); /* fallthrough */
+		    case 2: tm.tm_mon  = opdint(n-1) - 1; /* fallthrough */
 		    case 1: tm.tm_year = opdint(n-0) - 1900;
 		}
 		t = mktime(&tm);

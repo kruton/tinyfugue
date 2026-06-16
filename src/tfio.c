@@ -272,7 +272,16 @@ TFILE *tfopen(const char *name, const char *mode)
 
     if (fp) {
         errno = EAGAIN;  /* in case malloc fails */
-        if (!(result = (TFILE*)MALLOC(sizeof(TFILE)))) return NULL;
+        if (!(result = (TFILE*)MALLOC(sizeof(TFILE)))) {
+#ifdef PLATFORM_UNIX
+            if (type == TF_PIPE) pclose(fp);
+            else fclose(fp);
+#else
+            fclose(fp);
+#endif
+            if (newname) FREE(newname);
+            return NULL;
+        }
         result->type = type;
         result->name = newname;
         result->id = 0;
@@ -605,7 +614,7 @@ void vSprintf(String *buf, int flags, const char *fmt, va_list ap)
             if (!(quote = (char)va_arg(ap, int))) break;
             if (!(sval = va_arg(ap, char *))) break;
 	    if (flags & SP_CHECK) sval = checkstring(sval);
-            for ( ; *sval; sval = q) {
+            for (q = sval; *sval; sval = q) {
 		if (*fmt == 'b' && !is_print(*q)) {
 		    if (max < 4) break;
 		    max -= 4;

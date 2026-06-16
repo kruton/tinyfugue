@@ -399,9 +399,10 @@ void crash(int internal, const char *fmt, const char *file, int line, long n)
 	fclose(dumpfile);
     debugger_dump();
     raise(SIGQUIT);
+    abort();
 }
 
-static char dumpname[32] = "................................";
+static char dumpname[64];
 static char exebuf[PATH_MAX+1];
 static const char *initial_path = NULL;
 static char initial_dir[PATH_MAX+1] = "."; /* default: many users never chdir */
@@ -493,20 +494,42 @@ static const char *get_exename(pid_t pid)
 	return argv0;
     }
     if (strchr(argv0, '/')) {
-	sprintf(exebuf, "%s/%s", initial_dir, argv0);
-	return exebuf;
+	if (strlen(initial_dir) + 1 + strlen(argv0) < sizeof(exebuf)) {
+	    strcpy(exebuf, initial_dir);
+	    strcat(exebuf, "/");
+	    strcat(exebuf, argv0);
+	    return exebuf;
+	}
+	return NULL;
     }
     if (!initial_path || !*initial_path)
 	return NULL;
     dir = initial_path;
     while (1) {
 	len = strcspn(dir, ":\0");
-	if (*dir == '/')
-	    sprintf(exebuf, "%.*s/%s", (int) len, dir, argv0);
-	else
-	    sprintf(exebuf, "%s/%.*s/%s", initial_dir, (int) len, dir, argv0);
+	if (*dir == '/') {
+	    if (len + 1 + strlen(argv0) < sizeof(exebuf)) {
+		memcpy(exebuf, dir, len);
+		exebuf[len] = '/';
+		strcpy(exebuf + len + 1, argv0);
+	    } else {
+		goto next_dir;
+	    }
+	} else {
+	    size_t id_len = strlen(initial_dir);
+	    if (id_len + 1 + len + 1 + strlen(argv0) < sizeof(exebuf)) {
+		strcpy(exebuf, initial_dir);
+		exebuf[id_len] = '/';
+		memcpy(exebuf + id_len + 1, dir, len);
+		exebuf[id_len + 1 + len] = '/';
+		strcpy(exebuf + id_len + 1 + len + 1, argv0);
+	    } else {
+		goto next_dir;
+	    }
+	}
 	if (stat(exebuf, &statbuf) == 0)
 	    return exebuf;
+next_dir:
 	if (!dir[len])
 	    break;
 	dir += len + 1;
@@ -541,10 +564,10 @@ static int debugger_dump(void)
 	} else {
 	    /* child */
 	    char inname[1024];
-	    char cmd[2048];
+	    char cmd[8192];
 	    int retval;
-	    sprintf(inname, "%.1000s/tf.gdb", TFLIBDIR);
-	    sprintf(cmd, "chmod go-rwx %s; gdb -n -batch -x %s '%s' %d "
+	    snprintf(inname, sizeof(inname), "%.1000s/tf.gdb", TFLIBDIR);
+	    snprintf(cmd, sizeof(cmd), "chmod go-rwx %s; gdb -n -batch -x %s '%s' %d "
 		">>%s 2>&1", dumpname, inname, exename, tf_pid, dumpname);
 	    retval = system(cmd);
 	    exit(shell_status(retval) == 0 ? 0 : 1);

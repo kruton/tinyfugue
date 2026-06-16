@@ -41,7 +41,18 @@
 # define PURE
 #endif
 #ifndef NORET
-# define NORET
+# ifdef __GNUC__
+#  define NORET __attribute__ ((noreturn))
+# else
+#  define NORET
+# endif
+#endif
+#ifndef RETURNS_NONNULL
+# ifdef __GNUC__
+#  define RETURNS_NONNULL __attribute__ ((returns_nonnull))
+# else
+#  define RETURNS_NONNULL
+# endif
 #endif
 
 #if 0

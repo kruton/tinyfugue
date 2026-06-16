@@ -65,11 +65,11 @@ extern void   dfree(void *md, void *ptr,
 #endif
 
 extern void  *xmalloc(void *md, long unsigned size,
-                       const char *file, const int line);
+                       const char *file, const int line) RETURNS_NONNULL;
 extern void  *xcalloc(void *md, long unsigned size,
-                       const char *file, const int line);
+                       const char *file, const int line) RETURNS_NONNULL;
 extern void  *xrealloc(void *md, void *ptr, long unsigned size,
-                       const char *file, const int line);
+                       const char *file, const int line) RETURNS_NONNULL;
 extern void      xfree(void *md, void *ptr,
                        const char *file, const int line);
 extern void      init_malloc(void);

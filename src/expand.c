@@ -472,9 +472,9 @@ Value *prog_interpret(const Program *prog, int in_expr)
 {
     Value *val, *val2, *result = NULL;
     String *str, *tbuf;
-    conString *constr;
-    int cip, stackbot, no_arg;
-    int empty;	/* for varsub default */
+    conString *constr = NULL;
+    int cip, stackbot, no_arg = 0;
+    int empty = 0;	/* for varsub default */
     opcode_t op;
     int first, last, n;
     int instruction_count = 0;
@@ -1314,7 +1314,7 @@ static int list(Program *prog, int subs)
     int failed = 0, result = 0;
     const char *stmtstart;
     int is_pipe = 0;
-    int block_start, jump_point, oldlen;
+    int block_start = 0, jump_point = 0, oldlen;
 
     /* Do NOT strip leading space here.  This allows user to type and send
      * lines with leading spaces (but completely empty lines are handled

@@ -69,7 +69,7 @@ typedef struct Proc {
 
 static struct Value *killproc(Proc *proc, int needresult);
 
-static void format_approx_interval(char *buf, struct timeval *tv);
+static void format_approx_interval(char *buf, size_t size, struct timeval *tv);
 static void nukeproc(Proc *proc);
 static int  runproc(Proc *proc);
 static int  do_repeat(Proc *proc);
@@ -83,16 +83,24 @@ static Proc *proclist = NULL;		/* head of process list */
 static Proc *proctail = NULL;		/* tail of process list */
 
 
-static void format_approx_interval(char *buf, struct timeval *tvp)
+static void format_approx_interval(char *buf, size_t size, struct timeval *tvp)
 {
-    if (tvp->tv_sec >= 60*60*100)
-        sprintf(buf, "%6ld h", (long)tvp->tv_sec/3600);
-    else if (tvp->tv_sec >= 60)
-        sprintf(buf, "%2ld:%02ld:%02ld", (long)tvp->tv_sec/3600,
+    long h = (long)tvp->tv_sec/3600;
+    if (tvp->tv_sec >= 60*60*100) {
+        if (h > 999999) h = 999999;
+        snprintf(buf, size, "%6ld h", h);
+    } else if (tvp->tv_sec >= 60) {
+        snprintf(buf, size, "%2ld:%02ld:%02ld", h,
             (long)(tvp->tv_sec/60) % 60, (long)tvp->tv_sec % 60);
-    else
-        sprintf(buf, "%4ld.%03ld",
-            (long)tvp->tv_sec, (long)tvp->tv_usec / 1000);
+    } else {
+        long sec = (long)tvp->tv_sec;
+        long usec = (long)tvp->tv_usec / 1000;
+        if (sec < 0) sec = 0;
+        if (sec > 59) sec = 59;
+        if (usec < 0) usec = 0;
+        if (usec > 999) usec = 999;
+        snprintf(buf, size, "%4ld.%03ld", sec, usec);
+    }
 }
 
 struct Value *handle_ps_command(String *args, int offset)
@@ -149,7 +157,7 @@ struct Value *handle_ps_command(String *args, int offset)
             if (next.tv_sec < 0 || next.tv_usec < 0)
                 sprintf(nbuf, "%8s", "pending");
             else if (next.tv_sec >= 0)
-                format_approx_interval(nbuf, &next);
+                format_approx_interval(nbuf, sizeof(nbuf), &next);
         }
         sprintf(obuf, "%-8.8s ", p->world ? p->world->name : "");
         if (p->ptime.tv_sec == PTIME_SYNC) {
@@ -159,7 +167,7 @@ struct Value *handle_ps_command(String *args, int offset)
         } else if (p->ptime.tv_sec < 0) {
             strcpy(obuf+9, "        ");
         } else {
-            format_approx_interval(obuf+9, &p->ptime);
+            format_approx_interval(obuf+9, sizeof(obuf) - 9, &p->ptime);
         }
         if (p->type == P_REPEAT) {
             char cbuf[32];
@@ -170,7 +178,7 @@ struct Value *handle_ps_command(String *args, int offset)
             oprintf("%5d %s r   %s %5s %S",
                 p->pid, nbuf, obuf, cbuf, p->cmd);
         } else {
-	    char disp;
+	    char disp = '?';
 	    switch (p->disp) {
 	    case DISP_ECHO: disp = 'e'; break;
 	    case DISP_SEND: disp = 's'; break;
@@ -202,6 +210,7 @@ static struct Value *newproc(int type, int (*func)(Proc *proc), int count,
     if (type == P_REPEAT) {
 	if (!(proc->prog = compile_tf(CS(cmd), 0, SUB_MACRO, 0, 0))) {
 	    Stringfree(cmd);
+	    FREE(proc);
 	    return shareval(val_zero);
 	}
     } else {
@@ -508,8 +517,10 @@ static int procopt(const char *opts, String *args, int *offsetp,
                 return FALSE;
             break;
         case 's':
-            if ((*subflag = enum2int(ptr, 0, enum_sub, "-s")) < 0)
-                return FALSE;
+            if (subflag) {
+                if ((*subflag = enum2int(ptr, 0, enum_sub, "-s")) < 0)
+                    return FALSE;
+            }
             break;
         case 'S':
             ptime->tv_sec = PTIME_SYNC;
@@ -518,8 +529,10 @@ static int procopt(const char *opts, String *args, int *offsetp,
             ptime->tv_sec = PTIME_PROMPT;
             break;
         case 'd':
-            if ((*disp = enum2int(ptr, 0, enum_disp, "-d")) < 0)
-                return FALSE;
+            if (disp) {
+                if ((*disp = enum2int(ptr, 0, enum_disp, "-d")) < 0)
+                    return FALSE;
+            }
             break;
         case 'n':
             *delay = FALSE;
