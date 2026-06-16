@@ -532,7 +532,8 @@ static int macro_match(Macro *spec, Macro *macro, AuxPat *aux)
 	/* -h0 */
 	if (macro->flags & MACRO_HOOK) return 0;
     } else if (spec->flags & MACRO_HOOK) {
-	int i, hit = 0;
+	size_t i;
+	int hit = 0;
 	if (!(macro->flags & MACRO_HOOK)) return 0;
 	for (i = 0; i < sizeof(spec->hook)/sizeof(long); i++) {
 	    if ((hit = (spec->hook.bits[i] & macro->hook.bits[i])))

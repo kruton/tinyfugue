@@ -113,6 +113,9 @@ String *dSinit(
     const char *file,
     int line)
 {
+#if !USE_MMALLOC
+    (void)md;
+#endif
     if (data && len < 0)
         len = strlen(data);
     if (!str) {
@@ -123,7 +126,9 @@ String *dSinit(
             if (!md || !str)
 #endif
             {
+#if USE_MMALLOC
                 md = NULL;
+#endif
                 str = xmalloc(NULL, sizeof(*str) + len + 1, file, line);
             }
             str->data = (char*)str + sizeof(*str);
@@ -236,7 +241,7 @@ String *dSnadd(String *str, int c, int n, const char *file, int line)
 String *dStrunc(String *str, int len, const char *file, int line)
 {
     /* if (str->size && str->len < len) return str; */
-    unsigned int oldlen = str->len;
+    int oldlen = str->len;
     str->len = len;
     lcheck(str, file, line);
     if (len <= oldlen) {

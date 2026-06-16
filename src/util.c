@@ -552,6 +552,7 @@ nextopt_error:
 #if HAVE_TZSET
 int ch_timezone(Var *var)
 {
+    (void)var;
     tzset();
     return 1;
 }
@@ -559,6 +560,7 @@ int ch_timezone(Var *var)
 
 int ch_locale(Var *var)
 {
+    (void)var;
 #if HAVE_SETLOCALE
 
 #define tf_setlocale(cat, name, value) \
@@ -589,6 +591,7 @@ int ch_locale(Var *var)
 
 int ch_maildelay(Var *var)
 {
+    (void)var;
     mail_update = tvzero;
     return 1;
 }
@@ -619,6 +622,7 @@ static mail_info_t *add_mail_file(mail_info_t *newlist, char *name)
 
 int ch_mailfile(Var *var)
 {
+    (void)var;
     const char *path, *end;
     char *name, *p;
     mail_info_t *newlist = NULL;

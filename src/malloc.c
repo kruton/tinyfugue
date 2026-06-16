@@ -24,6 +24,7 @@ void *xmalloc(void *md, long unsigned size, const char *file, const int line)
 {
     void *memory;
 
+    (void)md;
     if ((long)size <= 0)
         core("xmalloc(%ld).", file, line, (long)size);
 
@@ -47,6 +48,7 @@ void *xrealloc(void *md, void *ptr, long unsigned size,
 {
     void *memory;
 
+    (void)md;
     if ((long)size <= 0)
         core("xrealloc(%ld).", file, line, (long)size);
 
@@ -76,6 +78,9 @@ void *xcalloc(void *md, long unsigned size, const char *file, const int line)
 
 void xfree(void *md, void *ptr, const char *file, const int line)
 {
+    (void)md;
+    (void)file;
+    (void)line;
     dfree(md, ptr, file, line);
     if (!reserve)
         init_malloc();

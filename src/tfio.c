@@ -75,7 +75,7 @@ void init_tfio(void)
 {
     int i;
 
-    for (i = 0; i < sizeof(filemap)/sizeof(*filemap); i++)
+    for (i = 0; i < (int)(sizeof(filemap)/sizeof(*filemap)); i++)
         filemap[i] = NULL;
     init_list(userfilelist);
 
@@ -985,6 +985,8 @@ TFILE *find_usable_tfile(const char *handle, int mode)
 struct Value *handle_liststreams_command(String *args, int offset)
 {
     int count = 0;
+    (void)args;
+    (void)offset;
     TFILE *file;
     ListEntry *node;
 

@@ -408,7 +408,7 @@ static fd_set readers;		/* input file descriptors */
 static fd_set active;		/* active file descriptors */
 static fd_set writers;		/* pending connections */
 static fd_set connected;	/* completed connections */
-static unsigned int nfds;	/* max # of readers/writers */
+static int nfds;	/* max # of readers/writers */
 static Sock *hsock = NULL;	/* head of socket list */
 static Sock *tsock = NULL;	/* tail of socket list */
 static Sock *fsock = NULL;	/* foreground socket */
@@ -986,6 +986,7 @@ void readers_set(int fd)
 int tog_bg(Var *var)
 {
     Sock *sock;
+    (void)var;
     if (background)
         for (sock = hsock; sock; sock = sock->next)
             if (sock->constate == SS_CONNECTED)
@@ -997,6 +998,8 @@ int tog_keepalive(Var *var)
 {
     Sock *sock;
     int flags;
+
+    (void)var;
 
     flags = keepalive;
     for (sock = hsock; sock; sock = sock->next) {
@@ -1866,6 +1869,8 @@ static int nonblocking_gethost(const char *name, const char *port,
     int fds[2];
     int err;
 
+    (void)res;
+
     *what = "pipe";
     if (pipe(fds) < 0) return -1;
 
@@ -2710,7 +2715,7 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 
     /* Buf1 -> Buf2  [Telnet escape]   */
     i = 0; j = 0;
-    while (j < len) {
+    while (j < (int)len) {
         if (xsock->flags & SOCKTELNET && buffer1[j] == TN_IAC)
             buffer2[i++] = TN_IAC;    /* double IAC */
         buffer2[i] = unmapchar(buffer1[j]);
@@ -2836,6 +2841,7 @@ conString *fgprompt(void)
 
 int tog_lp(Var *var)
 {
+    (void)var;
     if (!fsock) {
         /* do nothing */
     } else if (lpflag) {
@@ -2863,6 +2869,7 @@ int handle_prompt_func(conString *str)
 
 static void handle_prompt(String *str, int offset, int confirmed)
 {
+    (void)offset;
     runall(1, xsock->world);	/* run prompted processes */
     if (xsock->prompt) {
         unprompt(xsock, 0);

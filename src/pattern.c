@@ -83,6 +83,7 @@ RegInfo *new_reg_scope(RegInfo *ri, String *Str)
 {
     RegInfo *old;
 
+    (void)Str;
     old = reginfo;
     reginfo = ri ? ri : reginfo;	/* use new ri or inherit old reginfo */
     if (reginfo) reginfo->links++;
@@ -133,6 +134,10 @@ static RegInfo *tf_reg_compile_fl(const char *pattern, int optimize,
 {
     RegInfo *ri;
     const char *s;
+
+    (void)optimize;
+    (void)file;
+    (void)line;
     uint32_t options = PCRE2_DOLLAR_ENDONLY | PCRE2_DOTALL | PCRE2_CASELESS;
 #if WIDECHAR
     options |= PCRE2_UTF | PCRE2_UCP;
