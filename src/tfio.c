@@ -756,7 +756,7 @@ void internal_error(const char *file, int line, const char *fmt, ...)
 {
     va_list ap;
 
-    eprintf("Internal error at %s:%d, %s.  %s", file, line, version, interrmsg);
+    eprintf("Internal error at %s:%d, %s (fork %s).  %s", file, line, version, fork_version, interrmsg);
     if (current_command) eprintf("cmd: \"%.32b\"", '\"', current_command);
 
     va_start(ap, fmt);
@@ -769,8 +769,8 @@ void internal_error2(const char *file, int line, const char *file2, int line2,
 {
     va_list ap;
 
-    eprintf("Internal error at %s:%d (%s:%d), %s.  %s",
-	file, line, file2, line2, version, interrmsg);
+    eprintf("Internal error at %s:%d (%s:%d), %s (fork %s).  %s",
+	file, line, file2, line2, version, fork_version, interrmsg);
     if (current_command) eprintf("cmd: \"%.32b\"", '\"', current_command);
 
     va_start(ap, fmt);

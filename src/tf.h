@@ -183,7 +183,7 @@ VEC_TYPEDEF(hookvec_t, NUM_HOOKS);
 
 
 /* externs */
-extern const char version[], sysname[], copyright[], contrib[], mods[];
+extern const char version[], sysname[], copyright[], contrib[], mods[], fork_version[];
 extern int restriction, debug;
 extern void internal_error(const char *file, int line,
     const char *fmt, ...) format_printf(3, 4);
