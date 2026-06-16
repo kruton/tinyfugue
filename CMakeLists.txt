@@ -5,6 +5,44 @@ project(tinyfugue VERSION 5.0.8 LANGUAGES C)
 set(TF_VERSION_SHORT "50b8")
 set(TF_VERSION_STRING "TinyFugue version 5.0 beta 8")
 
+# Custom Release Versioning System
+set(TF_FORK_VERSION_DEFAULT "")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fork_version.txt")
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/fork_version.txt" TF_FORK_VERSION_DEFAULT)
+    string(STRIP "${TF_FORK_VERSION_DEFAULT}" TF_FORK_VERSION_DEFAULT)
+else()
+    find_package(Git QUIET)
+    if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} describe --tags --exact-match --match "v*"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAG
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            ERROR_QUIET
+        )
+        if(GIT_TAG MATCHES "^v")
+            string(REGEX REPLACE "^v" "kruton-" TF_FORK_VERSION_DEFAULT "${GIT_TAG}")
+        else()
+            execute_process(
+                COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                OUTPUT_VARIABLE GIT_COMMIT_HASH
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET
+            )
+            if(GIT_COMMIT_HASH)
+                set(TF_FORK_VERSION_DEFAULT "kruton-dev-g${GIT_COMMIT_HASH}")
+            endif()
+        endif()
+    endif()
+endif()
+
+if(NOT TF_FORK_VERSION_DEFAULT)
+    set(TF_FORK_VERSION_DEFAULT "kruton-dev")
+endif()
+
+set(TF_FORK_VERSION "${TF_FORK_VERSION_DEFAULT}" CACHE STRING "Fork release version")
+
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 include(GNUInstallDirs)
@@ -100,7 +138,7 @@ if(TF_EXTRA_LIBRARY_DIRS)
     list(APPEND CMAKE_REQUIRED_LINK_DIRECTORIES ${TF_EXTRA_LIBRARY_DIRS})
 endif()
 
-message(STATUS "Configuring ${TF_VERSION_STRING}")
+message(STATUS "Configuring ${TF_VERSION_STRING} (Fork: ${TF_FORK_VERSION})")
 
 if(TF_CORE)
     set(DISABLE_CORE 0)

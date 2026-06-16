@@ -22,6 +22,8 @@ const char version[] =
 #endif
     TF_VERSION_STRING;
 
+const char fork_version[] = TF_FORK_VERSION;
+
 const char mods[] = "";
 
 const char copyright[] =

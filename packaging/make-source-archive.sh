@@ -56,6 +56,22 @@ else
         --format=tar --prefix="${prefix}/" \
         --output="$tmp_tar" HEAD
 fi
+
+# Determine the fork version to write
+if git -c "safe.directory=$repo" -C "$repo" describe --tags --exact-match --match "v*" >/dev/null 2>&1; then
+    GIT_TAG=$(git -c "safe.directory=$repo" -C "$repo" describe --tags --exact-match --match "v*")
+    FORK_VERSION="kruton-${GIT_TAG#v}"
+else
+    GIT_COMMIT_HASH=$(git -c "safe.directory=$repo" -C "$repo" rev-parse --short HEAD)
+    FORK_VERSION="kruton-dev-g${GIT_COMMIT_HASH}"
+fi
+
+# Append fork_version.txt to the tarball under the prefix directory
+mkdir -p "${prefix}"
+echo "${FORK_VERSION}" > "${prefix}/fork_version.txt"
+tar -rf "$tmp_tar" "${prefix}/fork_version.txt"
+rm -rf "${prefix}"
+
 gzip -n <"$tmp_tar" >"$tmp"
 mv "$tmp" "$output"
 rm -f "$tmp_tar"

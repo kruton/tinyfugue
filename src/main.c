@@ -51,6 +51,9 @@ int main(int argc, char *argv[])
 
     puts("");
     puts(version);
+    if (*fork_version) {
+        printf("Fork version: %s\n", fork_version);
+    }
     puts(copyright);
 
     while (--argc > 0 && (*++argv)[0] == '-') {
@@ -129,6 +132,11 @@ int main(int argc, char *argv[])
     init_keyboard();			/* keyboard.c */
 
     oputs(version);
+    if (*fork_version) {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "Fork version: %s", fork_version);
+        oputs(buf);
+    }
     oputs(copyright);
     oputs("Type `/help copyright' for more information.");
     if (*contrib) oputs(contrib);

@@ -156,6 +156,7 @@ enum Vars {
 #define TFLIBDIR	getstdvar(VAR_TFLIBDIR)
 #define TFPATH		getstdvar(VAR_TFPATH)
 #define TFMAILPATH	getstdvar(VAR_TFMAILPATH)
+#define TF_FORK_VERSION_VAR getstdvar(VAR_TF_FORK_VERSION)
 #define alert_attr	getattrvar(VAR_alert_attr)
 #define alert_time	gettimevar(VAR_alert_time)
 #define	ansi_log	getintvar(VAR_ansi_log)
