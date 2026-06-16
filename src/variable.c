@@ -97,10 +97,10 @@ extern char **environ;
 /* Special variables. */
 Var special_var[] = {
 #define varcode(id, name, sval, type, flags, enums, ival, uval, func) \
-    {{ name, type, 1, NULL }, flags|VARSPECIAL, enums, func, NULL, 0 },
+    {{ name, type, 1, NULL, {0} }, flags|VARSPECIAL, enums, func, NULL, 0, 0, 0 },
 #include "varlist.h"
 #undef varcode
-    {{ NULL, 0, 1, NULL }, 0, NULL, NULL, NULL, 0 }
+    {{ NULL, 0, 1, NULL, {0} }, 0, NULL, NULL, NULL, 0, 0, 0 }
 };
 
 Pattern looks_like_special_sub;    /* looks like a special substitution */
