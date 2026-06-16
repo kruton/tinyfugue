@@ -40,7 +40,7 @@ static void split_args(char *args);
 static BuiltinCmd cmd_table[] =
 {
 #define defcmd(name, func, reserved) \
-  { name, func, reserved },
+  { name, func, reserved, NULL },
 #include "cmdlist.h"
 };
 
