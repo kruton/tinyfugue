@@ -1100,3 +1100,22 @@ void die(const char *why, int err)
     }
     exit(1);
 }
+
+char *tf_strdup(const char *src, const char *file, int line)
+{
+    char *dest;
+    if (!src) return NULL;
+    dest = (char *)xmalloc(NULL, strlen(src) + 1, file, line);
+    strcpy(dest, src);
+    return dest;
+}
+
+char *tf_strndup(const char *src, size_t len, const char *file, int line)
+{
+    char *dest;
+    if (!src) return NULL;
+    dest = (char *)xmalloc(NULL, len + 1, file, line);
+    memcpy(dest, src, len);
+    dest[len] = '\0';
+    return dest;
+}

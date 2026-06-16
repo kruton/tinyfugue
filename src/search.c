@@ -270,6 +270,8 @@ void encqueue(CQueue *cq, void *datum)
 {
     if (!cq->data)
         alloc_cqueue(cq, cq->maxsize);
+    if (!cq->data)
+        return;
     if (cq->size == cq->maxsize) {
         cq->free(cq->data[cq->first], __FILE__, __LINE__);
         cq->first = nmod(cq->first + 1, cq->maxsize);

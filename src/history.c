@@ -322,7 +322,7 @@ int do_recall(String *args, int offset)
     if ((locality = (ptr && *ptr == '?'))) ptr++;
 #endif
     if ((numbers = (ptr && *ptr == '#'))) ptr++;
-    while (is_space(*ptr)) ptr++;
+    while (ptr && is_space(*ptr)) ptr++;
 
     tvp0 = tvp1 = NULL;
     n0 = 0;

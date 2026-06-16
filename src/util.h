@@ -32,10 +32,11 @@ struct feature {
 #define localize(c)  ((is_print(c) || is_cntrl(c)) ? (c) : (c) & 0x7F)
 #endif
 
-/* Note STRNDUP works only if src[len] == '\0', ie. len == strlen(src) */
-#define STRNDUP(src, len) \
-    (strcpy(xmalloc(NULL, (len) + 1, __FILE__, __LINE__), (src)))
-#define STRDUP(src)  STRNDUP((src), strlen(src))
+extern char *tf_strdup(const char *src, const char *file, int line);
+extern char *tf_strndup(const char *src, size_t len, const char *file, int line);
+
+#define STRNDUP(src, len)  tf_strndup((src), (len), __FILE__, __LINE__)
+#define STRDUP(src)        tf_strdup((src), __FILE__, __LINE__)
 
 
 #define IS_QUOTE	0x01

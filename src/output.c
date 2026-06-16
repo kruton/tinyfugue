@@ -431,6 +431,7 @@ void init_output(void)
 static void init_term(void)
 {
 #if TERMCAP
+    const char *term = TERM;
     int i;
     /* Termcap entries are supposed to fit in 1024 bytes.  But, if a 'tc'
      * field is present, some termcap libraries will just append the second
@@ -483,10 +484,10 @@ static void init_term(void)
 	}
     }
 
-    if (!TERM || !*TERM) {
+    if (!term || !*term) {
         tfwprintf("TERM undefined.");
-    } else if (tgetent(termcap_entry, TERM) <= 0) {
-        tfwprintf("\"%s\" terminal unsupported.", TERM);
+    } else if (tgetent(termcap_entry, term) <= 0) {
+        tfwprintf("\"%s\" terminal unsupported.", term);
     } else {
         if (columns <= 0) columns = tgetnum("co");
         if (lines   <= 0) lines   = tgetnum("li");
@@ -537,7 +538,7 @@ static void init_term(void)
 
 	if (!keypad_off) keypad_on = NULL;
 
-        if (strcmp(TERM, "xterm") == 0) {
+        if (strcmp(term, "xterm") == 0) {
 #if 0	    /* Now that tf has virtual screens, the secondary buffer is ok. */
             enter_ca_mode = exit_ca_mode = NULL; /* Avoid secondary buffer. */
 #endif
@@ -545,7 +546,7 @@ static void init_term(void)
             if (!set_scroll_region)
                 set_scroll_region = "\033[%i%d;%dr";
         }
-        if (strcmp(TERM, "linux") == 0) {
+        if (strcmp(term, "linux") == 0) {
             /* Many "linux" termcaps mistakenly omit "ks" and "ke". */
             if (!keypad_on && !keypad_off) {
 		keypad_on = "\033[?1h\033=";
@@ -1089,7 +1090,7 @@ static void rewrap(Screen *screen)
 
     /* recalculate bot within last lline */
     screen->bot = screen->pline.tail;
-    while (screen->bot->prev) {
+    while (screen->bot && screen->bot->prev) {
 	pl = screen->bot->datum;
 	if (pl->start == 0 || pl->start < old_bot_visible) break;
 	screen->bot = screen->bot->prev;
@@ -1111,7 +1112,7 @@ static void rewrap(Screen *screen)
 
     /* recalculate maxbot within last lline */
     screen->maxbot = screen->pline.tail;
-    while (screen->maxbot->prev) {
+    while (screen->maxbot && screen->maxbot->prev) {
 	pl = screen->maxbot->datum;
 	if (pl->start == 0 || pl->start < old_maxbot_visible) break;
 	screen->maxbot = screen->maxbot->prev;
@@ -3502,10 +3503,11 @@ void hide_screen(Screen *screen)
     PhysLine *pl;
 
     if (!screen) screen = fg_screen;
+    if (!screen) return;
     if (screen->viewsize > 0) {
 	/* delete any temp lines in [top,bot] */
 	int done;
-	for (done = 0, node = screen->top; !done; node = next) {
+	for (done = 0, node = screen->top; !done && node; node = next) {
 	    done = (node == screen->bot);
 	    next = node->next;
 	    pl = node->datum;

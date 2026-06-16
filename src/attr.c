@@ -334,7 +334,8 @@ attr_t adj_attr(attr_t base, attr_t adj)
 /* convert attr string to bitfields */
 const char *parse_attrs(const char *str, attr_t *attrp, int delimiter)
 {
-    int color, len;
+    int color;
+    size_t len;
     const char *name;
     char buf[16];
     char reject[3] = {',', '\0', '\0'};
@@ -689,7 +690,7 @@ String *attr2str(String *buffer, attr_t attrs)
 
 String *encode_attr(const conString *str, int offset)
 {
-    attr_t oldattrs = 0, attrs;
+    attr_t oldattrs = 0, attrs = 0;
     int i;
     String *new;
     
@@ -776,7 +777,7 @@ static String *attr2ansi(String *str, attr_t attrs)
 
 String *encode_ansi(const conString *str, int offset)
 {
-    attr_t oldattrs = 0, attrs;
+    attr_t oldattrs = 0, attrs = 0;
     int i;
     String *new;
     

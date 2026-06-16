@@ -1458,6 +1458,10 @@ static void setupnextconn(Sock *sock)
     if (sock->fd >= 0)
 	close(sock->fd);
 retry:
+    if (!next) {
+	sock->addr = NULL;
+	return;
+    }
     next = next->ai_next;
     /* if next address is a duplicate of one we've already done, skip it */
     for (ai = sock->addrs; next && ai != next; ai = ai->ai_next) {
@@ -1502,8 +1506,10 @@ static int openconn(Sock *sock)
                 CONFAIL(xsock, "read", strerror(errno));
             else
 		CONFAILHP(xsock, gai_strerror(info.err));
-            close(xsock->fd);
-            xsock->fd = -1;
+            if (xsock->fd >= 0) {
+                close(xsock->fd);
+                xsock->fd = -1;
+            }
 # ifdef PLATFORM_UNIX
 	    if (xsock->pid >= 0)
 		if (waitpid(xsock->pid, NULL, 0) < 0)
@@ -1519,7 +1525,9 @@ static int openconn(Sock *sock)
 	    xsock->addrs = XMALLOC(info.size);
 	    read(xsock->fd, (char*)xsock->addrs, info.size);
 	}
-        close(xsock->fd);
+        if (xsock->fd >= 0) {
+            close(xsock->fd);
+        }
 # ifdef PLATFORM_UNIX
         if (xsock->pid >= 0)
             if (waitpid(xsock->pid, NULL, 0) < 0)
@@ -2124,24 +2132,26 @@ static void killsock(Sock *sock)
  */
 static void nukesock(Sock *sock)
 {
+    if (!sock) return;
     if (sock->queue.list.head) {
 	internal_error(__FILE__, __LINE__, "socket %s has unprocessed lines",
-	    !sock ? "!sock" :
 	    !sock->world ? "!sock->world" :
 	    sock->world->name);
 	socks_with_lines--;
     }
     if (sock == xsock) xsock = NULL;
-    sock->world->sock = NULL;
+    if (sock->world) {
+        sock->world->sock = NULL;
+    }
     killsock(sock);
     *((sock == hsock) ? &hsock : &sock->prev->next) = sock->next;
     *((sock == tsock) ? &tsock : &sock->next->prev) = sock->prev;
-    if (sock->world->screen->active) {
+    if (sock->world && sock->world->screen && sock->world->screen->active) {
 	sock->world->screen->active = 0;
         --active_count;
         update_status_field(NULL, STAT_ACTIVE);
     }
-    if (sock->world->flags & WORLD_TEMP) {
+    if (sock->world && (sock->world->flags & WORLD_TEMP)) {
         nuke_world(sock->world);
         sock->world = NULL;
     }
@@ -2620,6 +2630,11 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     String *encoded;
 #endif
 
+    if (!src) {
+        src = "";
+        len = 0;
+    }
+
 
     if (!xsock ||
 	(xsock->constate != SS_CONNECTED && !(xsock->flags & SOCKECHO)))
@@ -2658,6 +2673,9 @@ int send_line(const char *src, unsigned int len, int eol_flag)
         bufferlen = needed;
         buffer1 = XREALLOC(buffer1, bufferlen);
         buffer2 = XREALLOC(buffer2, bufferlen);
+    }
+    if (!buffer1 || !buffer2) {
+        return 0;
     }
 
     memcpy(buffer1, src, len);
@@ -2774,9 +2792,11 @@ void world_output(World *world, conString *line)
     Sock *saved_xsock = xsock;
     xsock = world ? world->sock : NULL;
     line->links++;
-    recordline(world->history, line);
+    if (world) {
+        recordline(world->history, line);
+    }
     record_global(line);
-    if (world->sock && (world->sock->constate < SS_DEAD) &&
+    if (world && world->sock && (world->sock->constate < SS_DEAD) &&
 	!(gag && (line->attrs & F_GAG)))
     {
         if (world->sock == fsock) {
@@ -2784,21 +2804,23 @@ void world_output(World *world, conString *line)
         } else {
 	    static int preactivity_depth = 0; /* avoid recursion */
 	    /* line was already tested for gag, so it WILL print */
-	    if (!preactivity_depth && !world->screen->active) {
+	    if (!preactivity_depth && world->screen && !world->screen->active) {
 		preactivity_depth++;
                 do_hook(H_PREACTIVITY, NULL, "%s", world->name);
 		preactivity_depth--;
 	    }
-            enscreen(world->screen, line); /* ignores preactivity_depth */
-            if (!preactivity_depth) {
-		if (!world->screen->active && !(line->attrs & F_NOACTIVITY)) {
-		    world->screen->active = 1;
-		    ++active_count;
-		    update_status_field(NULL, STAT_ACTIVE);
-		    do_hook(H_ACTIVITY, "%% Activity in world %s", "%s",
-			world->name);
-		}
-		do_hook(H_BGTEXT, NULL, "%s", world->name);
+            if (world->screen) {
+                enscreen(world->screen, line); /* ignores preactivity_depth */
+                if (!preactivity_depth) {
+		    if (!world->screen->active && !(line->attrs & F_NOACTIVITY)) {
+		        world->screen->active = 1;
+		        ++active_count;
+		        update_status_field(NULL, STAT_ACTIVE);
+		        do_hook(H_ACTIVITY, "%% Activity in world %s", "%s",
+			    world->name);
+		    }
+		    do_hook(H_BGTEXT, NULL, "%s", world->name);
+                }
             }
         }
     }
@@ -3263,7 +3285,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
                 case TN_EC:
                 case TN_EL:
                     valid = 1;
-		    /* Unsupported.  Fall through to default case. */
+		    /* fallthrough */
                 default:
                     if (xsock->flags & SOCKTELNET ||
                         (xsock->flags & SOCKMAYTELNET && valid))

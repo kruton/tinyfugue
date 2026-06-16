@@ -196,7 +196,7 @@ void init_variables(void)
 	    set_str_var_direct(var, TYPE_STR, svalue);
         } else if (var->flags & VARSPECIAL) {
             /* overwrite a pre-defined special variable */
-	    Value value;
+	    Value value = {0};
 	    value.type = TYPE_STR;
 	    value.sval = svalue;
             set_special_var(var, &value, 0, 0);
@@ -560,7 +560,7 @@ Var *setvar(Var *var, Value *value, int exportflag)
 
 Var *setstrvar(Var *var, conString *sval, int exportflag)
 {
-    Value value;
+    Value value = {0};
     value.type = TYPE_STR;
     value.sval = sval;
     return setvar(var, &value, exportflag);
@@ -568,7 +568,7 @@ Var *setstrvar(Var *var, conString *sval, int exportflag)
 
 Var *setintvar(Var *var, long ival, int exportflag)
 {
-    Value value;
+    Value value = {0};
     value.type = TYPE_INT;
     value.u.ival = ival;
     return setvar(var, &value, exportflag);
