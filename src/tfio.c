@@ -788,11 +788,27 @@ char igetchar(void)
 {
     char c;
     fd_set readers;
+    int result;
 
-    FD_ZERO(&readers);
-    FD_SET(STDIN_FILENO, &readers);
-    while(select(1, &readers, NULL, NULL, NULL) <= 0);
-    read(STDIN_FILENO, &c, 1);
+    for (;;) {
+	FD_ZERO(&readers);
+	FD_SET(STDIN_FILENO, &readers);
+	result = select(STDIN_FILENO + 1, &readers, NULL, NULL, NULL);
+	if (result > 0)
+	    break;
+	if (result < 0) {
+	    if (errno == EINTR)
+		continue;
+	    operror("select");
+	    return '\0';
+	}
+    }
+    RETRY_ON_EINTR(result, read(STDIN_FILENO, &c, 1));
+    if (result != 1) {
+	if (result < 0)
+	    operror("read");
+	return '\0';
+    }
     return c;
 }
 
@@ -900,8 +916,11 @@ String *tfgetS(String *str, TFILE *file)
                 file->off = next;
             }
             file->off = 0;
-            file->len = read(fileno(file->u.fp), file->buf, sizeof(file->buf));
-        } while (file->len > 0);
+	    RETRY_ON_EINTR(file->len, read(fileno(file->u.fp), file->buf,
+					   sizeof(file->buf)));
+	    if (file->len < 0)
+		operror("read");
+	} while (file->len > 0);
 
         file->len = -1;  /* note eof */
         return str->len ? str : NULL;
@@ -1004,4 +1023,3 @@ struct Value *handle_liststreams_command(String *args, int offset)
 
     return newint(count);
 }
-

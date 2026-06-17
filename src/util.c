@@ -22,6 +22,7 @@
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/uio.h>
 #include <limits.h>
 #include "port.h"
 #include "tf.h"
@@ -80,6 +81,72 @@ struct feature features[] = {
 };
 
 static void  free_maillist(void);
+
+int read_full(int fd, char *buf, size_t len)
+{
+    size_t off = 0;
+
+    while (off < len) {
+	ssize_t result;
+
+	RETRY_ON_EINTR(result, read(fd, buf + off, len - off));
+	if (result < 0)
+	    return -1;
+	if (result == 0) {
+	    errno = EIO;
+	    return -1;
+	}
+	off += result;
+    }
+    return 0;
+}
+
+int write_full(int fd, const char *buf, size_t len)
+{
+    size_t off = 0;
+
+    while (off < len) {
+	ssize_t result;
+
+	RETRY_ON_EINTR(result, write(fd, buf + off, len - off));
+	if (result < 0)
+	    return -1;
+	if (result == 0) {
+	    errno = EIO;
+	    return -1;
+	}
+	off += result;
+    }
+    return 0;
+}
+
+int writev_full(int fd, struct iovec *iov, int niov)
+{
+    while (niov > 0) {
+	ssize_t result;
+	size_t written;
+
+	RETRY_ON_EINTR(result, writev(fd, iov, niov));
+	if (result < 0)
+	    return -1;
+	if (result == 0) {
+	    errno = EIO;
+	    return -1;
+	}
+
+	written = result;
+	while (niov > 0 && written >= iov[0].iov_len) {
+	    written -= iov[0].iov_len;
+	    iov++;
+	    niov--;
+	}
+	if (niov > 0 && written > 0) {
+	    iov[0].iov_base = (char *)iov[0].iov_base + written;
+	    iov[0].iov_len -= written;
+	}
+    }
+    return 0;
+}
 
 #if !STDC_HEADERS
 int lcase(x) char x; { return is_upper(x) ? tolower(x) : x; }
