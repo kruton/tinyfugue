@@ -325,10 +325,18 @@ struct Value *handle_lcd_command(String *args, int offset)
     }
 
 #if HAVE_GETCWD
-    oprintf("%% Current directory is %s", getcwd(buffer, PATH_MAX));
+    if (!getcwd(buffer, sizeof(buffer))) {
+	operror("getcwd");
+	return shareval(val_zero);
+    }
+    oprintf("%% Current directory is %s", buffer);
 #else
 # if HAVE_GETWD
-    oprintf("%% Current directory is %s", getwd(buffer));
+    if (!getwd(buffer)) {
+	operror("getwd");
+	return shareval(val_zero);
+    }
+    oprintf("%% Current directory is %s", buffer);
 # endif
 #endif
     return shareval(val_one);
@@ -364,8 +372,11 @@ int handle_echo_func(
             return 0;
     }
     if (raw) {
-        write(STDOUT_FILENO, src->data, src->len);
-        return 1;
+	if (write_full(STDOUT_FILENO, src->data, src->len) < 0) {
+	    operror("write");
+	    return 0;
+	}
+	return 1;
     }
 
     newstr = inline_flag ? CS(decode_attr(src, 0, 0)) : CS(Stringdup(src));
@@ -832,4 +843,3 @@ struct Value *handle_bind_command(String *args, int offset)
     return newint(add_new_macro(NULL, print_to_ascii(NULL, pattern)->data,
 	NULL, NULL, body, 1, 100, 0, FALSE, 0));
 }
-
