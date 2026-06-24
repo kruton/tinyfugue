@@ -434,9 +434,11 @@ void init_exename(char *name)
 {
     argv0 = name;
 #if HAVE_GETCWD
-    getcwd(initial_dir, PATH_MAX);
+    if (!getcwd(initial_dir, sizeof(initial_dir)))
+	initial_dir[0] = '\0';
 #elif HAVE_GETWD
-    getwd(initial_dir);
+    if (!getwd(initial_dir))
+	initial_dir[0] = '\0';
 #endif
     initial_path = getenv("PATH");
 }

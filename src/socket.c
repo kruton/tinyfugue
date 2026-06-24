@@ -342,6 +342,9 @@ static Sock *find_sock(const char *name);
 static void  wload(World *w);
 static int   fg_sock(Sock *sock, int quiet);
 static int   get_host_address(Sock *sock, const char **what, int *errp);
+#ifdef NONBLOCKING_GETHOST
+static void close_resolver(Sock *sock);
+#endif
 #if !HAVE_GETADDRINFO
 static int   tfgetaddrinfo(const char *nodename, const char *port,
 	     const struct addrinfo *hints, struct addrinfo **res);
@@ -1491,6 +1494,29 @@ static int ICONFAIL(Sock *sock, const char *what, const char *why)
     return 0;
 }
 
+#ifdef NONBLOCKING_GETHOST
+static void close_resolver(Sock *sock)
+{
+#ifdef PLATFORM_UNIX
+    pid_t pid;
+#endif /* PLATFORM_UNIX */
+
+    if (sock->fd >= 0) {
+	close(sock->fd);
+	sock->fd = -1;
+    }
+#ifdef PLATFORM_UNIX
+    if (sock->pid >= 0) {
+	RETRY_ON_EINTR(pid, waitpid(sock->pid, NULL, 0));
+	if (pid < 0)
+	    tfprintf(tferr, "waitpid %ld: %s", (long)sock->pid,
+		strerror(errno));
+	sock->pid = -1;
+    }
+#endif /* PLATFORM_UNIX */
+}
+#endif
+
 static int openconn(Sock *sock)
 {
     int flags;
@@ -1500,41 +1526,34 @@ static int openconn(Sock *sock)
     if (xsock->constate == SS_RESOLVING) {
 	nbgai_hdr_t info = { 0, 0 };
 	struct addrinfo *ai;
-        FD_CLR(xsock->fd, &readers);
-        if (read(xsock->fd, &info, sizeof(info)) < 0 || info.err != 0) {
-            if (!info.err)
-                CONFAIL(xsock, "read", strerror(errno));
-            else
-		CONFAILHP(xsock, gai_strerror(info.err));
-            if (xsock->fd >= 0) {
-                close(xsock->fd);
-                xsock->fd = -1;
-            }
-# ifdef PLATFORM_UNIX
-	    if (xsock->pid >= 0)
-		if (waitpid(xsock->pid, NULL, 0) < 0)
-		    tfprintf(tferr, "waitpid %ld: %s", xsock->pid, strerror(errno));
-	    xsock->pid = -1;
-# endif /* PLATFORM_UNIX */
-            killsock(xsock);
-            return 0;
-        }
+	FD_CLR(xsock->fd, &readers);
+	if (read_full(xsock->fd, (char *)&info, sizeof(info)) < 0) {
+	    CONFAIL(xsock, "read", strerror(errno));
+	    close_resolver(xsock);
+	    killsock(xsock);
+	    return 0;
+	}
+	if (info.err != 0) {
+	    CONFAILHP(xsock, gai_strerror(info.err));
+	    close_resolver(xsock);
+	    killsock(xsock);
+	    return 0;
+	}
 	if (info.size <= 0) { /* shouldn't happen */
 	    xsock->addrs = NULL;
 	} else {
 	    xsock->addrs = XMALLOC(info.size);
-	    read(xsock->fd, (char*)xsock->addrs, info.size);
+	    if (read_full(xsock->fd, (char *)xsock->addrs, info.size) < 0) {
+		CONFAIL(xsock, "read", strerror(errno));
+		FREE(xsock->addrs);
+		xsock->addrs = NULL;
+		close_resolver(xsock);
+		killsock(xsock);
+		return 0;
+	    }
 	}
-        if (xsock->fd >= 0) {
-            close(xsock->fd);
-        }
-# ifdef PLATFORM_UNIX
-        if (xsock->pid >= 0)
-            if (waitpid(xsock->pid, NULL, 0) < 0)
-               tfprintf(tferr, "waitpid: %ld: %s", xsock->pid, strerror(errno));
-        xsock->pid = -1;
-# endif /* PLATFORM_UNIX */
-        xsock->constate = SS_RESOLVED;
+	close_resolver(xsock);
+	xsock->constate = SS_RESOLVED;
 	for (ai = xsock->addrs; ai; ai = ai->ai_next) {
 	    ai->ai_addr = (struct sockaddr*)((char*)ai + sizeof(*ai));
 	    if (ai->ai_next != 0) {
@@ -1851,11 +1870,13 @@ static void waitforhostname(int fd, const char *name, const char *port)
 	    iov[niov].iov_len = ai->ai_addrlen;
 	    niov++;
 	}
-	writev(fd, iov, niov);
+	(void)writev_full(fd, iov, niov);
 	if (res) freeaddrinfo(res);
     } else {
 	hdr.size = 0;
-	write(fd, &hdr, sizeof(hdr));
+	iov[0].iov_base = (char *)&hdr;
+	iov[0].iov_len = sizeof(hdr);
+	(void)writev_full(fd, iov, 1);
     }
     close(fd);
 }
@@ -1954,9 +1975,13 @@ static int establish(Sock *sock)
             } else if ((ai_connect(xsock->fd, xsock->addr) < 0) &&
                 errno != EISCONN)
             {
-                read(xsock->fd, &ch, 1);   /* must fail */
-		return ICONFAIL(xsock, "nonblocking connect 2/read", strerror(errno));
-            }
+		int connect_err = errno;
+		if (read(xsock->fd, &ch, 1) < 0) /* must fail */
+		    return ICONFAIL(xsock, "nonblocking connect 2/read",
+				    strerror(errno));
+		return ICONFAIL(xsock, "nonblocking connect 2",
+				strerror(connect_err));
+	    }
         }
 #endif
         if (err != 0) {
@@ -2115,9 +2140,13 @@ static void killsock(Sock *sock)
 #ifdef NONBLOCKING_GETHOST
 # ifdef PLATFORM_UNIX
     if (sock->pid >= 0) {
+	pid_t pid;
+
         kill(sock->pid, SIGTERM);
-        if (waitpid(sock->pid, NULL, 0) < 0)
-            tfprintf(tferr, "waitpid: %ld: %s", sock->pid, strerror(errno));
+	RETRY_ON_EINTR(pid, waitpid(sock->pid, NULL, 0));
+        if (pid < 0)
+            tfprintf(tferr, "waitpid: %ld: %s", (long)sock->pid,
+		strerror(errno));
         sock->pid = -1;
     }
 # endif /* PLATFORM_UNIX */
