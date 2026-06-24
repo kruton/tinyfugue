@@ -412,6 +412,7 @@ static void coremsg(FILE *dumpfile)
     fputs("Also describe what you were doing in tf when this\r\n", stderr);
     fputs("occurred, and whether you can repeat it.\r\n\n", stderr);
     fprintf(dumpfile, "> %.512s\r\n", version);
+    if (*fork_version) fprintf(dumpfile, "> fork_version=%.256s\r\n", fork_version);
     if (*sysname) fprintf(dumpfile, "> %.256s\r\n", sysname);
     fprintf(dumpfile, "> %.256s\r\n", featurestr->data);
     fprintf(dumpfile,"> virtscreen=%ld, visual=%ld, expnonvis=%ld, "
