@@ -67,7 +67,7 @@ varflag(VAR_borg,	"borg",		TRUE,		NULL)
 varenum(VAR_cecho,	"cecho",	0,		NULL,	enum_mecho)
 varstr (VAR_cecho_attr,	"cecho_attr",	"Cgreen",	ch_attr)
 #if WIDECHAR
-varstr (VAR_default_charset,"default_charset","US-ASCII",ch_default_charset)
+varstr (VAR_default_charset,"default_charset","UTF-8",ch_default_charset)
 #endif
 varflag(VAR_cleardone,	"cleardone",	FALSE,		NULL)
 varflag(VAR_clearfull,	"clearfull",	FALSE,		NULL)
