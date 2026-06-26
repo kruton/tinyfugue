@@ -12,5 +12,6 @@
 extern void init_wasm_platform(void);
 extern void run_wasm_startup_script(void);
 extern int tf_wasm_resize(int new_columns, int new_lines);
+extern void wasm_handle_quit(void);
 
 #endif /* WASM_PLATFORM_H */

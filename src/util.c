@@ -33,6 +33,7 @@
 #include "tty.h"	/* reset_tty() */
 #include "signals.h"	/* core() */
 #include "variable.h"
+#include "unicode.h"
 #include "parse.h"	/* for expression in nextopt() numeric option */
 
 #if HAVE_SETLOCALE
@@ -142,6 +143,8 @@ void init_util1(void)
 {
     int i;
     const struct feature *f;
+
+    init_unicode();
 
     for (i = 0; i < 0x100; i++) {
         tf_ctype[i] = 0;

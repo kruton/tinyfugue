@@ -39,6 +39,15 @@ if(BUILD_TESTING)
     target_compile_definitions(tf_test PRIVATE
         EXPECTED_TFLIBDIR="${CMAKE_INSTALL_FULL_DATAROOTDIR}/${LIBNAME}")
     target_link_libraries(tf_test PRIVATE tflib)
+    if(PLATFORM_WASM)
+        target_link_options(tf_test PRIVATE
+            "SHELL:-sALLOW_MEMORY_GROWTH=1"
+            "SHELL:-sFORCE_FILESYSTEM=1"
+            "SHELL:-sEXIT_RUNTIME=1")
+        if(ICU_DATA_FILE)
+            target_link_options(tf_test PRIVATE "--embed-file=${ICU_DATA_FILE}@/icudt.dat")
+        endif()
+    endif()
     add_test(NAME unit COMMAND tf_test)
 
     add_test(NAME configured-features

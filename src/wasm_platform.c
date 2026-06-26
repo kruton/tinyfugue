@@ -20,6 +20,12 @@
 #endif
 
 #include "wasm_platform.h"
+#ifdef __EMSCRIPTEN__
+# include <emscripten.h>
+#endif
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/socket.h>
 #include "socket.h"
 #include "pattern.h"
 #include "search.h"
@@ -41,7 +47,7 @@ extern int tf_wasm_read_stdin(char *data, int len);
 extern int tf_wasm_write_stdout(const char *data, int len);
 extern int tf_wasm_schedule_wake(int delay_ms);
 extern int tf_wasm_stdin_ready(void);
-extern int tf_wasm_socket_open(int domain, int type, int protocol);
+extern int tf_wasm_socket_open(int domain, int type, int protocol, int is_ssl);
 extern int tf_wasm_socket_connect(int fd);
 extern int tf_wasm_socket_close(int fd);
 extern int tf_wasm_socket_recv(int fd, char *buf, int len, int flags);
@@ -207,7 +213,7 @@ static void wasm_freeaddrinfo(tf_addrinfo *res)
 
 static int wasm_socket_open(int domain, int type, int protocol)
 {
-    int fd = tf_wasm_socket_open(domain, type, protocol);
+    int fd = tf_wasm_socket_open(domain, type, protocol, xsock_is_ssl());
     if (fd < 0)
         errno = EACCES;
     return fd;
@@ -243,10 +249,11 @@ static int wasm_socket_setsockopt(int fd, int level, int optname,
     const void *optval, int optlen)
 {
     (void)fd;
-    (void)level;
-    (void)optname;
     (void)optval;
     (void)optlen;
+    if (level == SOL_SOCKET && optname == SO_KEEPALIVE) {
+        return 0;
+    }
     return wasm_unsupported();
 }
 
@@ -264,8 +271,10 @@ static int wasm_socket_getsockopt(int fd, int level, int optname,
 static int wasm_socket_fcntl(int fd, int cmd, int arg)
 {
     (void)fd;
-    (void)cmd;
     (void)arg;
+    if (cmd == F_GETFL || cmd == F_SETFL) {
+        return 0;
+    }
     return wasm_unsupported();
 }
 
@@ -445,4 +454,13 @@ void init_wasm_platform(void)
     tf_set_tty_isatty_func(wasm_tty_isatty);
     tf_set_tty_mode_funcs(wasm_tty_mode_noop, wasm_tty_mode_noop);
     tf_set_window_size_func(wasm_get_window_size);
+}
+
+void wasm_handle_quit(void)
+{
+#ifdef __EMSCRIPTEN__
+    emscripten_force_exit(0);
+#else
+    exit(0);
+#endif
 }

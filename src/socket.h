@@ -124,5 +124,6 @@ extern void          xsock_alert_id(void);
 extern const char   *fgname(void);
 extern const char   *world_info(const char *worldname, const char *fieldname);
 extern struct World *named_or_current_world(const char *name);
+extern int           xsock_is_ssl(void);
 
 #endif /* SOCKET_H */

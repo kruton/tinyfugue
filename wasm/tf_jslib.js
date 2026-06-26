@@ -41,7 +41,7 @@ mergeInto(LibraryManager.library, {
     return 0;
   },
 
-  tf_wasm_socket_open: function(domain, type, protocol) {
+  tf_wasm_socket_open: function(domain, type, protocol, is_ssl) {
     var relay = Module['tfRelay'];
     var destination = Module['tfPendingRelayDestination'];
     Module['tfPendingRelayDestination'] = null;
@@ -73,7 +73,7 @@ mergeInto(LibraryManager.library, {
       }
       return -1;
     }
-    return relay.open(domain, type, protocol, destination);
+    return relay.open(domain, type, protocol, destination, is_ssl);
   },
 
   tf_wasm_socket_connect: function(fd) {

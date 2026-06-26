@@ -96,7 +96,7 @@ if(TF_WASM)
     set(TF_TLS OFF CACHE STRING "TLS support" FORCE)
     set(TF_TERMCAP OFF CACHE STRING "termcap/curses terminal support" FORCE)
     set(TF_MAILCHECK OFF CACHE BOOL "Enable mail checking" FORCE)
-    set(TF_PROCESS OFF CACHE BOOL "Enable /quote and /repeat" FORCE)
+    set(TF_PROCESS ON CACHE BOOL "Enable /quote and /repeat" FORCE)
     message(STATUS "WASM platform: enabled")
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
         message(WARNING
@@ -121,11 +121,15 @@ if(TF_WASM AND CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
         "SHELL:-sENVIRONMENT=web,node"
         "SHELL:-sALLOW_MEMORY_GROWTH=1"
         "SHELL:-sFORCE_FILESYSTEM=1"
+        "SHELL:-sEXIT_RUNTIME=1"
         "SHELL:-sEXPORTED_FUNCTIONS=['_main','_tf_tick','_tf_next_deadline_ms','_tf_wasm_resize','_tf_wasm_smoke']"
         "SHELL:-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS','callMain']"
         "SHELL:-lidbfs.js"
         "SHELL:-lnodefs.js"
         "--js-library=${CMAKE_CURRENT_SOURCE_DIR}/wasm/tf_jslib.js")
+    if(ICU_DATA_FILE)
+        target_link_options(tf PRIVATE "--embed-file=${ICU_DATA_FILE}@/icudt.dat")
+    endif()
     if(TF_WASM_JS_LIBRARY)
         target_link_options(tf PRIVATE "--js-library=${TF_WASM_JS_LIBRARY}")
     endif()
@@ -275,12 +279,38 @@ endif()
 
 set(WIDECHAR 0)
 if(NOT TF_WIDECHAR STREQUAL "OFF")
-    find_package(ICU 51.0 QUIET COMPONENTS uc i18n data)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+        set(ICU_FOUND 1)
+        set(ICU_VERSION "Emscripten Port")
+        file(GLOB ICU_DATA_FILES
+            "${EMSCRIPTEN_ROOT_PATH}/cache/ports/icu/icu/source/data/in/icudt*.dat"
+            "$ENV{EMSDK}/upstream/emscripten/cache/ports/icu/icu/source/data/in/icudt*.dat"
+        )
+        if(ICU_DATA_FILES)
+            list(GET ICU_DATA_FILES 0 ICU_DATA_FILE_LOCAL)
+            set(ICU_DATA_FILE "${ICU_DATA_FILE_LOCAL}" CACHE INTERNAL "Path to Emscripten ICU data file")
+            message(STATUS "Found Emscripten ICU data file: ${ICU_DATA_FILE}")
+        else()
+            message(FATAL_ERROR "Could not find Emscripten ICU data file (icudt*.dat)")
+        endif()
+    else()
+        find_package(ICU 51.0 QUIET COMPONENTS uc i18n data)
+    endif()
+
     if(ICU_FOUND)
         set(WIDECHAR 1)
-        target_link_libraries(tflib PUBLIC ICU::uc ICU::i18n ICU::data)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+            target_compile_options(tflib PUBLIC "SHELL:-sUSE_ICU=1")
+            target_link_options(tflib INTERFACE "SHELL:-sUSE_ICU=1")
+        else()
+            target_link_libraries(tflib PUBLIC ICU::uc ICU::i18n ICU::data)
+        endif()
         cmake_push_check_state()
-        list(APPEND CMAKE_REQUIRED_INCLUDES ${ICU_INCLUDE_DIRS})
+        if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+            set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -sUSE_ICU=1")
+        else()
+            list(APPEND CMAKE_REQUIRED_INCLUDES ${ICU_INCLUDE_DIRS})
+        endif()
         foreach(header wchar.h wctype.h unicode/ubrk.h unicode/uchar.h
                 unicode/ucnv.h unicode/ustring.h unicode/utext.h
                 unicode/utypes.h unicode/utf8.h)

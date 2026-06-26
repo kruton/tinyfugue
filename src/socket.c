@@ -33,6 +33,10 @@
 #include <unicode/ucnv.h>
 #endif
 
+#if PLATFORM_WASM
+# include "wasm_platform.h"
+#endif
+
 #if HAVE_SSL
 # if HAVE_GNUTLS_OPENSSL_H
 #  include <gnutls/openssl.h>
@@ -330,6 +334,9 @@ typedef struct Sock {		/* an open connection to a server */
 #endif
 #if HAVE_SSL
     SSL *ssl;			/* SSL state */
+#endif
+#if PLATFORM_WASM
+    int ssl_flag;
 #endif
 } Sock;
 
@@ -1153,8 +1160,14 @@ void tf_tick(void)
     LoopWait wait;
     struct timeval *tvp;
 
-    if (!loop_before_wait(1))
+    if (!loop_before_wait(1)) {
+#if PLATFORM_WASM
+        if (quit_flag) {
+            wasm_handle_quit();
+        }
+#endif
 	return;
+    }
 
     loop_compute_wait(&wait);
     oflush();
@@ -1164,6 +1177,11 @@ void tf_tick(void)
     count = tfselect(nfds, &active, &connected, NULL, tvp);
     loop_service_ready(&sock, &count);
     loop_after_iteration(1, &sock);
+#if PLATFORM_WASM
+    if (quit_flag) {
+        wasm_handle_quit();
+    }
+#endif
 }
 
 long tf_next_deadline_ms(void)
@@ -1546,6 +1564,9 @@ static int opensock(World *world, int flags)
 #if HAVE_SSL
 	xsock->ssl = NULL;
 #endif
+#if PLATFORM_WASM
+	xsock->ssl_flag = 0;
+#endif
     }
     Stringninit(xsock->buffer, 80);  /* data must be allocated */
     Stringninit(xsock->subbuffer, 1);
@@ -1594,7 +1615,9 @@ static int opensock(World *world, int flags)
     if (flags & CONN_AUTOLOGIN) xsock->flags |= SOCKLOGIN;
     if (world->flags & WORLD_ECHO) xsock->flags |= SOCKECHO;
     if ((flags & CONN_SSL) || (world->flags & WORLD_SSL)) {
-#if HAVE_SSL
+#if PLATFORM_WASM
+        xsock->ssl_flag = 1;
+#elif HAVE_SSL
 	xsock->ssl = SSL_new(ssl_ctx);
 #else
         CONFAIL(xsock, "ssl", "not supported");
@@ -4168,4 +4191,13 @@ int nactive(const char *worldname)
     if (!(w = find_world(worldname)) || !w->sock)
         return 0;
     return w->screen->active ? w->screen->nnew : 0;
+}
+
+int xsock_is_ssl(void)
+{
+#if PLATFORM_WASM
+    return xsock ? xsock->ssl_flag : 0;
+#else
+    return 0;
+#endif
 }

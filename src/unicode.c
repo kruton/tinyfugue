@@ -10,6 +10,37 @@
 #include "unicode.h"
 
 #if WIDECHAR
+#include <stdio.h>
+#include <stdlib.h>
+#include <unicode/udata.h>
+#endif
+
+void init_unicode(void)
+{
+#if WIDECHAR && PLATFORM_WASM
+    FILE *f = fopen("/icudt.dat", "rb");
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        long size = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        void *data = malloc(size);
+        if (data) {
+            size_t read_bytes = fread(data, 1, size, f);
+            (void)read_bytes;
+            UErrorCode status = U_ZERO_ERROR;
+            udata_setCommonData(data, &status);
+            if (U_FAILURE(status)) {
+                fprintf(stderr, "ICU udata_setCommonData failed: %d\n", status);
+            }
+        }
+        fclose(f);
+    } else {
+        fprintf(stderr, "Failed to open /icudt.dat\n");
+    }
+#endif
+}
+
+#if WIDECHAR
 #include <unicode/ubrk.h>
 #include <unicode/utext.h>
 static int cluster_width(const char *str, int start, int end);
