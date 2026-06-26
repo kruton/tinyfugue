@@ -6,6 +6,10 @@ foreach(source_file IN LISTS source_files)
     configure_file("${source_file}" "${OUTPUT_DIR}/${file_name}" COPYONLY)
 endforeach()
 
+if(DEFINED CHANGES_FILE)
+    configure_file("${CHANGES_FILE}" "${OUTPUT_DIR}/CHANGES" COPYONLY)
+endif()
+
 file(GLOB command_files LIST_DIRECTORIES false
     "${HELP_SOURCE}/commands/*.html")
 file(GLOB topic_files LIST_DIRECTORIES false

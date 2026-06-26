@@ -26,10 +26,6 @@
 #include "cmdlist.h"
 #include "variable.h"	/* unsetvar() */
 #include "unicode.h"
-#if WIDECHAR
-#include <unicode/utf8.h>
-#include <unicode/uchar.h>
-#endif
 
 static int literal_next = FALSE;
 static TrieNode *keynode = NULL;	/* current node matched by input */
@@ -431,15 +427,14 @@ int do_kbdel(int place)
 static int grapheme_is_word(const char *str, int start, int end)
 {
     int index = start;
-    UChar32 c;
-    U8_NEXT(str, index, end, c);
-    if (c < 0) {
+    int c;
+    if (!tf_utf8_decode(str, end, &index, &c)) {
         return is_inword(str[start]);
     }
     if (c <= 127) {
         return is_alnum((char)c) || (wordpunct && strchr(wordpunct, (char)c));
     }
-    return u_isalnum(c);
+    return tf_unicode_isalnum(c);
 }
 #endif
 

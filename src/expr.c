@@ -39,10 +39,6 @@
 #include "history.h"	/* log_count */
 #include "world.h"	/* new_world() */
 #include "unicode.h"
-#if WIDECHAR
-#include <unicode/uchar.h>
-#include <unicode/utf8.h>
-#endif
 
 
 #define STACKSIZE 512
@@ -1503,19 +1499,17 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
                     if (next <= offset) break;
                     int idx = offset;
                     while (idx < next) {
-                        UChar32 c, lc;
+                        int c, lc;
                         int prev_idx = idx;
-                        U8_NEXT(constr->data, idx, next, c);
-                        if (c < 0) {
+                        if (!tf_utf8_decode(constr->data, next, &idx, &c)) {
                             Stringadd(Sstr2, constr->data[prev_idx]);
                             if (Sstr2->charattrs && constr->charattrs)
                                 Sstr2->charattrs[Sstr2->len - 1] = constr->charattrs[prev_idx];
                         } else {
-                            lc = u_tolower(c);
+                            lc = tf_unicode_tolower(c);
                             int start_len = Sstr2->len;
                             char buf[8];
-                            int dest_len = 0;
-                            U8_APPEND_UNSAFE(buf, dest_len, lc);
+                            int dest_len = tf_utf8_encode(lc, buf);
                             Stringncat(Sstr2, buf, dest_len);
                             if (Sstr2->charattrs && constr->charattrs) {
                                 attr_t attr = constr->charattrs[prev_idx];
@@ -1561,19 +1555,17 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
                     if (next <= offset) break;
                     int idx = offset;
                     while (idx < next) {
-                        UChar32 c, uc;
+                        int c, uc;
                         int prev_idx = idx;
-                        U8_NEXT(constr->data, idx, next, c);
-                        if (c < 0) {
+                        if (!tf_utf8_decode(constr->data, next, &idx, &c)) {
                             Stringadd(Sstr2, constr->data[prev_idx]);
                             if (Sstr2->charattrs && constr->charattrs)
                                 Sstr2->charattrs[Sstr2->len - 1] = constr->charattrs[prev_idx];
                         } else {
-                            uc = u_toupper(c);
+                            uc = tf_unicode_toupper(c);
                             int start_len = Sstr2->len;
                             char buf[8];
-                            int dest_len = 0;
-                            U8_APPEND_UNSAFE(buf, dest_len, uc);
+                            int dest_len = tf_utf8_encode(uc, buf);
                             Stringncat(Sstr2, buf, dest_len);
                             if (Sstr2->charattrs && constr->charattrs) {
                                 attr_t attr = constr->charattrs[prev_idx];

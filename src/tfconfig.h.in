@@ -91,6 +91,8 @@
 #cmakedefine01 NO_FLOAT
 #define NCOLORS @NCOLORS@
 #cmakedefine01 WIDECHAR
+#cmakedefine01 UNICODE_BACKEND_ICU
+#cmakedefine01 UNICODE_BACKEND_UTF8PROC
 #define USE_DMALLOC 0
 #define USE_MMALLOC 0
 #cmakedefine01 DEVELOPMENT

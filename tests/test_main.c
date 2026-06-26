@@ -665,62 +665,68 @@ static void test_display_positions(void)
 
 static void test_incoming_conversion(void)
 {
-    UConverter *converter;
-    UErrorCode error = U_ZERO_ERROR;
+    TfConverter *converter;
     String *input;
     String *output;
+#if UNICODE_BACKEND_ICU
     const char latin1[] = "caf\xe9";
 
-    converter = ucnv_open("ISO-8859-1", &error);
-    EXPECT_TRUE(U_SUCCESS(error));
+    converter = tf_converter_open("ISO-8859-1");
+    EXPECT_TRUE(converter != NULL);
     input = owned_string(latin1, 4, 0);
     output = owned_string(NULL, 0, 0);
-    EXPECT_INT(4, tf_to_utf8(output, input, converter, 1, &error));
-    EXPECT_TRUE(U_SUCCESS(error));
+    EXPECT_INT(4, tf_to_utf8(output, input, converter, 1));
     expect_bytes("caf\xc3\xa9", 5, output);
     EXPECT_INT(0, input->len);
     Stringfree(output);
     Stringfree(input);
-    ucnv_close(converter);
+    tf_converter_close(converter);
+#else
+    EXPECT_TRUE(tf_converter_open("ISO-8859-1") == NULL);
+#endif
 
-    error = U_ZERO_ERROR;
-    converter = ucnv_open("UTF-8", &error);
+    converter = tf_converter_open("UTF-8");
+    EXPECT_TRUE(converter != NULL);
     input = owned_string("\xe2\x82", 2, 0);
     output = owned_string(NULL, 0, 0);
-    EXPECT_INT(2, tf_to_utf8(output, input, converter, 1, &error));
-    EXPECT_TRUE(U_SUCCESS(error));
+    EXPECT_INT(2, tf_to_utf8(output, input, converter, 1));
     expect_bytes("\xef\xbf\xbd", 3, output);
     Stringfree(output);
     Stringfree(input);
-    ucnv_close(converter);
+    tf_converter_close(converter);
 
-    error = U_ZERO_ERROR;
-    converter = ucnv_open("UTF-8", &error);
+    converter = tf_converter_open("UTF-8");
+    EXPECT_TRUE(converter != NULL);
     input = owned_string("\xe2\x82", 2, 0);
     output = owned_string(NULL, 0, 0);
-    EXPECT_INT(2, tf_to_utf8(output, input, converter, 0, &error));
+    EXPECT_INT(2, tf_to_utf8(output, input, converter, 0));
     EXPECT_INT(0, output->len);
     Stringcat(input, "\xac");
-    EXPECT_INT(1, tf_to_utf8(output, input, converter, 1, &error));
-    EXPECT_TRUE(U_SUCCESS(error));
+    EXPECT_INT(1, tf_to_utf8(output, input, converter, 1));
     expect_bytes("\xe2\x82\xac", 3, output);
     Stringfree(output);
     Stringfree(input);
-    ucnv_close(converter);
+    tf_converter_close(converter);
 }
 
 static void test_outgoing_conversion(void)
 {
-    UConverter *converter;
-    UErrorCode error = U_ZERO_ERROR;
+    TfConverter *converter;
     String *output = owned_string(NULL, 0, 0);
 
-    converter = ucnv_open("ISO-8859-1", &error);
-    EXPECT_TRUE(U_SUCCESS(error));
-    EXPECT_INT(4, tf_from_utf8(output, "caf\xc3\xa9", 5, converter, &error));
-    EXPECT_TRUE(U_SUCCESS(error));
+#if UNICODE_BACKEND_ICU
+    converter = tf_converter_open("ISO-8859-1");
+    EXPECT_TRUE(converter != NULL);
+    EXPECT_INT(4, tf_from_utf8(output, "caf\xc3\xa9", 5, converter));
     expect_bytes("caf\xe9", 4, output);
-    ucnv_close(converter);
+    tf_converter_close(converter);
+#else
+    converter = tf_converter_open("UTF-8");
+    EXPECT_TRUE(converter != NULL);
+    EXPECT_INT(5, tf_from_utf8(output, "caf\xc3\xa9", 5, converter));
+    expect_bytes("caf\xc3\xa9", 5, output);
+    tf_converter_close(converter);
+#endif
     Stringfree(output);
 }
 

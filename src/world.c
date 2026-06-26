@@ -25,10 +25,7 @@
 #include "cmdlist.h"
 #include "socket.h"
 #include "output.h"	/* columns */
-
-#if WIDECHAR
-#include <unicode/ucnv.h>
-#endif
+#include "unicode.h"
 
 #define LW_TABLE	001
 #define LW_UNNAMED	002
@@ -435,16 +432,15 @@ void mapworld(void (*func)(World *world))
 /* used by %{default_charset} */
 int ch_default_charset(Var *var)
 {
-    UErrorCode err = U_ZERO_ERROR;
-    UConverter *cnv = ucnv_open(default_charset->data, &err);
+    TfConverter *converter = tf_converter_open(default_charset->data);
 
-    if (U_FAILURE(err)) {
+    if (!converter) {
         /* This could be an out-of-memory or other error too */
         eprintf("illegal charset name: %s", default_charset->data);
         return 0;
     }
 
-    ucnv_close(cnv);
+    tf_converter_close(converter);
     return 1;
 }
 #endif

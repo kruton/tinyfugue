@@ -34,6 +34,7 @@
 #include "keyboard.h"
 #include "variable.h"
 #include "tty.h"	/* no_tty */
+#include "unicode.h"
 #include "expand.h"
 #include "expr.h"
 #include "process.h"
@@ -140,6 +141,9 @@ int main(int argc, char *argv[])
     if (*contrib) oputs(contrib);
     if (*mods) oputs(mods);
     oprintf("Using PCRE version %s", tf_pcre_version());
+#if WIDECHAR
+    oprintf("Using Unicode library %s", tf_unicode_version());
+#endif
     oputs("Type `/help', `/help topics', or `/help intro' for help.");
     oputs("Type `/quit' to quit tf.");
     oputs("");

@@ -19,6 +19,13 @@ foreach(feature WIDECHAR SSL GNUTLS ZLIB ATCP GMCP OPTION102)
     endif()
 endforeach()
 
+foreach(macro UNICODE_BACKEND_ICU UNICODE_BACKEND_UTF8PROC)
+    if(NOT config MATCHES "#define ${macro} ${EXPECT_${macro}}([\r\n]|$)")
+        message(FATAL_ERROR
+            "${macro} did not match expected value ${EXPECT_${macro}}")
+    endif()
+endforeach()
+
 if(NOT config MATCHES "#define TERMCAP ${EXPECT_TERMCAP}([\r\n]|$)")
     message(FATAL_ERROR
         "TERMCAP did not match expected value ${EXPECT_TERMCAP}")

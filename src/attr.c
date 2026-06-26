@@ -17,10 +17,7 @@
 #include "attr.h"
 #include "variable.h"
 #include "parse.h"	/* valstd() */
-
-#if WIDECHAR
-#include <unicode/utf8.h>
-#endif
+#include "unicode.h"
 
 
 const int feature_256colors = (NCOLORS == 256);
@@ -468,7 +465,7 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
     const char *start = s;
     int index, oldindex;
     int in_len = strlen(s);
-    UChar32 codepoint;
+    int codepoint;
 #endif
 
     if (emul == EMUL_RAW || emul == EMUL_DEBUG) {
@@ -558,7 +555,7 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 	    if (dst->len > 0) {
 #if WIDECHAR
 		int previous = dst->len;
-		U8_BACK_1((const uint8_t *)dst->data, 0, previous);
+		previous = tf_utf8_prev_offset(dst->data, 0, previous);
 		Stringtrunc(dst, previous);
 #else
 		Stringtrunc(dst, dst->len - 1);
@@ -575,8 +572,7 @@ String *decode_ansi(const char *s, attr_t attrs, int emul, attr_t *final_attrs)
 	    } else {
                 index = s - start;
                 oldindex = index;
-                U8_NEXT(start, index, in_len, codepoint);
-                if (codepoint >= 0) {
+                if (tf_utf8_decode(start, in_len, &index, &codepoint)) {
                     Stringfncat(dst, s, index - oldindex);
                     s = s + index - oldindex - 1;
                 }

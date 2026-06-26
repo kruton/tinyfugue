@@ -23,16 +23,27 @@ extern void tf_display_position(const char *str, int len, int position,
 extern int tf_display_row_offset(const char *str, int len, int target_row,
     int start_column, int wrap_width, int tab_width);
 extern int tf_utf8_incomplete_bytes(const char *str, int len);
+extern const char *tf_unicode_version(void);
 
 #if WIDECHAR
-#include <unicode/ucnv.h>
+typedef struct TfConverter TfConverter;
 
-extern int tf_to_utf8(String *output, String *input, UConverter *converter,
-    int flush, UErrorCode *error);
+extern TfConverter *tf_converter_open(const char *charset);
+extern void tf_converter_close(TfConverter *converter);
+extern int tf_converter_is_valid_charset(const char *charset);
+extern int tf_to_utf8(String *output, String *input, TfConverter *converter,
+    int flush);
 extern int tf_from_utf8(String *output, const char *input, int input_len,
-    UConverter *converter, UErrorCode *error);
+    TfConverter *converter);
 extern int tf_utf8_wraplen(const char *str, int len, int max_columns,
     int tab_width);
+extern int tf_utf8_decode(const char *str, int len, int *index,
+    int *codepoint);
+extern int tf_utf8_encode(int codepoint, char *dst);
+extern int tf_utf8_prev_offset(const char *str, int start, int offset);
+extern int tf_unicode_isalnum(int codepoint);
+extern int tf_unicode_tolower(int codepoint);
+extern int tf_unicode_toupper(int codepoint);
 #endif
 
 #endif /* UNICODE_H */

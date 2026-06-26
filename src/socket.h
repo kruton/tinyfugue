@@ -10,6 +10,7 @@
 #define SOCKET_H
 
 #include "tfconfig.h"
+#include <stddef.h>
 
 /* socktime ids */
 #define SOCK_RECV	0
@@ -27,7 +28,16 @@ struct World;	/* declares struct World */
 struct addrinfo;
 typedef struct addrinfo tf_addrinfo;
 #else
-struct tfaddrinfo;
+struct tfaddrinfo {
+    int     ai_flags;     /* AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST */
+    int     ai_family;    /* PF_xxx */
+    int     ai_socktype;  /* SOCK_xxx */
+    int     ai_protocol;  /* 0 or IPPROTO_xxx for IPv4 and IPv6 */
+    size_t  ai_addrlen;   /* length of ai_addr */
+    char   *ai_canonname; /* canonical name for nodename */
+    struct sockaddr *ai_addr;     /* binary address */
+    struct tfaddrinfo *ai_next;   /* next structure in linked list */
+};
 typedef struct tfaddrinfo tf_addrinfo;
 #endif
 struct sockaddr;

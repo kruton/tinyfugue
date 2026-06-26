@@ -44,7 +44,7 @@ if(BUILD_TESTING)
             "SHELL:-sALLOW_MEMORY_GROWTH=1"
             "SHELL:-sFORCE_FILESYSTEM=1"
             "SHELL:-sEXIT_RUNTIME=1")
-        if(ICU_DATA_FILE)
+        if(UNICODE_BACKEND_ICU AND ICU_DATA_FILE)
             target_link_options(tf_test PRIVATE "--embed-file=${ICU_DATA_FILE}@/icudt.dat")
         endif()
     endif()
@@ -54,6 +54,8 @@ if(BUILD_TESTING)
         COMMAND "${CMAKE_COMMAND}"
             -DHEADER=${CMAKE_CURRENT_BINARY_DIR}/tfconfig.h
             -DEXPECT_WIDECHAR=${WIDECHAR}
+            -DEXPECT_UNICODE_BACKEND_ICU=${UNICODE_BACKEND_ICU}
+            -DEXPECT_UNICODE_BACKEND_UTF8PROC=${UNICODE_BACKEND_UTF8PROC}
             -DEXPECT_SSL=${HAVE_SSL}
             -DEXPECT_GNUTLS=${HAVE_GNUTLS_OPENSSL_H}
             -DEXPECT_ZLIB=${HAVE_LIBZ}

@@ -166,17 +166,6 @@ static const char *tf_gai_errlist[] = {
 # define getaddrinfo tfgetaddrinfo
 # define freeaddrinfo tffreeaddrinfo
 
-struct tfaddrinfo {
-    int     ai_flags;     /* AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST */
-    int     ai_family;    /* PF_xxx */
-    int     ai_socktype;  /* SOCK_xxx */
-    int     ai_protocol;  /* 0 or IPPROTO_xxx for IPv4 and IPv6 */
-    size_t  ai_addrlen;   /* length of ai_addr */
-    char   *ai_canonname; /* canonical name for nodename */
-    struct sockaddr  *ai_addr; /* binary address */
-    struct addrinfo  *ai_next; /* next structure in linked list */
-};
-
 #ifndef AI_NUMERICHOST
 # define AI_NUMERICHOST  0x00000004 /* prevent name resolution */
 #endif
@@ -314,7 +303,7 @@ typedef struct Sock {		/* an open connection to a server */
     struct Sock *next, *prev;	/* next/prev sockets in linked list */
 #if WIDECHAR
     Stringp incomingposttelnet;	/* incoming text stripped of telnet commands */
-    UConverter *incomingfsm;	/* converter for incomingposttelnet to buffer */
+    TfConverter *incomingfsm;	/* converter for incomingposttelnet to buffer */
 #endif
     Stringp buffer;		/* above buffer processed into UTF-8 */
     Stringp subbuffer;		/* buffer for processing telnet commands */
@@ -370,7 +359,7 @@ static void  schedule_prompt(Sock *sock);
 static void  handle_socket_lines(void);
 #if WIDECHAR
 static int   inbound_decode_str(String *output, String *input,
-    UConverter *converter, int flush);
+    TfConverter *converter, int flush);
 #endif
 static int   handle_socket_input(const char *simbuffer, int simlen, const char* encoding);
 static void  handle_socket_input_queue_lines(Sock *sock);
@@ -404,10 +393,9 @@ static void  killsock(Sock *sock);
 
 #if WIDECHAR
 static int inbound_decode_str(String *output, String *input,
-    UConverter *converter, int flush)
+    TfConverter *converter, int flush)
 {
-    UErrorCode error;
-    return tf_to_utf8(output, input, converter, flush, &error);
+    return tf_to_utf8(output, input, converter, flush);
 }
 #endif
 #define SPAM (4*1024)		/* break loop if this many chars are received */
@@ -1577,10 +1565,9 @@ static int opensock(World *world, int flags)
 #if WIDECHAR
 	 Stringninit(xsock->incomingposttelnet, 1);
 	 /* TODO: Better error handling, /addworld charset setting. */
-    UErrorCode uerr = U_ZERO_ERROR;
-    xsock->incomingfsm = ucnv_open(world->charset, &uerr);
-    if (U_FAILURE(uerr))
-        core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
+    xsock->incomingfsm = tf_converter_open(world->charset);
+    if (!xsock->incomingfsm)
+        core("TN_CHARSET: Could not create converter.", __FILE__, __LINE__, 0);
 #endif
     xsock->fd = -1;
     xsock->pid = -1;
@@ -2372,6 +2359,11 @@ static void killsock(Sock *sock)
     VEC_ZERO(&sock->tn_them_tog);
     VEC_ZERO(&sock->tn_us);
     VEC_ZERO(&sock->tn_us_tog);
+#if WIDECHAR
+    Stringfree(sock->incomingposttelnet);
+    tf_converter_close(sock->incomingfsm);
+    sock->incomingfsm = NULL;
+#endif
     Stringfree(sock->buffer);
     Stringfree(sock->subbuffer);
 
@@ -2520,11 +2512,7 @@ static void dc(Sock *s)
     Sock *oldxsock = xsock;
     xsock = s;
 #if WIDECHAR
-    {
-        UErrorCode error;
-        tf_to_utf8(s->buffer, s->incomingposttelnet, s->incomingfsm, 1,
-            &error);
-    }
+    tf_to_utf8(s->buffer, s->incomingposttelnet, s->incomingfsm, 1);
     handle_socket_input_queue_lines(xsock);
 #endif
     flushxsock();
@@ -2925,7 +2913,6 @@ int send_line(const char *src, unsigned int len, int eol_flag)
     static int bufferlen = 0;
     static char *buffer2 = NULL;
 #if WIDECHAR
-    UErrorCode err;
     String *encoded;
 #endif
 
@@ -2991,7 +2978,7 @@ int send_line(const char *src, unsigned int len, int eol_flag)
 
 #if WIDECHAR
     (encoded = Stringnew(NULL, len * 12 + 8, 0))->links++;
-    if (tf_from_utf8(encoded, buffer1, len, xsock->incomingfsm, &err) < 0) {
+    if (tf_from_utf8(encoded, buffer1, len, xsock->incomingfsm) < 0) {
         Stringfree(encoded);
         eprintf("Broken characters found. Line not sent.");
         return 0;
@@ -3237,8 +3224,7 @@ static void telnet_subnegotiation(void)
     int ttype;
     char charset_sep = '\0';
 #if WIDECHAR
-    UConverter* newconverter = NULL;
-    UErrorCode newconvertererr;
+    TfConverter *newconverter = NULL;
 #endif
 
     static conString enum_ttype[] = {
@@ -3292,8 +3278,7 @@ static void telnet_subnegotiation(void)
 		  ++p;
 	      }
 	      temp_buff[p - temp_ptr] = '\0';
-	      newconvertererr = U_ZERO_ERROR;
-	      newconverter = ucnv_open(temp_buff, &newconvertererr);
+	      newconverter = tf_converter_open(temp_buff);
 	  /* TODO: Check U_MEMORY_ALLOCATION_ERROR and U_FILE_ACCESS_ERROR */
 	      if (newconverter != NULL) {
 		  p = (char *) end; /* Prefer the first valid charset! */
@@ -3306,7 +3291,7 @@ static void telnet_subnegotiation(void)
 	      inbound_decode_str(xsock->buffer, xsock->incomingposttelnet, 
 	          xsock->incomingfsm, 1); /* 1; nothing else to convert */
 	      handle_socket_input_queue_lines(xsock);
-	      ucnv_close(xsock->incomingfsm);
+	      tf_converter_close(xsock->incomingfsm);
 	      xsock->incomingfsm = newconverter;
 	   } else {
 	      Sprintf(telbuf, "%c%c%c%c%c%c", TN_IAC, TN_SB, TN_CHARSET, '\03', TN_IAC, TN_SE);
@@ -3388,8 +3373,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     struct timeval timeout;
 #if WIDECHAR
     String *incomingposttelnet;
-    UConverter *incomingFSM = NULL;
-    UErrorCode incomingERR;
+    TfConverter *incomingFSM = NULL;
 #endif
 
     if (xsock->constate <= SS_CONNECTING || xsock->constate >= SS_ZOMBIE)
@@ -3402,9 +3386,9 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
     } else {
         /* Using simlen because we assume we'll have UTF-8 anyway */
 	incomingposttelnet = Stringnew(NULL, simlen, 0);
-	incomingFSM = ucnv_open(encoding, &incomingERR);
-	if (incomingERR == U_MEMORY_ALLOCATION_ERROR || incomingERR == U_FILE_ACCESS_ERROR)
-            core("TN_CHARSET: Could not create UConverter.", __FILE__, __LINE__, 0);
+	incomingFSM = tf_converter_open(encoding);
+	if (!incomingFSM)
+            core("TN_CHARSET: Could not create converter.", __FILE__, __LINE__, 0);
     }
 #endif
 
@@ -3826,7 +3810,7 @@ non_telnet:
 #if WIDECHAR
 	if (encoding != NULL) {
 	   Stringfree(incomingposttelnet);
-	   ucnv_close(incomingFSM);
+	   tf_converter_close(incomingFSM);
 	}
 #endif
 
