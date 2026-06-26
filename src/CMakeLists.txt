@@ -27,6 +27,10 @@ target_sources(tflib PRIVATE
     world.c
 )
 
+if(PLATFORM_WASM)
+    target_sources(tflib PRIVATE wasm_platform.c)
+endif()
+
 if(BUILD_TESTING)
     add_executable(tf_test "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_main.c")
     target_include_directories(tf_test PRIVATE
@@ -49,6 +53,7 @@ if(BUILD_TESTING)
             -DEXPECT_OPTION102=${ENABLE_OPTION102}
             -DEXPECT_TERMCAP=${TERMCAP}
             -DEXPECT_HARDCODE=${HARDCODE}
+            -DEXPECT_WASM=${PLATFORM_WASM}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/../tests/check_config.cmake")
 
     add_test(NAME install-layout
@@ -62,5 +67,6 @@ if(BUILD_TESTING)
             -DMANDIR=${CMAKE_INSTALL_MANDIR}
             -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
             -DEXPECT_EXECUTABLE_SYMLINK=${TF_INSTALL_SYMLINK}
+            -DSKIP_EXECUTABLE_SMOKE=${PLATFORM_WASM}
             -P "${CMAKE_CURRENT_SOURCE_DIR}/../tests/verify_install.cmake")
 endif()

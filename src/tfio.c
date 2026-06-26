@@ -65,10 +65,102 @@ static TFILE *filemap[FD_SETSIZE];
 static int selectable_tfiles = 0;
 static List userfilelist[1];
 static int max_fileid = 0;
+static FILE *native_fopen(const char *name, const char *mode);
+static int native_fclose(FILE *file);
+static FILE *native_popen(const char *command, const char *mode);
+static int native_pclose(FILE *file);
+static int native_select(int nfds, fd_set *readers, fd_set *writers,
+    fd_set *excepts, struct timeval *timeout);
+static tf_fopen_func_t tf_fopen_func = native_fopen;
+static tf_fclose_func_t tf_fclose_func = native_fclose;
+static tf_popen_func_t tf_popen_func = native_popen;
+static tf_pclose_func_t tf_pclose_func = native_pclose;
+static tf_select_func_t tf_select_func = native_select;
 
 static void fileputs(const char *str, FILE *fp);
 static void filenputs(const char *str, int n, FILE *fp);
 static void queueputline(conString *line, TFILE *file);
+
+static FILE *native_fopen(const char *name, const char *mode)
+{
+    return fopen(name, mode);
+}
+
+static int native_fclose(FILE *file)
+{
+    return fclose(file);
+}
+
+FILE *tf_fopen(const char *name, const char *mode)
+{
+    return (*tf_fopen_func)(name, mode);
+}
+
+int tf_fclose(FILE *file)
+{
+    return (*tf_fclose_func)(file);
+}
+
+void tf_set_fopen_funcs(tf_fopen_func_t fopen_func,
+    tf_fclose_func_t fclose_func)
+{
+    tf_fopen_func = fopen_func ? fopen_func : native_fopen;
+    tf_fclose_func = fclose_func ? fclose_func : native_fclose;
+}
+
+static FILE *native_popen(const char *command, const char *mode)
+{
+    return popen(command, mode);
+}
+
+static int native_pclose(FILE *file)
+{
+    return pclose(file);
+}
+
+FILE *tf_popen(const char *command, const char *mode)
+{
+    return (*tf_popen_func)(command, mode);
+}
+
+int tf_pclose(FILE *file)
+{
+    return (*tf_pclose_func)(file);
+}
+
+void tf_set_popen_funcs(tf_popen_func_t popen_func,
+    tf_pclose_func_t pclose_func)
+{
+    tf_popen_func = popen_func ? popen_func : native_popen;
+    tf_pclose_func = pclose_func ? pclose_func : native_pclose;
+}
+
+static int native_select(int nfds, fd_set *readers, fd_set *writers,
+    fd_set *excepts, struct timeval *timeout)
+{
+#if PLATFORM_WASM
+    (void)nfds;
+    (void)readers;
+    (void)writers;
+    (void)excepts;
+    (void)timeout;
+    errno = ENOSYS;
+    return -1;
+#else
+    return select(nfds, readers, writers, excepts, timeout);
+#endif
+}
+
+int tf_select(int nfds, fd_set *readers, fd_set *writers, fd_set *excepts,
+    struct timeval *timeout)
+{
+    return (*tf_select_func)(nfds, readers, writers, excepts, timeout);
+}
+
+void tf_set_select_func(tf_select_func_t select_func)
+{
+    tf_select_func = select_func ? select_func : native_select;
+}
 
 
 void init_tfio(void)
@@ -225,7 +317,7 @@ TFILE *tfopen(const char *name, const char *mode)
 	    errno = EPERM;
 	    return NULL;
 	}
-        if (!(fp = popen(name, "r"))) return NULL;
+        if (!(fp = tf_popen(name, "r"))) return NULL;
         result = (TFILE *)XMALLOC(sizeof(TFILE));
         result->type = TF_PIPE;
         result->name = STRDUP(name);
@@ -242,9 +334,9 @@ TFILE *tfopen(const char *name, const char *mode)
 #endif
     }
 
-    if ((fp = fopen(name, mode)) && fstat(fileno(fp), &buf) == 0) {
+    if ((fp = tf_fopen(name, mode)) && fstat(fileno(fp), &buf) == 0) {
         if (buf.st_mode & S_IFDIR) {
-            fclose(fp);
+            tf_fclose(fp);
             errno = EISDIR;  /* must be after fclose() */
             return NULL;
         }
@@ -260,12 +352,12 @@ TFILE *tfopen(const char *name, const char *mode)
         newname = (char*)XMALLOC(strlen(name) + strlen(suffix) + 1);
         strcat(strcpy(newname, name), suffix);
 
-        if ((fp = fopen(newname, mode)) != NULL) {  /* test readability */
-            fclose(fp);
+        if ((fp = tf_fopen(newname, mode)) != NULL) {  /* test readability */
+            tf_fclose(fp);
 #ifdef PLATFORM_UNIX
             Sprintf(buffer, "%s %s 2>/dev/null", prog, newname);
 #endif
-            fp = popen(buffer->data, mode);
+            fp = tf_popen(buffer->data, mode);
             type = TF_PIPE;
         }
     }
@@ -274,10 +366,10 @@ TFILE *tfopen(const char *name, const char *mode)
         errno = EAGAIN;  /* in case malloc fails */
         if (!(result = (TFILE*)MALLOC(sizeof(TFILE)))) {
 #ifdef PLATFORM_UNIX
-            if (type == TF_PIPE) pclose(fp);
-            else fclose(fp);
+            if (type == TF_PIPE) tf_pclose(fp);
+            else tf_fclose(fp);
 #else
-            fclose(fp);
+            tf_fclose(fp);
 #endif
             if (newname) FREE(newname);
             return NULL;
@@ -325,12 +417,12 @@ int tfclose(TFILE *file)
         result = 0;
         break;
     case TF_FILE:
-        result = fclose(file->u.fp);
+        result = tf_fclose(file->u.fp);
         break;
     case TF_PIPE:
         filemap[fileno(file->u.fp)] = NULL;
         selectable_tfiles--;
-        result = shell_status(pclose(file->u.fp));
+        result = shell_status(tf_pclose(file->u.fp));
         break;
     default:
         result = -1;
@@ -349,7 +441,7 @@ int tfselect(int nfds, fd_set *readers, fd_set *writers, fd_set *excepts,
     fd_set tfreaders;
 
     if (!selectable_tfiles)
-        return select(nfds, readers, writers, excepts, timeout);
+        return tf_select(nfds, readers, writers, excepts, timeout);
 
     FD_ZERO(&tfreaders);
 
@@ -364,13 +456,13 @@ int tfselect(int nfds, fd_set *readers, fd_set *writers, fd_set *excepts,
     }
 
     if (!tfcount) {
-        return select(nfds, readers, writers, excepts, timeout);
+        return tf_select(nfds, readers, writers, excepts, timeout);
 
     } else {
         /* we found at least one; poll the rest, but don't wait */
         struct timeval zero;
         zero = tvzero;
-        count = select(nfds, readers, writers, excepts, &zero);
+        count = tf_select(nfds, readers, writers, excepts, &zero);
         if (count < 0) return count;
         count += tfcount;
 
@@ -791,8 +883,8 @@ char igetchar(void)
 
     FD_ZERO(&readers);
     FD_SET(STDIN_FILENO, &readers);
-    while(select(1, &readers, NULL, NULL, NULL) <= 0);
-    read(STDIN_FILENO, &c, 1);
+    while(tf_select(1, &readers, NULL, NULL, NULL) <= 0);
+    tf_read_stdin(&c, 1);
     return c;
 }
 
@@ -817,7 +909,8 @@ int tfreadable(TFILE *file)
 	FD_ZERO(&readers);
 	FD_SET(fileno(file->u.fp), &readers);
 
-	count = select(fileno(file->u.fp) + 1, &readers, NULL, NULL, &timeout);
+	count = tf_select(fileno(file->u.fp) + 1, &readers, NULL, NULL,
+	    &timeout);
 	if (count < 0) {
 	    return -1;
 	} else if (count == 0) {
@@ -1004,4 +1097,3 @@ struct Value *handle_liststreams_command(String *args, int offset)
 
     return newint(count);
 }
-

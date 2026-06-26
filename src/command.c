@@ -359,7 +359,7 @@ int handle_echo_func(
             return 0;
     }
     if (raw) {
-        write(STDOUT_FILENO, src->data, src->len);
+        tf_write_stdout(src->data, src->len);
         return 1;
     }
 
@@ -823,4 +823,3 @@ struct Value *handle_bind_command(String *args, int offset)
     return newint(add_new_macro(NULL, print_to_ascii(NULL, pattern)->data,
 	NULL, NULL, body, 1, 100, 0, FALSE, 0));
 }
-

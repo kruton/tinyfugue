@@ -52,20 +52,22 @@ if(NOT local_contents STREQUAL "site-local configuration\n")
     message(FATAL_ERROR "Reinstallation overwrote the site-local library file")
 endif()
 
-execute_process(
-    COMMAND "${executable}" "-?"
-    RESULT_VARIABLE smoke_result
-    OUTPUT_VARIABLE smoke_output
-    ERROR_VARIABLE smoke_error
-    TIMEOUT 10)
-if(NOT smoke_result EQUAL 1)
-    message(FATAL_ERROR
-        "Installed executable usage check returned ${smoke_result}: ${smoke_error}")
-endif()
-string(CONCAT smoke_text "${smoke_output}" "${smoke_error}")
-if(NOT smoke_text MATCHES "Usage:")
-    message(FATAL_ERROR
-        "Installed executable did not print usage information: ${smoke_text}")
+if(NOT SKIP_EXECUTABLE_SMOKE)
+    execute_process(
+        COMMAND "${executable}" "-?"
+        RESULT_VARIABLE smoke_result
+        OUTPUT_VARIABLE smoke_output
+        ERROR_VARIABLE smoke_error
+        TIMEOUT 10)
+    if(NOT smoke_result EQUAL 1)
+        message(FATAL_ERROR
+            "Installed executable usage check returned ${smoke_result}: ${smoke_error}")
+    endif()
+    string(CONCAT smoke_text "${smoke_output}" "${smoke_error}")
+    if(NOT smoke_text MATCHES "Usage:")
+        message(FATAL_ERROR
+            "Installed executable did not print usage information: ${smoke_text}")
+    endif()
 endif()
 
 set(destdir_stage "${BUILD_DIR}/test-destdir")

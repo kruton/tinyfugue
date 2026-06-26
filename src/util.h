@@ -91,6 +91,15 @@ extern const int feature_TZ;
 # define gettime(p)	((p)->tv_usec = 0, time(&(p)->tv_sec))
 #endif
 
+typedef void (*tf_gettime_func_t)(struct timeval *tv);
+typedef int (*tf_write_func_t)(const char *data, int len);
+typedef int (*tf_read_func_t)(char *data, int len);
+extern void   tf_gettime(struct timeval *tv);
+extern void   tf_set_gettime_func(tf_gettime_func_t func);
+extern int    tf_read_stdin(char *data, int len);
+extern void   tf_set_read_stdin_func(tf_read_func_t func);
+extern int    tf_write_stdout(const char *data, int len);
+extern void   tf_set_write_stdout_func(tf_write_func_t func);
 #define strtochr(s, ep)   ((char)(strtol((s), (char**)ep, 0) % 0x100))
 #define strtoint(s, ep)   ((int)strtol((s), (char**)ep, 10))
 #define strtolong(s, ep)  (strtol((s), (char**)ep, 10))

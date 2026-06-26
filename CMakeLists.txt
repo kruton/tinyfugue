@@ -43,6 +43,7 @@ option(TF_OPTION102 "Enable telnet option 102 support" OFF)
 option(TF_PROCESS "Enable /quote and /repeat" ON)
 option(TF_VERSIONED "Add the release suffix to installed names" OFF)
 option(TF_INSTALL_SYMLINK "Install an unversioned tf symlink" OFF)
+option(TF_WASM "Build for the WebAssembly platform provider layer" OFF)
 
 set(TF_MAILDIR "AUTO" CACHE STRING
     "Mail spool directory, AUTO to detect one, or empty to disable")
@@ -52,6 +53,12 @@ set(TF_EXTRA_INCLUDE_DIRS "" CACHE STRING
     "Additional semicolon-separated dependency include directories")
 set(TF_EXTRA_LIBRARY_DIRS "" CACHE STRING
     "Additional semicolon-separated dependency library directories")
+set(TF_WASM_JS_LIBRARY "" CACHE FILEPATH
+    "Optional Emscripten JS library to link into the WebAssembly backend")
+set(TF_HOST_HTML2TF "" CACHE FILEPATH
+    "Native html2tf helper to use when cross-compiling")
+set(TF_HOST_MAKEHELP "" CACHE FILEPATH
+    "Native makehelp helper to use when cross-compiling")
 
 tf_feature_mode(TF_WIDECHAR AUTO "ICU wide-character support")
 tf_feature_mode(TF_TLS AUTO "TLS support")
@@ -85,11 +92,51 @@ foreach(old new IN ZIP_LISTS old_mode_options new_mode_options)
     endif()
 endforeach()
 
+if(TF_WASM)
+    set(TF_TLS OFF CACHE STRING "TLS support" FORCE)
+    set(TF_TERMCAP OFF CACHE STRING "termcap/curses terminal support" FORCE)
+    set(TF_MAILCHECK OFF CACHE BOOL "Enable mail checking" FORCE)
+    set(TF_PROCESS OFF CACHE BOOL "Enable /quote and /repeat" FORCE)
+    message(STATUS "WASM platform: enabled")
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+        message(WARNING
+            "TF_WASM is intended for Emscripten; use emcmake or pass "
+            "Emscripten's CMake toolchain for a browser WebAssembly build.")
+    endif()
+endif()
+
 add_library(tflib STATIC)
 add_executable(tf src/main.c)
 add_executable(html2tf help/html2tf.c)
 add_executable(makehelp src/makehelp.c)
 target_link_libraries(tf PRIVATE tflib)
+
+if(TF_WASM AND CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    set_target_properties(tf PROPERTIES SUFFIX ".js")
+    set_property(TARGET tf APPEND PROPERTY LINK_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/wasm/tf_jslib.js")
+    target_link_options(tf PRIVATE
+        "SHELL:-sMODULARIZE=1"
+        "SHELL:-sEXPORT_ES6=1"
+        "SHELL:-sENVIRONMENT=web,node"
+        "SHELL:-sALLOW_MEMORY_GROWTH=1"
+        "SHELL:-sFORCE_FILESYSTEM=1"
+        "SHELL:-sEXPORTED_FUNCTIONS=['_main','_tf_tick','_tf_next_deadline_ms','_tf_wasm_resize','_tf_wasm_smoke']"
+        "SHELL:-sEXPORTED_RUNTIME_METHODS=['ccall','cwrap','FS','callMain']"
+        "SHELL:-lidbfs.js"
+        "SHELL:-lnodefs.js"
+        "--js-library=${CMAKE_CURRENT_SOURCE_DIR}/wasm/tf_jslib.js")
+    if(TF_WASM_JS_LIBRARY)
+        target_link_options(tf PRIVATE "--js-library=${TF_WASM_JS_LIBRARY}")
+    endif()
+    add_custom_target(wasm-dist
+        COMMAND "${CMAKE_COMMAND}"
+            -DBUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}/tinyfugue-wasm.tar.gz
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PackageWasmDist.cmake"
+        DEPENDS tf tf-lib
+        COMMENT "Packaging TinyFugue WebAssembly distribution")
+endif()
 
 if(TF_EXTRA_INCLUDE_DIRS)
     target_include_directories(tflib PRIVATE ${TF_EXTRA_INCLUDE_DIRS})
@@ -107,11 +154,20 @@ if(TF_CORE)
 else()
     set(DISABLE_CORE 1)
 endif()
+if(TF_WASM)
+    set(PLATFORM_WASM 1)
+else()
+    set(PLATFORM_WASM 0)
+endif()
 set(DEVELOPMENT ${TF_DEVELOPMENT})
 
-search_for_function(select "bsd" tflib HAVE_SELECT)
-if(NOT HAVE_SELECT)
-    message(FATAL_ERROR "TinyFugue requires BSD-style select().")
+if(TF_WASM)
+    set(HAVE_SELECT 0)
+else()
+    search_for_function(select "bsd" tflib HAVE_SELECT)
+    if(NOT HAVE_SELECT)
+        message(FATAL_ERROR "TinyFugue requires BSD-style select().")
+    endif()
 endif()
 
 # Preserve the incremental library search used by the historical configure
@@ -261,7 +317,18 @@ if(NOT HAVE_LIBZ)
     message(STATUS "MCCP support: disabled")
 endif()
 
-find_package(PCRE2 REQUIRED)
+find_package(PCRE2 QUIET)
+if(NOT PCRE2_FOUND)
+    if(TF_WASM)
+        message(FATAL_ERROR
+            "TF_WASM requires PCRE2 built with Emscripten. Build and install "
+            "PCRE2 with emcmake, then pass its install prefix with "
+            "-DCMAKE_PREFIX_PATH=/path/to/pcre2-wasm, or pass "
+            "-DTF_EXTRA_INCLUDE_DIRS=/path/to/include and "
+            "-DTF_EXTRA_LIBRARY_DIRS=/path/to/lib.")
+    endif()
+    find_package(PCRE2 REQUIRED)
+endif()
 target_link_libraries(tflib PUBLIC PCRE2::PCRE2)
 
 check_include_file("unistd.h" HAVE_UNISTD_H)
@@ -409,6 +476,14 @@ target_include_directories(tf PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
 
 add_subdirectory(src)
 include(cmake/TfLib.cmake)
+if(BUILD_TESTING AND PLATFORM_WASM AND CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    add_test(NAME wasm-smoke
+        COMMAND "${CMAKE_CROSSCOMPILING_EMULATOR}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/wasm_smoke.mjs"
+            "$<TARGET_FILE:tf>"
+            "${CMAKE_CURRENT_BINARY_DIR}/${EXENAME}.wasm"
+            "${CMAKE_CURRENT_BINARY_DIR}/tf-lib")
+endif()
 include(cmake/Docs.cmake)
 include(cmake/Install.cmake)
 

@@ -104,7 +104,7 @@ struct sockaddr_in {
 #define INET6_ADDRSTRLEN 46
 #endif
 
-#ifdef PLATFORM_UNIX
+#if defined(PLATFORM_UNIX) && !PLATFORM_WASM
 # ifndef __CYGWIN32__
 #  if HAVE_WAITPID
 #   define NONBLOCKING_GETHOST
@@ -345,6 +345,7 @@ static int   get_host_address(Sock *sock, const char **what, int *errp);
 #if !HAVE_GETADDRINFO
 static int   tfgetaddrinfo(const char *nodename, const char *port,
 	     const struct addrinfo *hints, struct addrinfo **res);
+static void  tffreeaddrinfo(struct addrinfo *ai);
 #endif
 static int   opensock(World *world, int flags);
 static int   openconn(Sock *new);
@@ -509,6 +510,193 @@ const int feature_SOCKS = SOCKS - 0;
 
 static const char *CONFAIL_fmt = "%% Connection to %s failed: %s: %s";
 static const char *ICONFAIL_fmt = "%% Intermediate connection to %s failed: %s: %s";
+
+static int native_getaddrinfo(const char *name, const char *port,
+    const tf_addrinfo *hints, tf_addrinfo **res);
+static void native_freeaddrinfo(tf_addrinfo *res);
+static int native_socket_open(int domain, int type, int protocol);
+static int native_socket_connect(int fd, const struct sockaddr *addr,
+    int addrlen);
+static int native_socket_bind(int fd, const struct sockaddr *addr,
+    int addrlen);
+static int native_socket_close(int fd);
+static int native_socket_setsockopt(int fd, int level, int optname,
+    const void *optval, int optlen);
+static int native_socket_getsockopt(int fd, int level, int optname,
+    void *optval, int *optlen);
+static int native_socket_fcntl(int fd, int cmd, int arg);
+static int native_socket_recv(int fd, char *buf, int len, int flags);
+static int native_socket_send(int fd, const char *buf, int len, int flags);
+static tf_getaddrinfo_func_t tf_getaddrinfo_func = native_getaddrinfo;
+static tf_freeaddrinfo_func_t tf_freeaddrinfo_func = native_freeaddrinfo;
+static tf_socket_open_func_t tf_socket_open_func = native_socket_open;
+static tf_socket_connect_func_t tf_socket_connect_func = native_socket_connect;
+static tf_socket_bind_func_t tf_socket_bind_func = native_socket_bind;
+static tf_socket_close_func_t tf_socket_close_func = native_socket_close;
+static tf_socket_setsockopt_func_t tf_socket_setsockopt_func =
+    native_socket_setsockopt;
+static tf_socket_getsockopt_func_t tf_socket_getsockopt_func =
+    native_socket_getsockopt;
+static tf_socket_fcntl_func_t tf_socket_fcntl_func = native_socket_fcntl;
+static tf_socket_recv_func_t tf_socket_recv_func = native_socket_recv;
+static tf_socket_send_func_t tf_socket_send_func = native_socket_send;
+
+static int native_getaddrinfo(const char *name, const char *port,
+    const tf_addrinfo *hints, tf_addrinfo **res)
+{
+    return getaddrinfo(name, port, hints, res);
+}
+
+static void native_freeaddrinfo(tf_addrinfo *res)
+{
+    freeaddrinfo(res);
+}
+
+int tf_getaddrinfo(const char *name, const char *port,
+    const tf_addrinfo *hints, tf_addrinfo **res)
+{
+    return (*tf_getaddrinfo_func)(name, port, hints, res);
+}
+
+void tf_freeaddrinfo(tf_addrinfo *res)
+{
+    (*tf_freeaddrinfo_func)(res);
+}
+
+void tf_set_addrinfo_funcs(tf_getaddrinfo_func_t getaddrinfo_func,
+    tf_freeaddrinfo_func_t freeaddrinfo_func)
+{
+    tf_getaddrinfo_func =
+        getaddrinfo_func ? getaddrinfo_func : native_getaddrinfo;
+    tf_freeaddrinfo_func =
+        freeaddrinfo_func ? freeaddrinfo_func : native_freeaddrinfo;
+}
+
+static int native_socket_open(int domain, int type, int protocol)
+{
+    return socket(domain, type, protocol);
+}
+
+static int native_socket_connect(int fd, const struct sockaddr *addr,
+    int addrlen)
+{
+    return connect(fd, addr, addrlen);
+}
+
+static int native_socket_bind(int fd, const struct sockaddr *addr, int addrlen)
+{
+    return bind(fd, addr, addrlen);
+}
+
+static int native_socket_close(int fd)
+{
+    return close(fd);
+}
+
+static int native_socket_setsockopt(int fd, int level, int optname,
+    const void *optval, int optlen)
+{
+    return setsockopt(fd, level, optname, optval, optlen);
+}
+
+static int native_socket_getsockopt(int fd, int level, int optname,
+    void *optval, int *optlen)
+{
+    socklen_t len = *optlen;
+    int result;
+
+    result = getsockopt(fd, level, optname, optval, &len);
+    *optlen = len;
+    return result;
+}
+
+static int native_socket_fcntl(int fd, int cmd, int arg)
+{
+    return fcntl(fd, cmd, arg);
+}
+
+static int native_socket_recv(int fd, char *buf, int len, int flags)
+{
+    return recv(fd, buf, len, flags);
+}
+
+static int native_socket_send(int fd, const char *buf, int len, int flags)
+{
+    return send(fd, buf, len, flags);
+}
+
+int tf_socket_open(int domain, int type, int protocol)
+{
+    return (*tf_socket_open_func)(domain, type, protocol);
+}
+
+int tf_socket_connect(int fd, const struct sockaddr *addr, int addrlen)
+{
+    return (*tf_socket_connect_func)(fd, addr, addrlen);
+}
+
+int tf_socket_bind(int fd, const struct sockaddr *addr, int addrlen)
+{
+    return (*tf_socket_bind_func)(fd, addr, addrlen);
+}
+
+int tf_socket_close(int fd)
+{
+    return (*tf_socket_close_func)(fd);
+}
+
+int tf_socket_setsockopt(int fd, int level, int optname, const void *optval,
+    int optlen)
+{
+    return (*tf_socket_setsockopt_func)(fd, level, optname, optval, optlen);
+}
+
+int tf_socket_getsockopt(int fd, int level, int optname, void *optval,
+    int *optlen)
+{
+    return (*tf_socket_getsockopt_func)(fd, level, optname, optval, optlen);
+}
+
+int tf_socket_fcntl(int fd, int cmd, int arg)
+{
+    return (*tf_socket_fcntl_func)(fd, cmd, arg);
+}
+
+int tf_socket_recv(int fd, char *buf, int len, int flags)
+{
+    return (*tf_socket_recv_func)(fd, buf, len, flags);
+}
+
+int tf_socket_send(int fd, const char *buf, int len, int flags)
+{
+    return (*tf_socket_send_func)(fd, buf, len, flags);
+}
+
+void tf_set_socket_ops(tf_socket_open_func_t open_func,
+    tf_socket_connect_func_t connect_func, tf_socket_bind_func_t bind_func,
+    tf_socket_close_func_t close_func,
+    tf_socket_setsockopt_func_t setsockopt_func,
+    tf_socket_getsockopt_func_t getsockopt_func,
+    tf_socket_fcntl_func_t fcntl_func)
+{
+    tf_socket_open_func = open_func ? open_func : native_socket_open;
+    tf_socket_connect_func =
+        connect_func ? connect_func : native_socket_connect;
+    tf_socket_bind_func = bind_func ? bind_func : native_socket_bind;
+    tf_socket_close_func = close_func ? close_func : native_socket_close;
+    tf_socket_setsockopt_func =
+        setsockopt_func ? setsockopt_func : native_socket_setsockopt;
+    tf_socket_getsockopt_func =
+        getsockopt_func ? getsockopt_func : native_socket_getsockopt;
+    tf_socket_fcntl_func = fcntl_func ? fcntl_func : native_socket_fcntl;
+}
+
+void tf_set_socket_io_funcs(tf_socket_recv_func_t recv_func,
+    tf_socket_send_func_t send_func)
+{
+    tf_socket_recv_func = recv_func ? recv_func : native_socket_recv;
+    tf_socket_send_func = send_func ? send_func : native_socket_send;
+}
 
 #define ICONFAIL_AI(sock, why) \
     ICONFAIL((sock), printai((sock)->addr, NULL), (why))
@@ -675,12 +863,316 @@ void init_sock(void)
 #endif
 }
 
-#define set_min_earliest(tv) \
-    do { \
-	if (earliest.tv_sec == 0 || (tvcmp(&tv, &earliest) < 0)) { \
-	    earliest = tv; \
-	} \
-    } while (0)
+typedef struct LoopWait {
+    int has_timeout;
+    struct timeval timeout;
+} LoopWait;
+
+static void set_min_earliest(struct timeval *earliest,
+    const struct timeval *tv)
+{
+    if (earliest->tv_sec == 0 || (tvcmp(tv, earliest) < 0))
+        *earliest = *tv;
+}
+
+static int loop_before_wait(int depth)
+{
+    struct timeval now;
+    STATIC_STRING(low_memory_msg,
+	"% WARNING: memory is low.  Try reducing history sizes.", 0);
+
+    if (depth > 1 && interrupted()) return 0;
+
+    /* deal with pending signals */
+    /* at loop beginning in case of signals before main_loop() */
+    process_signals();
+
+    /* run processes */
+    /* at loop beginning in case of processes before main_loop() */
+    tf_gettime(&now);
+    if (proctime.tv_sec && tvcmp(&proctime, &now) <= 0)
+	runall(0, NULL); /* run timed processes */
+
+    if (low_memory_warning) {
+	low_memory_warning = 0;
+	tfputline(low_memory_msg, tferr);
+    }
+
+    return !quit_flag;
+}
+
+static void loop_compute_wait(LoopWait *wait)
+{
+    struct timeval now, earliest;
+    struct timeval refresh_tv;
+
+    wait->has_timeout = 0;
+
+    /* figure out when next event is so select() can timeout then */
+    tf_gettime(&now);
+    earliest = proctime;
+#if 1 /* XXX debugging */
+    {
+	Sock *s;
+	int n = 0;
+	for (s = hsock; s; s = s->next)
+	    if (s->queue.list.head) n++;
+	if (n != socks_with_lines) {
+	    internal_error(__FILE__, __LINE__,
+		"socks_with_lines (%d) is not correct (%d)!",
+		socks_with_lines, n);
+	    socks_with_lines = n;
+	}
+    }
+#endif
+    if (socks_with_lines)
+	earliest = now;
+    if (maillist && tvcmp(&maildelay, &tvzero) > 0) {
+	if (tvcmp(&now, &mail_update) >= 0) {
+	    check_mail();
+	    tvadd(&mail_update, &now, &maildelay);
+	}
+	set_min_earliest(&earliest, &mail_update);
+    }
+    if (visual && alert_timeout.tv_sec > 0) {
+	if (tvcmp(&alert_timeout, &now) < 0) {
+	    clear_alert();
+	} else {
+	    set_min_earliest(&earliest, &alert_timeout);
+	}
+    }
+    if (visual && clock_update.tv_sec > 0) {
+	if (now.tv_sec >= clock_update.tv_sec)
+	    update_status_field(NULL, STAT_CLOCK);
+	set_min_earliest(&earliest, &clock_update);
+    }
+    if (prompt_timeout.tv_sec > 0) {
+	set_min_earliest(&earliest, &prompt_timeout);
+    }
+
+    if (pending_input || pending_line) {
+	wait->has_timeout = 1;
+	wait->timeout = tvzero;
+    } else if (earliest.tv_sec) {
+	wait->has_timeout = 1;
+	if (tvcmp(&earliest, &now) <= 0) {
+	    wait->timeout = tvzero;
+	} else {
+	    tvsub(&wait->timeout, &earliest, &now);
+#if !HAVE_GETTIMEOFDAY
+	    /* We can't read microseconds, so we get within the right
+	     * second and then start polling. */
+	    if (proctime.tv_sec) {
+		if ((--wait->timeout.tv_sec) == 0)
+		    wait->timeout.tv_usec = PROC_WAIT;
+	    }
+#endif
+	}
+    }
+
+    if (need_refresh) {
+	if (!visual) {
+	    refresh_tv.tv_sec = refreshtime / 1000000;
+	    refresh_tv.tv_usec = refreshtime % 1000000;
+	} else {
+	    refresh_tv = tvzero;
+	}
+
+	if (!wait->has_timeout ||
+	    refresh_tv.tv_sec < wait->timeout.tv_sec ||
+	    (refresh_tv.tv_sec == wait->timeout.tv_sec &&
+	    refresh_tv.tv_usec < wait->timeout.tv_usec))
+	{
+	    wait->has_timeout = 1;
+	    wait->timeout = refresh_tv;
+	}
+    }
+
+    if (visual && need_more_refresh) {
+	if (!wait->has_timeout || 1 < wait->timeout.tv_sec ||
+	    (1 == wait->timeout.tv_sec && 0 < wait->timeout.tv_usec))
+	{
+	    wait->has_timeout = 1;
+	    refresh_tv.tv_sec = 1;
+	    refresh_tv.tv_usec = 0;
+	    wait->timeout = refresh_tv;
+	}
+    }
+}
+
+static void loop_service_ready(Sock **sockp, int *countp)
+{
+    int count = *countp;
+    int received;
+    Sock *stopsock;
+    struct timeval now;
+
+    if (count < 0) {
+	/* select() must have exited due to error or interrupt. */
+	if (errno != EINTR) core(strerror(errno), __FILE__, __LINE__, 0);
+	/* In case we're in a kb tfgetS(), clear things for parent loop. */
+	FD_ZERO(&active);
+	FD_ZERO(&connected);
+	/* In case the dreaded solaris select bug caused tf to remove stdin
+	 * from readers, user will probably panic and hit ^C, so we add
+	 * stdin back to readers, and recover. */
+	FD_SET(STDIN_FILENO, &readers);
+	*countp = count;
+	return;
+    }
+
+    if (count == 0) {
+	/* select() must have exited due to timeout. */
+	do_refresh();
+    }
+
+    /* check for user input */
+    if (pending_input || FD_ISSET(STDIN_FILENO, &active)) {
+	if (FD_ISSET(STDIN_FILENO, &active)) count--;
+	do_refresh();
+	if (!handle_keyboard_input(FD_ISSET(STDIN_FILENO, &active))) {
+	    /* input is at EOF, stop reading it */
+	    FD_CLR(STDIN_FILENO, &readers);
+	}
+    }
+
+    /* Check for socket completion/activity.  We pick up where we
+     * left off last time, so sockets near the end of the list aren't
+     * starved.  We stop when we've gone through the list once, or
+     * when we've received a lot of data (so spammy sockets don't
+     * degrade interactive response too much).
+     */
+    if (hsock) {
+	received = 0;
+	if (!*sockp) *sockp = hsock;
+	stopsock = *sockp;
+	/* note: count may have been zeroed by nested main_loop */
+	while (count > 0 || socks_with_lines > 0 ||
+	    prompt_timeout.tv_sec > 0)
+	{
+	    xsock = *sockp;
+	    if ((*sockp)->constate >= SS_OPEN) {
+		/* do nothing */
+	    } else if (FD_ISSET(xsock->fd, &connected)) {
+		count--;
+		establish(xsock);
+	    } else if (FD_ISSET(xsock->fd, &active)) {
+		count--;
+		if (xsock->constate == SS_RESOLVING) {
+		    openconn(xsock);
+		} else if (xsock->constate == SS_CONNECTING) {
+		    establish(xsock);
+		} else if (xsock == fsock || background) {
+		    received += handle_socket_input(NULL, 0, NULL);
+		} else {
+		    FD_CLR(xsock->fd, &readers);
+		}
+	    }
+	    if (xsock->queue.list.head)
+		handle_socket_lines();
+
+	    /* If there's a partial line that's past prompt_timeout,
+	     * make it a prompt. */
+	    if (xsock->prompt_timeout.tv_sec) {
+		tf_gettime(&now);
+		if (tvcmp(&xsock->prompt_timeout, &now) < 0) {
+		    handle_implicit_prompt();
+		}
+	    }
+
+	    *sockp = (*sockp)->next ? (*sockp)->next : hsock;
+	    if (*sockp == stopsock || received >= SPAM) break;
+	}
+
+	/* fsock and/or xsock may have changed during loop above. */
+	xsock = fsock;
+
+	if (prompt_timeout.tv_sec > 0) {
+	    /* reset global prompt timeout */
+	    Sock *psock;
+	    prompt_timeout = tvzero;
+	    for (psock = hsock; psock; psock = psock->next) {
+		schedule_prompt(psock);
+	    }
+	}
+    }
+
+#if !NO_PROCESS
+    /* other active fds must be from command /quotes. */
+    if (count) tf_gettime(&proctime);
+#endif
+
+    *countp = count;
+}
+
+static int loop_after_iteration(int depth, Sock **sockp)
+{
+    if (pending_line && read_depth) {    /* end of tf read() */
+	pending_line = FALSE;
+	return 0;
+    }
+
+#if 0
+    if (fsock && fsock->constate >= SS_ZOMBIE && auto_fg &&
+	!(fsock->world->screen->nnew || fsock->queue.list.head))
+    {
+	fg_live_sock();
+    }
+#endif
+
+    /* garbage collection */
+    if (depth == 1) {
+	if (*sockp && (*sockp)->constate == SS_DEAD) *sockp = NULL;
+	if (dead_socks) nuke_dead_socks(); /* at end in case of quitdone */
+	nuke_dead_macros();
+	nuke_dead_procs();
+    }
+
+    return 1;
+}
+
+static long loop_wait_milliseconds(const LoopWait *wait)
+{
+    long result;
+
+    if (!wait->has_timeout)
+	return -1;
+    if (wait->timeout.tv_sec <= 0 && wait->timeout.tv_usec <= 0)
+	return 0;
+
+    result = wait->timeout.tv_sec * 1000 + wait->timeout.tv_usec / 1000;
+    if (wait->timeout.tv_usec % 1000)
+	result++;
+    return result;
+}
+
+void tf_tick(void)
+{
+    static Sock *sock = NULL;
+    int count = 0;
+    LoopWait wait;
+    struct timeval *tvp;
+
+    if (!loop_before_wait(1))
+	return;
+
+    loop_compute_wait(&wait);
+    oflush();
+    tvp = wait.has_timeout ? &wait.timeout : NULL;
+    active = readers;
+    connected = writers;
+    count = tfselect(nfds, &active, &connected, NULL, tvp);
+    loop_service_ready(&sock, &count);
+    loop_after_iteration(1, &sock);
+}
+
+long tf_next_deadline_ms(void)
+{
+    LoopWait wait;
+
+    loop_compute_wait(&wait);
+    return loop_wait_milliseconds(&wait);
+}
 
 /* main_loop
  * Here we mostly sit in select(), waiting for something to happen.
@@ -690,129 +1182,23 @@ void init_sock(void)
  */
 void main_loop(void)
 {
-    static struct timeval now, earliest;    /* static, for recursion */
     Sock *sock = NULL;		/* loop index */
     static int count;		/* select count; remembered across recursion */
-    int received;
-    Sock *stopsock;
     static int depth = 0;
-    struct timeval tv, *tvp;
-    struct timeval refresh_tv;
-    STATIC_STRING(low_memory_msg,
-	"% WARNING: memory is low.  Try reducing history sizes.", 0);
+    LoopWait wait;
+    struct timeval *tvp;
 
     depth++;
     while (!quit_flag) {
-        if (depth > 1 && interrupted()) break;
+	if (!loop_before_wait(depth)) break;
 
-        /* deal with pending signals */
-        /* at loop beginning in case of signals before main_loop() */
-        process_signals();
-
-        /* run processes */
-        /* at loop beginning in case of processes before main_loop() */
-        gettime(&now);
-        if (proctime.tv_sec && tvcmp(&proctime, &now) <= 0)
-	    runall(0, NULL); /* run timed processes */
-
-        if (low_memory_warning) {
-            low_memory_warning = 0;
-	    tfputline(low_memory_msg, tferr);
-        }
-
-        if (quit_flag) break;
-
-        /* figure out when next event is so select() can timeout then */
-        gettime(&now);
-        earliest = proctime;
-#if 1 /* XXX debugging */
-	{
-	    Sock *s;
-	    int n = 0;
-	    for (s = hsock; s; s = s->next)
-		if (s->queue.list.head) n++;
-	    if (n != socks_with_lines) {
-		internal_error(__FILE__, __LINE__,
-		    "socks_with_lines (%d) is not correct (%d)!",
-		    socks_with_lines, n);
-		socks_with_lines = n;
-	    }
-	}
-#endif
-	if (socks_with_lines)
-	    earliest = now;
-        if (maillist && tvcmp(&maildelay, &tvzero) > 0) {
-            if (tvcmp(&now, &mail_update) >= 0) {
-                check_mail();
-                tvadd(&mail_update, &now, &maildelay);
-            }
-	    set_min_earliest(mail_update);
-        }
-        if (visual && alert_timeout.tv_sec > 0) {
-            if (tvcmp(&alert_timeout, &now) < 0) {
-		clear_alert();
-	    } else {
-		set_min_earliest(alert_timeout);
-            }
-	}
-        if (visual && clock_update.tv_sec > 0) {
-            if (now.tv_sec >= clock_update.tv_sec)
-                update_status_field(NULL, STAT_CLOCK);
-	    set_min_earliest(clock_update);
-        }
-        if (prompt_timeout.tv_sec > 0) {
-	    set_min_earliest(prompt_timeout);
-	}
+	loop_compute_wait(&wait);
 
         /* flush pending display_screen output */
         /* must be after all possible output and before select() */
         oflush();
 
-        if (pending_input || pending_line) {
-            tvp = &tv;
-            tv = tvzero;
-        } else if (earliest.tv_sec) {
-            tvp = &tv;
-            if (tvcmp(&earliest, &now) <= 0) {
-                tv = tvzero;
-            } else {
-                tvsub(&tv, &earliest, &now);
-#if !HAVE_GETTIMEOFDAY
-                /* We can't read microseconds, so we get within the right
-                 * second and then start polling. */
-                if (proctime.tv_sec) {
-                    if ((--tv.tv_sec) == 0)
-                        tv.tv_usec = PROC_WAIT;
-                }
-#endif
-            }
-        } else tvp = NULL;
-
-        if (need_refresh) {
-            if (!visual) {
-                refresh_tv.tv_sec = refreshtime / 1000000;
-                refresh_tv.tv_usec = refreshtime % 1000000;
-            } else {
-                refresh_tv = tvzero;
-            }
-
-            if (!tvp || refresh_tv.tv_sec < tvp->tv_sec ||
-                (refresh_tv.tv_sec == tvp->tv_sec &&
-                refresh_tv.tv_usec < tvp->tv_usec))
-            {
-                tvp = &refresh_tv;
-            }
-        }
-
-        if (visual && need_more_refresh) {
-            if (!tvp || 1 < tvp->tv_sec ||
-                (1 == tvp->tv_sec && 0 < tvp->tv_usec))
-            {
-                refresh_tv.tv_sec = 1;
-                refresh_tv.tv_usec = 0;
-                tvp = &refresh_tv;
-            }
-        }
+	tvp = wait.has_timeout ? &wait.timeout : NULL;
 
         /* Wait for next event.
          *   descriptor read:	user input, socket input, or /quote !
@@ -825,120 +1211,8 @@ void main_loop(void)
         connected = writers;
         count = tfselect(nfds, &active, &connected, NULL, tvp);
 
-        if (count < 0) {
-            /* select() must have exited due to error or interrupt. */
-            if (errno != EINTR) core(strerror(errno), __FILE__, __LINE__, 0);
-            /* In case we're in a kb tfgetS(), clear things for parent loop. */
-            FD_ZERO(&active);
-            FD_ZERO(&connected);
-	    /* In case the dreaded solaris select bug caused tf to remove stdin
-	     * from readers, user will probably panic and hit ^C, so we add
-	     * stdin back to readers, and recover. */
-	    FD_SET(STDIN_FILENO, &readers);
-
-        } else {
-            if (count == 0) {
-                /* select() must have exited due to timeout. */
-                do_refresh();
-            }
-
-            /* check for user input */
-            if (pending_input || FD_ISSET(STDIN_FILENO, &active)) {
-                if (FD_ISSET(STDIN_FILENO, &active)) count--;
-                do_refresh();
-                if (!handle_keyboard_input(FD_ISSET(STDIN_FILENO, &active))) {
-                    /* input is at EOF, stop reading it */
-                    FD_CLR(STDIN_FILENO, &readers);
-                }
-            }
-
-            /* Check for socket completion/activity.  We pick up where we
-             * left off last time, so sockets near the end of the list aren't
-             * starved.  We stop when we've gone through the list once, or
-             * when we've received a lot of data (so spammy sockets don't
-             * degrade interactive response too much).
-             */
-            if (hsock) {
-                received = 0;
-                if (!sock) sock = hsock;
-                stopsock = sock;
-		/* note: count may have been zeroed by nested main_loop */
-                while (count > 0 || socks_with_lines > 0 ||
-		    prompt_timeout.tv_sec > 0)
-		{
-                    xsock = sock;
-                    if (sock->constate >= SS_OPEN) {
-                        /* do nothing */
-                    } else if (FD_ISSET(xsock->fd, &connected)) {
-                        count--;
-                        establish(xsock);
-                    } else if (FD_ISSET(xsock->fd, &active)) {
-                        count--;
-                        if (xsock->constate == SS_RESOLVING) {
-                            openconn(xsock);
-                        } else if (xsock->constate == SS_CONNECTING) {
-                            establish(xsock);
-                        } else if (xsock == fsock || background) {
-                            received += handle_socket_input(NULL, 0, NULL);
-                        } else {
-                            FD_CLR(xsock->fd, &readers);
-                        }
-                    }
-		    if (xsock->queue.list.head)
-			handle_socket_lines();
-
-		    /* If there's a partial line that's past prompt_timeout,
-		     * make it a prompt. */
-		    if (xsock->prompt_timeout.tv_sec) {
-			gettime(&now);
-			if (tvcmp(&xsock->prompt_timeout, &now) < 0) {
-			    handle_implicit_prompt();
-			}
-		    }
-
-                    sock = sock->next ? sock->next : hsock;
-		    if (sock == stopsock || received >= SPAM) break;
-                }
-
-                /* fsock and/or xsock may have changed during loop above. */
-                xsock = fsock;
-
-		if (prompt_timeout.tv_sec > 0) {
-		    /* reset global prompt timeout */
-		    Sock *psock;
-		    prompt_timeout = tvzero;
-		    for (psock = hsock; psock; psock = psock->next) {
-			schedule_prompt(psock);
-		    }
-		}
-            }
-
-#if !NO_PROCESS
-            /* other active fds must be from command /quotes. */
-            if (count) gettime(&proctime);
-#endif
-        }
-
-        if (pending_line && read_depth) {    /* end of tf read() */
-            pending_line = FALSE;
-            break;
-        }
-
-#if 0
-        if (fsock && fsock->constate >= SS_ZOMBIE && auto_fg &&
-	    !(fsock->world->screen->nnew || fsock->queue.list.head))
-	{
-            fg_live_sock();
-        }
-#endif
-
-        /* garbage collection */
-        if (depth == 1) {
-            if (sock && sock->constate == SS_DEAD) sock = NULL;
-            if (dead_socks) nuke_dead_socks(); /* at end in case of quitdone */
-            nuke_dead_macros();
-            nuke_dead_procs();
-        }
+	loop_service_ready(&sock, &count);
+	if (!loop_after_iteration(depth, &sock)) break;
     }
 
     /* end of loop */
@@ -964,7 +1238,7 @@ int sockecho(void)
 void close_all(void)
 {
     while (nfds > 3)
-	close(--nfds);
+	tf_socket_close(--nfds);
 }
 
 int is_active(int fd)
@@ -1001,8 +1275,8 @@ int tog_keepalive(Var *var)
     flags = keepalive;
     for (sock = hsock; sock; sock = sock->next) {
 	if (sock->constate != SS_CONNECTED) continue;
-	if (setsockopt(sock->fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&flags,
-	    sizeof(flags)) < 0)
+	if (tf_socket_setsockopt(sock->fd, SOL_SOCKET, SO_KEEPALIVE,
+	    (void*)&flags, sizeof(flags)) < 0)
 	{
 	    tfwprintf("setsockopt KEEPALIVE: %s", strerror(errno));
 	}
@@ -1303,7 +1577,7 @@ static int opensock(World *world, int flags)
     VEC_ZERO(&xsock->tn_us_tog);
     xsock->constate = SS_NEW;
     xsock->flags = 0;
-    gettime(&xsock->time[SOCK_SEND]);
+    tf_gettime(&xsock->time[SOCK_SEND]);
     xsock->time[SOCK_RECV] = xsock->time[SOCK_SEND];
 
     if ((flags & CONN_QUIETLOGIN) && (flags & CONN_AUTOLOGIN) &&
@@ -1361,7 +1635,7 @@ static int opensock(World *world, int flags)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	err = getaddrinfo(xsock->myhost, NULL, &hints, &xsock->myaddr);
+	err = tf_getaddrinfo(xsock->myhost, NULL, &hints, &xsock->myaddr);
 
 	if (err) {
 	    CONFAIL(xsock, xsock->myhost, gai_strerror(err));
@@ -1388,7 +1662,7 @@ static int opensock(World *world, int flags)
         FD_SET(xsock->fd, &readable);
         tv.tv_sec = 0;
         tv.tv_usec = CONN_WAIT;
-        if (select(xsock->fd + 1, &readable, NULL, NULL, &tv) > 0) {
+        if (tf_select(xsock->fd + 1, &readable, NULL, NULL, &tv) > 0) {
             /* The lookup completed. */
             return openconn(xsock);
         }
@@ -1448,7 +1722,7 @@ static inline int ai_connect(int s, struct addrinfo *ai)
 {
     do_hook(H_PENDING, "%% Trying to connect to %s: %s.", "%s %s",
 	xsock->world->name, printai(ai, NULL));
-    return connect(s, ai->ai_addr, ai->ai_addrlen);
+    return tf_socket_connect(s, ai->ai_addr, ai->ai_addrlen);
 }
 
 static void setupnextconn(Sock *sock)
@@ -1456,7 +1730,7 @@ static void setupnextconn(Sock *sock)
     struct addrinfo *ai, *next = sock->addr;
 
     if (sock->fd >= 0)
-	close(sock->fd);
+	tf_socket_close(sock->fd);
 retry:
     if (!next) {
 	sock->addr = NULL;
@@ -1507,7 +1781,7 @@ static int openconn(Sock *sock)
             else
 		CONFAILHP(xsock, gai_strerror(info.err));
             if (xsock->fd >= 0) {
-                close(xsock->fd);
+                tf_socket_close(xsock->fd);
                 xsock->fd = -1;
             }
 # ifdef PLATFORM_UNIX
@@ -1526,7 +1800,7 @@ static int openconn(Sock *sock)
 	    read(xsock->fd, (char*)xsock->addrs, info.size);
 	}
         if (xsock->fd >= 0) {
-            close(xsock->fd);
+            tf_socket_close(xsock->fd);
         }
 # ifdef PLATFORM_UNIX
         if (xsock->pid >= 0)
@@ -1559,7 +1833,7 @@ static int openconn(Sock *sock)
 	return 0;
     }
 
-    xsock->fd = socket(xsock->addr->ai_family, xsock->addr->ai_socktype,
+    xsock->fd = tf_socket_open(xsock->addr->ai_family, xsock->addr->ai_socktype,
 	xsock->addr->ai_protocol);
     if (xsock->fd < 0) {
 	if (errno == EPROTONOSUPPORT || errno == EAFNOSUPPORT)
@@ -1569,7 +1843,7 @@ static int openconn(Sock *sock)
         return 0;
     }
 
-    if (xsock->myaddr && bind(xsock->fd, xsock->myaddr->ai_addr,
+    if (xsock->myaddr && tf_socket_bind(xsock->fd, xsock->myaddr->ai_addr,
 	xsock->myaddr->ai_addrlen) < 0)
     {
         CONFAIL(xsock, printai(xsock->myaddr, NULL), strerror(errno));
@@ -1591,10 +1865,11 @@ static int openconn(Sock *sock)
         set_var_by_id(VAR_async_conn, 0);
     } else if (async_conn) {
         /* note: 3rd arg to fcntl() is optional on Unix, but required by OS/2 */
-        if ((flags = fcntl(xsock->fd, F_GETFL, 0)) < 0) {
+        if ((flags = tf_socket_fcntl(xsock->fd, F_GETFL, 0)) < 0) {
             operror("Can't make socket nonblocking: F_GETFL fcntl");
             set_var_by_id(VAR_async_conn, 0);
-        } else if ((fcntl(xsock->fd, F_SETFL, flags | TF_NONBLOCK)) < 0) {
+        } else if ((tf_socket_fcntl(xsock->fd, F_SETFL,
+	    flags | TF_NONBLOCK)) < 0) {
             operror("Can't make socket nonblocking: F_SETFL fcntl");
             set_var_by_id(VAR_async_conn, 0);
         }
@@ -1602,8 +1877,8 @@ static int openconn(Sock *sock)
 
     if (keepalive) {
 	flags = 1;
-	if (setsockopt(xsock->fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&flags,
-	    sizeof(flags)) < 0)
+	if (tf_socket_setsockopt(xsock->fd, SOL_SOCKET, SO_KEEPALIVE,
+	    (void*)&flags, sizeof(flags)) < 0)
 	{
 	    tfwprintf("setsockopt KEEPALIVE: %s", strerror(errno));
 	}
@@ -1627,7 +1902,7 @@ static int openconn(Sock *sock)
         FD_SET(xsock->fd, &writeable);
         tv.tv_sec = 0;
         tv.tv_usec = CONN_WAIT;
-        if (select(xsock->fd + 1, NULL, &writeable, NULL, &tv) > 0) {
+        if (tf_select(xsock->fd + 1, NULL, &writeable, NULL, &tv) > 0) {
             /* The connection completed. */
             return establish(xsock);
         }
@@ -1650,7 +1925,7 @@ static int openconn(Sock *sock)
          * incorrectly fail with EAGAIN.  The only thing we can do about
          * it is to try a blocking connect().
          */
-        close(xsock->fd);
+        tf_socket_close(xsock->fd);
         can_nonblock = FALSE;
         goto retry; /* try again */
 #endif /* 0 */
@@ -1792,7 +2067,7 @@ static int get_host_address(Sock *sock, const char **what, int *errp)
     hints.ai_flags |= AI_ADDRCONFIG;
 # endif
 #endif
-    *errp = getaddrinfo(sock->host, sock->port, &hints, &sock->addrs);
+    *errp = tf_getaddrinfo(sock->host, sock->port, &hints, &sock->addrs);
     *what = NULL;
     if (*errp == 0) return 0;
 
@@ -1808,7 +2083,7 @@ static int get_host_address(Sock *sock, const char **what, int *errp)
 #endif
     {
 	hints.ai_flags &= ~AI_NUMERICHOST;
-	*errp = getaddrinfo(sock->host, sock->port, &hints, &sock->addrs);
+	*errp = tf_getaddrinfo(sock->host, sock->port, &hints, &sock->addrs);
 	*what = NULL;
 	if (*errp == 0) return 0;
     }
@@ -1835,7 +2110,7 @@ static void waitforhostname(int fd, const char *name, const char *port)
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    hdr.err = getaddrinfo(name, port, &hints, &res);
+    hdr.err = tf_getaddrinfo(name, port, &hints, &res);
 
     if (!hdr.err) {
 	hdr.size = 0;
@@ -1852,7 +2127,7 @@ static void waitforhostname(int fd, const char *name, const char *port)
 	    niov++;
 	}
 	writev(fd, iov, niov);
-	if (res) freeaddrinfo(res);
+	if (res) tf_freeaddrinfo(res);
     } else {
 	hdr.size = 0;
 	write(fd, &hdr, sizeof(hdr));
@@ -1902,7 +2177,7 @@ static int establish(Sock *sock)
 #if TF_NONBLOCK
     if (xsock->constate == SS_CONNECTING) {
         int err = 0, flags;
-        socklen_t len = sizeof(err);
+        int len = sizeof(err);
 
         /* Old Method 1: If read(fd, buf, 0) fails, the connect() failed, and
          * errno will explain why.  Problem: on some systems, a read() of
@@ -1941,7 +2216,8 @@ static int establish(Sock *sock)
 #endif
 
 #ifdef USE_SO_ERROR
-        if (getsockopt(xsock->fd, SOL_SOCKET, SO_ERROR, (void*)&err, &len) < 0)
+        if (tf_socket_getsockopt(xsock->fd, SOL_SOCKET, SO_ERROR,
+	    (void*)&err, &len) < 0)
         {
             return ICONFAIL(xsock, "getsockopt", strerror(errno));
         }
@@ -1969,8 +2245,8 @@ static int establish(Sock *sock)
 
         /* Turn off nonblocking (this should help on buggy systems). */
         /* note: 3rd arg to fcntl() is optional on Unix, but required by OS/2 */
-        if ((flags = fcntl(xsock->fd, F_GETFL, 0)) >= 0)
-            fcntl(xsock->fd, F_SETFL, flags & ~TF_NONBLOCK);
+        if ((flags = tf_socket_fcntl(xsock->fd, F_GETFL, 0)) >= 0)
+            tf_socket_fcntl(xsock->fd, F_SETFL, flags & ~TF_NONBLOCK);
     }
 #endif /* TF_NONBLOCK */
 
@@ -2087,11 +2363,11 @@ static void killsock(Sock *sock)
 	if (sock->flags & SOCKALLOCADDRS)
 	    tffreeaddrinfo(sock->addrs);
 	else
-	    freeaddrinfo(sock->addrs);
+	    tf_freeaddrinfo(sock->addrs);
 	sock->addrs = NULL;
     }
     if (sock->myaddr) {
-	freeaddrinfo(sock->myaddr);
+	tf_freeaddrinfo(sock->myaddr);
 	sock->myaddr = NULL;
     }
 #if HAVE_SSL
@@ -2103,7 +2379,7 @@ static void killsock(Sock *sock)
     if (sock->fd >= 0) {
         FD_CLR(sock->fd, &readers);
         FD_CLR(sock->fd, &writers);
-        close(sock->fd);
+        tf_socket_close(sock->fd);
         sock->fd = -1;
     }
 #if HAVE_MCCP
@@ -2207,7 +2483,7 @@ static void queue_socket_line(Sock *sock, const conString *line, int length,
     (new = StringnewM(NULL, length, 0, sock->world->md))->links++;
     SStringoncat(new, line, 0, length);
     new->attrs |= attr;
-    gettime(&new->time);
+    tf_gettime(&new->time);
     sock->time[SOCK_RECV] = new->time;
     new->attrs &= ~F_GAG; /* in case gagged line was passed via fake_recv() */
     if (!sock->queue.list.head)
@@ -2585,7 +2861,7 @@ static int transmit(const char *str, unsigned int numtowrite)
 	} else
 #endif /* HAVE_SSL */
 	{
-	    numwritten = send(xsock->fd, str, numtowrite, 0);
+	    numwritten = tf_socket_send(xsock->fd, str, numtowrite, 0);
 	    if (numwritten < 0) {
 		err = errno;
 		/* Socket is blocking; EAGAIN and EWOULDBLOCK are impossible. */
@@ -2605,7 +2881,7 @@ static int transmit(const char *str, unsigned int numtowrite)
 	}
         numtowrite -= numwritten;
         str += numwritten;
-        gettime(&xsock->time[SOCK_SEND]);
+        tf_gettime(&xsock->time[SOCK_SEND]);
     }
     return 1;
 }
@@ -2922,7 +3198,7 @@ static void test_prompt(void)
 	} else if (lpflag) {
 	    /* Wait for prompt_wait before treating unterm'd line as prompt. */
 	    struct timeval now;
-	    gettime(&now);
+	    tf_gettime(&now);
 	    tvadd(&xsock->prompt_timeout, &now, &prompt_wait);
 	    schedule_prompt(xsock);
 	}
@@ -3143,7 +3419,7 @@ static int handle_socket_input(const char *simbuffer, int simlen, const char *en
 		/* We could loop while (count < 0 && errno == EINTR), but if we
 		 * got here because of a mistake in the active fdset and there
 		 * is really nothing to read, the loop would be unbreakable. */
-		count = recv(xsock->fd, inbuffer, sizeof(inbuffer), 0);
+		count = tf_socket_recv(xsock->fd, inbuffer, sizeof(inbuffer), 0);
 		eof:
 		if (count <= 0) {
 		    int err = errno;
@@ -3536,7 +3812,8 @@ non_telnet:
         FD_ZERO(&readfds);
         FD_SET(xsock->fd, &readfds);
 	timeout = tvzero; /* don't use tvzero directly, select may modify it */
-        if ((n = select(xsock->fd + 1, &readfds, NULL, NULL, &timeout)) < 0) {
+        if ((n = tf_select(xsock->fd + 1, &readfds, NULL, NULL,
+	    &timeout)) < 0) {
             if (errno != EINTR) die("handle_socket_input: select", errno);
         }
 

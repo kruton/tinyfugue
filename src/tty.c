@@ -75,6 +75,48 @@ int no_tty = 1;
 
 #define DEFAULT_COLUMNS 80
 
+static int native_tty_isatty(int fd);
+static void native_cbreak_noecho_mode(void);
+static void native_reset_tty(void);
+static int native_get_window_size(int *new_columns, int *new_lines);
+
+static tf_tty_isatty_func_t tty_isatty_func = native_tty_isatty;
+static tf_tty_mode_func_t tty_cbreak_func = native_cbreak_noecho_mode;
+static tf_tty_mode_func_t tty_reset_func = native_reset_tty;
+static tf_window_size_func_t window_size_func = native_get_window_size;
+
+static int native_tty_isatty(int fd)
+{
+    return isatty(fd);
+}
+
+int tf_tty_isatty(int fd)
+{
+    return (*tty_isatty_func)(fd);
+}
+
+void tf_set_tty_isatty_func(tf_tty_isatty_func_t func)
+{
+    tty_isatty_func = func ? func : native_tty_isatty;
+}
+
+void tf_set_tty_mode_funcs(tf_tty_mode_func_t cbreak_func,
+    tf_tty_mode_func_t reset_func)
+{
+    tty_cbreak_func = cbreak_func ? cbreak_func : native_cbreak_noecho_mode;
+    tty_reset_func = reset_func ? reset_func : native_reset_tty;
+}
+
+int tf_tty_get_window_size(int *new_columns, int *new_lines)
+{
+    return (*window_size_func)(new_columns, new_lines);
+}
+
+void tf_set_window_size_func(tf_window_size_func_t func)
+{
+    window_size_func = func ? func : native_get_window_size;
+}
+
 void init_tty(void)
 {
 #ifdef USE_HPUX_TERMIO
@@ -87,7 +129,7 @@ void init_tty(void)
     char bs[2], dline[2], bword[2], refresh[2], lnext[2];
     bs[0] = dline[0] = bword[0] = refresh[0] = lnext[0] = '\0';
 
-    no_tty = !isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO);
+    no_tty = !tf_tty_isatty(STDIN_FILENO) || !tf_tty_isatty(STDOUT_FILENO);
     cbreak_noecho_mode();
 
     if (!no_tty) {
@@ -147,21 +189,45 @@ void init_tty(void)
 # define CAN_GET_WINSIZE
 #endif
 
-int get_window_size(void)
+int set_window_size(int new_columns, int new_lines)
 {
-#ifdef CAN_GET_WINSIZE
     int ocol = columns, oline = lines;
     int new_wrapsize;
 
+    if (new_columns > 0) columns = new_columns;
+    if (new_lines > 0) lines = new_lines;
+
+    if (columns == ocol && lines == oline) return 1;
+    new_wrapsize = columns - (ocol - wrapsize);
+    if (new_wrapsize < 1)
+	new_wrapsize = columns > 1 ? columns - 1 : 1;
+    /* set_int_var_direct avoids ch_wrap() */
+    set_int_var_direct(&special_var[VAR_wrapsize], TYPE_INT, new_wrapsize);
+    ch_visual(NULL);
+    do_hook(H_RESIZE, NULL, "%d %d", columns, lines);
+    return 1;
+}
+
+int get_window_size(void)
+{
+    int new_columns = 0, new_lines = 0;
+
+    if (!tf_tty_get_window_size(&new_columns, &new_lines)) return 0;
+    return set_window_size(new_columns, new_lines);
+}
+
+static int native_get_window_size(int *new_columns, int *new_lines)
+{
+#ifdef CAN_GET_WINSIZE
 # ifdef TIOCGWINSZ
     struct winsize size;
     int first = 1;
 retry:
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, &size) < 0) return 0;
-    if (size.ws_col > 0) columns = size.ws_col;
-    if (size.ws_row > 0) lines = size.ws_row;
+    if (size.ws_col > 0) *new_columns = size.ws_col;
+    if (size.ws_row > 0) *new_lines = size.ws_row;
 
-    if (first && lines < 3) {
+    if (first && *new_lines > 0 && *new_lines < 3) {
 	/* Konsole sometimes sends an incorrect resize followed by a correct
 	 * resize.  The incorrect one would make tf disable visual mode.  So
 	 * if the resize looks fishy, wait briefly for a second resize, and
@@ -173,14 +239,6 @@ retry:
     }
 # endif
 
-    if (columns == ocol && lines == oline) return 1;
-    new_wrapsize = columns - (ocol - wrapsize);
-    if (new_wrapsize < 1)
-	new_wrapsize = columns > 1 ? columns - 1 : 1;
-    /* set_int_var_direct avoids ch_wrap() */
-    set_int_var_direct(&special_var[VAR_wrapsize], TYPE_INT, new_wrapsize);
-    ch_visual(NULL);
-    do_hook(H_RESIZE, NULL, "%d %d", columns, lines);
     return 1;
 #else
     return 0;
@@ -188,6 +246,11 @@ retry:
 }
 
 void cbreak_noecho_mode(void)
+{
+    (*tty_cbreak_func)();
+}
+
+static void native_cbreak_noecho_mode(void)
 {
     tty_struct tty;
 
@@ -248,6 +311,11 @@ void cbreak_noecho_mode(void)
 }
 
 void reset_tty(void)
+{
+    (*tty_reset_func)();
+}
+
+static void native_reset_tty(void)
 {
     if (is_custom_tty) {
         if (insetattr(&old_tty) < 0) perror(insetattr_error);

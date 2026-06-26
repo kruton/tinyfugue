@@ -24,6 +24,11 @@ if(NOT config MATCHES "#define TERMCAP ${EXPECT_TERMCAP}([\r\n]|$)")
         "TERMCAP did not match expected value ${EXPECT_TERMCAP}")
 endif()
 
+if(NOT config MATCHES "#define PLATFORM_WASM ${EXPECT_WASM}([\r\n]|$)")
+    message(FATAL_ERROR
+        "PLATFORM_WASM did not match expected value ${EXPECT_WASM}")
+endif()
+
 if(EXPECT_TERMCAP)
     if(config MATCHES "#define HARDCODE")
         message(FATAL_ERROR "HARDCODE was enabled with TERMCAP")

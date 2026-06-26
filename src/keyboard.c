@@ -77,7 +77,7 @@ static const char *efunc_table[] = {
 
 void init_keyboard(void)
 {
-    gettime(&keyboard_time);
+    tf_gettime(&keyboard_time);
 }
 
 /* Find the macro associated with <key> sequence. */
@@ -124,14 +124,14 @@ int handle_keyboard_input(int read_flag)
 
     if (eof < 100 && read_flag) {
         /* read a block of text */
-        if ((count = read(STDIN_FILENO, buf, sizeof(buf))) < 0) {
+        if ((count = tf_read_stdin(buf, sizeof(buf))) < 0) {
             /* error or interrupt */
             if (errno == EINTR) return 1;
             die("handle_keyboard_input: read", errno);
         } else if (count > 0) {
             /* something was read */
 	    eof = 0;
-            gettime(&keyboard_time);
+            tf_gettime(&keyboard_time);
         } else {
             /* nothing was read, and nothing is buffered */
 	    /* Don't close stdin; we might be wrong (solaris bug), and we

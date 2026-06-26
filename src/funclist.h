@@ -114,4 +114,5 @@ funccode(toupper,	1,	1,  2),
 funccode(trunc,		1,	1,  1),
 funccode(whatis,	1,	1,  1),
 funccode(winlines,	1,	0,  0),
+funccode(world_exists,	0,	1,  1),
 funccode(world_info,	0,	0,  2)

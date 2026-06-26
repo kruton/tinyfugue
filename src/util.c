@@ -80,6 +80,58 @@ struct feature features[] = {
 };
 
 static void  free_maillist(void);
+static void native_gettime(struct timeval *tv);
+static int native_read_stdin(char *data, int len);
+static int native_write_stdout(const char *data, int len);
+
+static tf_gettime_func_t tf_gettime_func = native_gettime;
+static tf_read_func_t tf_read_stdin_func = native_read_stdin;
+static tf_write_func_t tf_write_stdout_func = native_write_stdout;
+
+static void native_gettime(struct timeval *tv)
+{
+    gettime(tv);
+}
+
+void tf_gettime(struct timeval *tv)
+{
+    (*tf_gettime_func)(tv);
+}
+
+void tf_set_gettime_func(tf_gettime_func_t func)
+{
+    tf_gettime_func = func ? func : native_gettime;
+}
+
+static int native_read_stdin(char *data, int len)
+{
+    return read(STDIN_FILENO, data, len);
+}
+
+int tf_read_stdin(char *data, int len)
+{
+    return (*tf_read_stdin_func)(data, len);
+}
+
+void tf_set_read_stdin_func(tf_read_func_t func)
+{
+    tf_read_stdin_func = func ? func : native_read_stdin;
+}
+
+static int native_write_stdout(const char *data, int len)
+{
+    return write(STDOUT_FILENO, data, len);
+}
+
+int tf_write_stdout(const char *data, int len)
+{
+    return (*tf_write_stdout_func)(data, len);
+}
+
+void tf_set_write_stdout_func(tf_write_func_t func)
+{
+    tf_write_stdout_func = func ? func : native_write_stdout;
+}
 
 #if !STDC_HEADERS
 int lcase(x) char x; { return is_upper(x) ? tolower(x) : x; }

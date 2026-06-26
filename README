@@ -37,6 +37,14 @@ The direct CMake workflow is:
     cmake --build build
     ctest --test-dir build --output-on-failure
 
+WebAssembly
+-----------
+
+See `README_WASM.md` for the Emscripten build and module contract.
+
+CMake presets
+-------------
+
 Presets are available for `default`, `debug`, `full`, `minimal`, and
 `protocols` configurations:
 

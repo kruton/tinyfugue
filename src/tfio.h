@@ -29,6 +29,11 @@
 /* TFILE types */
 typedef enum { TF_NULL, TF_QUEUE, TF_FILE, TF_PIPE } TFILE_type_t;
 
+typedef FILE *(*tf_fopen_func_t)(const char *name, const char *mode);
+typedef int (*tf_fclose_func_t)(FILE *file);
+typedef FILE *(*tf_popen_func_t)(const char *command, const char *mode);
+typedef int (*tf_pclose_func_t)(FILE *file);
+
 /* Sprintf flags */
 #define SP_APPEND   1	/* don't truncate first, just append */
 #define SP_CHECK    2	/* make sure char* args won't SIGSEGV or SIGBUS */
@@ -135,6 +140,14 @@ extern void   free_screen_lines(Screen *screen);
 extern void   free_screen(Screen *screen);
 extern char  *tfname(const char *name, const char *macname);
 extern char  *expand_filename(const char *str);
+extern FILE  *tf_fopen(const char *name, const char *mode);
+extern int    tf_fclose(FILE *file);
+extern void   tf_set_fopen_funcs(tf_fopen_func_t fopen_func,
+                    tf_fclose_func_t fclose_func);
+extern FILE  *tf_popen(const char *command, const char *mode);
+extern int    tf_pclose(FILE *file);
+extern void   tf_set_popen_funcs(tf_popen_func_t popen_func,
+                    tf_pclose_func_t pclose_func);
 extern TFILE *tfopen(const char *name, const char *mode);
 extern int    tfclose(TFILE *file);
 extern void   tfnputs(const char *str, int n, TFILE *file);

@@ -1291,6 +1291,9 @@ static Value *function_switch(const ExprFunc *func, int n, const char *parent)
             }
             return newstr(str, -1);
 
+        case FN_world_exists:
+            return newint(find_world(opdstd(1)) != NULL);
+
         case FN_is_connected:
             return newint(is_connected(n>0 ? opdstd(1) : ""));
 

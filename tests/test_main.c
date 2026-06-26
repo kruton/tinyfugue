@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 
 #include "tfconfig.h"
@@ -14,6 +15,11 @@
 #include "tfio.h"
 #include "variable.h"
 #include "util.h"
+#include "socket.h"
+#include "tfselect.h"
+#include "process.h"
+#include "world.h"
+#include "tty.h"
 
 static int failures;
 
@@ -115,6 +121,432 @@ static void test_display_width_helpers(void)
 static void test_default_tflibdir(void)
 {
     EXPECT_TRUE(strcmp(DEFAULT_TFLIBD, EXPECTED_TFLIBDIR) == 0);
+}
+
+static void test_idle_loop_deadline(void)
+{
+    long deadline = tf_next_deadline_ms();
+
+#ifdef MAILDIR
+    if (maillist) {
+        EXPECT_TRUE(deadline >= 0);
+    } else {
+        EXPECT_TRUE(deadline >= -1);
+    }
+#else
+    EXPECT_TRUE(deadline >= -1);
+#endif
+}
+
+static struct timeval fake_now;
+
+static void fake_gettime(struct timeval *tv)
+{
+    *tv = fake_now;
+}
+
+static void test_loop_deadline_uses_time_provider(void)
+{
+#if NO_PROCESS
+    EXPECT_TRUE(tf_next_deadline_ms() >= -1);
+#else
+    struct timeval old_proctime = proctime;
+    struct mail_info_s *old_maillist = maillist;
+
+    maillist = NULL;
+    fake_now.tv_sec = 10;
+    fake_now.tv_usec = 250000;
+    tf_set_gettime_func(fake_gettime);
+
+    proctime.tv_sec = 12;
+    proctime.tv_usec = 500000;
+    EXPECT_INT(2250, tf_next_deadline_ms());
+
+    proctime = old_proctime;
+    maillist = old_maillist;
+    tf_set_gettime_func(NULL);
+#endif
+}
+
+static char fake_stdout[32];
+static int fake_stdout_len;
+
+static int fake_write_stdout(const char *data, int len)
+{
+    if (len > (int)sizeof(fake_stdout) - fake_stdout_len)
+        len = (int)sizeof(fake_stdout) - fake_stdout_len;
+    memcpy(fake_stdout + fake_stdout_len, data, len);
+    fake_stdout_len += len;
+    return len;
+}
+
+static void test_stdout_write_provider(void)
+{
+    fake_stdout_len = 0;
+    tf_set_write_stdout_func(fake_write_stdout);
+
+    EXPECT_INT(5, tf_write_stdout("hello", 5));
+    EXPECT_INT(5, fake_stdout_len);
+    EXPECT_TRUE(memcmp(fake_stdout, "hello", 5) == 0);
+
+    tf_set_write_stdout_func(NULL);
+}
+
+static const char *fake_stdin;
+static int fake_stdin_len;
+static int fake_stdin_pos;
+
+static int fake_read_stdin(char *data, int len)
+{
+    int available = fake_stdin_len - fake_stdin_pos;
+
+    if (available < len)
+        len = available;
+    if (len > 0) {
+        memcpy(data, fake_stdin + fake_stdin_pos, len);
+        fake_stdin_pos += len;
+    }
+    return len;
+}
+
+static void test_stdin_read_provider(void)
+{
+    char buf[8];
+
+    fake_stdin = "input";
+    fake_stdin_len = 5;
+    fake_stdin_pos = 0;
+    tf_set_read_stdin_func(fake_read_stdin);
+
+    EXPECT_INT(3, tf_read_stdin(buf, 3));
+    EXPECT_TRUE(memcmp(buf, "inp", 3) == 0);
+    EXPECT_INT(2, tf_read_stdin(buf, 3));
+    EXPECT_TRUE(memcmp(buf, "ut", 2) == 0);
+
+    tf_set_read_stdin_func(NULL);
+}
+
+static void test_world_exists_function(void)
+{
+    const char *name = "__wasm_test_world";
+    World *world;
+    Value *val;
+
+    world = find_world(name);
+    if (world)
+        nuke_world(world);
+
+    val = expr_value("world_exists('__wasm_test_world')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(0, valint(val));
+        freeval(val);
+    }
+
+    world = new_world(name, "lp", "example.invalid", "4000",
+        "", "", "", 0, "");
+    EXPECT_TRUE(world != NULL);
+
+    val = expr_value("world_exists('__wasm_test_world')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_INT(1, valint(val));
+        freeval(val);
+    }
+
+    world = find_world(name);
+    if (world)
+        nuke_world(world);
+}
+
+static int fake_tty_isatty_value;
+static int fake_tty_cbreak_count;
+static int fake_tty_reset_count;
+
+static int fake_tty_isatty(int fd)
+{
+    (void)fd;
+    return fake_tty_isatty_value;
+}
+
+static void fake_tty_cbreak(void)
+{
+    fake_tty_cbreak_count++;
+}
+
+static void fake_tty_reset(void)
+{
+    fake_tty_reset_count++;
+}
+
+static int fake_window_columns;
+static int fake_window_lines;
+
+static int fake_get_window_size(int *new_columns, int *new_lines)
+{
+    *new_columns = fake_window_columns;
+    *new_lines = fake_window_lines;
+    return 1;
+}
+
+static void test_tty_provider_hooks(void)
+{
+    int new_columns = 0;
+    int new_lines = 0;
+
+    fake_tty_isatty_value = 1;
+    fake_tty_cbreak_count = 0;
+    fake_tty_reset_count = 0;
+    fake_window_columns = 132;
+    fake_window_lines = 43;
+
+    tf_set_tty_isatty_func(fake_tty_isatty);
+    tf_set_tty_mode_funcs(fake_tty_cbreak, fake_tty_reset);
+    tf_set_window_size_func(fake_get_window_size);
+
+    EXPECT_INT(1, tf_tty_isatty(0));
+    cbreak_noecho_mode();
+    reset_tty();
+    EXPECT_INT(1, fake_tty_cbreak_count);
+    EXPECT_INT(1, fake_tty_reset_count);
+    EXPECT_INT(1, tf_tty_get_window_size(&new_columns, &new_lines));
+    EXPECT_INT(132, new_columns);
+    EXPECT_INT(43, new_lines);
+
+    tf_set_tty_isatty_func(NULL);
+    tf_set_tty_mode_funcs(NULL, NULL);
+    tf_set_window_size_func(NULL);
+}
+
+static FILE *fake_restricted_popen(const char *command, const char *mode)
+{
+    (void)command;
+    (void)mode;
+    errno = EPERM;
+    return NULL;
+}
+
+static int fake_pclose(FILE *file)
+{
+    (void)file;
+    return 0;
+}
+
+static void test_popen_provider_restriction(void)
+{
+    TFILE *file;
+
+    tf_set_popen_funcs(fake_restricted_popen, fake_pclose);
+    file = tfopen("echo blocked", "p");
+    EXPECT_TRUE(file == NULL);
+    EXPECT_INT(EPERM, errno);
+    tf_set_popen_funcs(NULL, NULL);
+}
+
+static FILE *fake_restricted_fopen(const char *name, const char *mode)
+{
+    (void)name;
+    (void)mode;
+    errno = EACCES;
+    return NULL;
+}
+
+static int fake_fclose(FILE *file)
+{
+    (void)file;
+    return 0;
+}
+
+static void test_fopen_provider_restriction(void)
+{
+    TFILE *file;
+
+    tf_set_fopen_funcs(fake_restricted_fopen, fake_fclose);
+    file = tfopen("__blocked__", "r");
+    EXPECT_TRUE(file == NULL);
+    EXPECT_INT(EACCES, errno);
+    tf_set_fopen_funcs(NULL, NULL);
+}
+
+static int fake_socket_recv(int fd, char *buf, int len, int flags)
+{
+    EXPECT_INT(42, fd);
+    EXPECT_INT(8, len);
+    EXPECT_INT(3, flags);
+    memcpy(buf, "relay", 5);
+    return 5;
+}
+
+static int fake_socket_send(int fd, const char *buf, int len, int flags)
+{
+    EXPECT_INT(43, fd);
+    EXPECT_INT(4, len);
+    EXPECT_INT(2, flags);
+    EXPECT_TRUE(memcmp(buf, "mud!", 4) == 0);
+    return len;
+}
+
+static void test_socket_io_provider(void)
+{
+    char buf[8];
+
+    tf_set_socket_io_funcs(fake_socket_recv, fake_socket_send);
+    EXPECT_INT(5, tf_socket_recv(42, buf, sizeof(buf), 3));
+    EXPECT_TRUE(memcmp(buf, "relay", 5) == 0);
+    EXPECT_INT(4, tf_socket_send(43, "mud!", 4, 2));
+    tf_set_socket_io_funcs(NULL, NULL);
+}
+
+static int fake_socket_open(int domain, int type, int protocol)
+{
+    EXPECT_INT(1, domain);
+    EXPECT_INT(2, type);
+    EXPECT_INT(3, protocol);
+    return 44;
+}
+
+static int fake_socket_connect(int fd, const struct sockaddr *addr, int addrlen)
+{
+    EXPECT_INT(44, fd);
+    EXPECT_TRUE(addr == NULL);
+    EXPECT_INT(9, addrlen);
+    errno = EINPROGRESS;
+    return -1;
+}
+
+static int fake_socket_bind(int fd, const struct sockaddr *addr, int addrlen)
+{
+    EXPECT_INT(44, fd);
+    EXPECT_TRUE(addr == NULL);
+    EXPECT_INT(11, addrlen);
+    return 0;
+}
+
+static int fake_socket_close(int fd)
+{
+    EXPECT_INT(44, fd);
+    return 0;
+}
+
+static int fake_socket_setsockopt(int fd, int level, int optname,
+    const void *optval, int optlen)
+{
+    const int *value = optval;
+
+    EXPECT_INT(44, fd);
+    EXPECT_INT(5, level);
+    EXPECT_INT(6, optname);
+    EXPECT_INT((int)sizeof(*value), optlen);
+    EXPECT_INT(1, *value);
+    return 0;
+}
+
+static int fake_socket_getsockopt(int fd, int level, int optname,
+    void *optval, int *optlen)
+{
+    EXPECT_INT(44, fd);
+    EXPECT_INT(5, level);
+    EXPECT_INT(7, optname);
+    EXPECT_INT((int)sizeof(int), *optlen);
+    *(int *)optval = 0;
+    return 0;
+}
+
+static int fake_socket_fcntl(int fd, int cmd, int arg)
+{
+    EXPECT_INT(44, fd);
+    EXPECT_INT(8, cmd);
+    EXPECT_INT(10, arg);
+    return 12;
+}
+
+static void test_socket_ops_provider(void)
+{
+    int value = 1;
+    int optlen = sizeof(value);
+
+    tf_set_socket_ops(fake_socket_open, fake_socket_connect,
+        fake_socket_bind, fake_socket_close, fake_socket_setsockopt,
+        fake_socket_getsockopt, fake_socket_fcntl);
+
+    EXPECT_INT(44, tf_socket_open(1, 2, 3));
+    EXPECT_INT(-1, tf_socket_connect(44, NULL, 9));
+    EXPECT_INT(EINPROGRESS, errno);
+    EXPECT_INT(0, tf_socket_bind(44, NULL, 11));
+    EXPECT_INT(0, tf_socket_setsockopt(44, 5, 6, &value, sizeof(value)));
+    EXPECT_INT(0, tf_socket_getsockopt(44, 5, 7, &value, &optlen));
+    EXPECT_INT(0, value);
+    EXPECT_INT(12, tf_socket_fcntl(44, 8, 10));
+    EXPECT_INT(0, tf_socket_close(44));
+
+    tf_set_socket_ops(NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+}
+
+static char fake_addrinfo_storage;
+static int fake_freeaddrinfo_count;
+
+static int fake_getaddrinfo(const char *name, const char *port,
+    const tf_addrinfo *hints, tf_addrinfo **res)
+{
+    (void)hints;
+
+    EXPECT_TRUE(strcmp("example.invalid", name) == 0);
+    EXPECT_TRUE(strcmp("4000", port) == 0);
+    *res = (tf_addrinfo *)&fake_addrinfo_storage;
+    return 0;
+}
+
+static void fake_freeaddrinfo(tf_addrinfo *res)
+{
+    EXPECT_TRUE(res == (tf_addrinfo *)&fake_addrinfo_storage);
+    fake_freeaddrinfo_count++;
+}
+
+static void test_addrinfo_provider(void)
+{
+    tf_addrinfo *res = NULL;
+
+    fake_freeaddrinfo_count = 0;
+    tf_set_addrinfo_funcs(fake_getaddrinfo, fake_freeaddrinfo);
+
+    EXPECT_INT(0, tf_getaddrinfo("example.invalid", "4000", NULL, &res));
+    EXPECT_TRUE(res == (tf_addrinfo *)&fake_addrinfo_storage);
+    tf_freeaddrinfo(res);
+    EXPECT_INT(1, fake_freeaddrinfo_count);
+
+    tf_set_addrinfo_funcs(NULL, NULL);
+}
+
+static int fake_select(int nfds, fd_set *readers, fd_set *writers,
+    fd_set *excepts, struct timeval *timeout)
+{
+    (void)writers;
+    (void)excepts;
+
+    EXPECT_INT(4, nfds);
+    EXPECT_TRUE(readers != NULL);
+    EXPECT_TRUE(FD_ISSET(3, readers));
+    EXPECT_TRUE(timeout != NULL);
+    if (timeout) {
+        EXPECT_INT(1, timeout->tv_sec);
+        EXPECT_INT(2000, timeout->tv_usec);
+    }
+    return 1;
+}
+
+static void test_select_provider(void)
+{
+    fd_set readers;
+    struct timeval timeout;
+
+    FD_ZERO(&readers);
+    FD_SET(3, &readers);
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 2000;
+
+    tf_set_select_func(fake_select);
+    EXPECT_INT(1, tf_select(4, &readers, NULL, NULL, &timeout));
+    tf_set_select_func(NULL);
 }
 
 #if WIDECHAR
@@ -297,12 +729,19 @@ extern int keyboard_pos;
 extern conString *prompt;
 extern int desired_column;
 extern int kb_visual_move(int delta);
+extern void (*tp)(const char *str);
+
+static void noop_terminal_puts(const char *str)
+{
+    (void)str;
+}
 
 static void test_kb_visual_move_func(void)
 {
     int old_pos = keyboard_pos;
     conString *old_prompt = prompt;
     int old_desired = desired_column;
+    void (*old_tp)(const char *) = tp;
     char old_content[1024];
     int old_len = keybuf->len;
 
@@ -317,6 +756,7 @@ static void test_kb_visual_move_func(void)
 
     special_var[VAR_wrapsize].val.u.ival = 5;
     special_var[VAR_tabsize].val.u.ival = 8;
+    tp = noop_terminal_puts;
 
     Stringtrunc(keybuf, 0);
     Stringcat(keybuf, "abcdefgh");
@@ -340,6 +780,7 @@ static void test_kb_visual_move_func(void)
     keyboard_pos = old_pos;
     prompt = old_prompt;
     desired_column = old_desired;
+    tp = old_tp;
 }
 
 static void test_overwrite_and_insert(void)
@@ -347,6 +788,7 @@ static void test_overwrite_and_insert(void)
     int old_pos = keyboard_pos;
     conString *old_prompt = prompt;
     int old_insert = special_var[VAR_insert].val.u.ival;
+    void (*old_tp)(const char *) = tp;
     char old_content[1024];
     int old_len = keybuf->len;
 
@@ -358,6 +800,8 @@ static void test_overwrite_and_insert(void)
     } else {
         old_content[0] = '\0';
     }
+
+    tp = noop_terminal_puts;
 
     /* Test 1: Insert mode with UTF-8 */
     special_var[VAR_insert].val.u.ival = 1;
@@ -400,6 +844,7 @@ static void test_overwrite_and_insert(void)
     keyboard_pos = old_pos;
     prompt = old_prompt;
     special_var[VAR_insert].val.u.ival = old_insert;
+    tp = old_tp;
 }
 
 extern int cx;
@@ -436,7 +881,9 @@ static void test_prompt_clipping(void)
     int old_ix = ix;
     int old_iendx = iendx;
     int old_expnonvis = special_var[VAR_expnonvis].val.u.ival;
+    void (*old_tp)(const char *) = tp;
 
+    tp = noop_terminal_puts;
     special_var[VAR_wrapsize].val.u.ival = 2;
     special_var[VAR_tabsize].val.u.ival = 8;
     special_var[VAR_expnonvis].val.u.ival = 1;
@@ -454,6 +901,7 @@ static void test_prompt_clipping(void)
     ix = old_ix;
     iendx = old_iendx;
     special_var[VAR_expnonvis].val.u.ival = old_expnonvis;
+    tp = old_tp;
 }
 
 static void test_do_kbword_func(void)
@@ -626,6 +1074,7 @@ static void test_tf_utf8_incomplete_bytes(void)
 #include <unistd.h>
 #include <fcntl.h>
 
+#if TERMCAP
 extern const char *clear_screen;
 extern const char *clear_to_eol;
 extern const char *cursor_address;
@@ -764,6 +1213,7 @@ static void test_screen_redraw_utf8(void)
     cursor_address = old_cursor_address;
     tp = old_tp;
 }
+#endif
 
 static void test_status_bar_utf8(void)
 {
@@ -1046,6 +1496,18 @@ int main(void)
     test_string_shift_attributes();
     test_display_width_helpers();
     test_default_tflibdir();
+    test_idle_loop_deadline();
+    test_loop_deadline_uses_time_provider();
+    test_stdout_write_provider();
+    test_stdin_read_provider();
+    test_world_exists_function();
+    test_tty_provider_hooks();
+    test_popen_provider_restriction();
+    test_fopen_provider_restriction();
+    test_socket_io_provider();
+    test_socket_ops_provider();
+    test_addrinfo_provider();
+    test_select_provider();
     test_regex_compat();
 #if WIDECHAR
     test_character_offsets();
@@ -1061,8 +1523,10 @@ int main(void)
     test_do_kbword_func();
     test_grapheme_expr_functions();
     test_tf_utf8_incomplete_bytes();
+#if TERMCAP
     test_pseudo_terminal_rendering();
     test_screen_redraw_utf8();
+#endif
     test_status_bar_utf8();
 #endif
 

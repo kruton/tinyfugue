@@ -30,7 +30,12 @@ extern int select();
 
 #endif /* ndef FD_ZERO */
 
+typedef int (*tf_select_func_t)(int nfds, fd_set *readers, fd_set *writers,
+    fd_set *excepts, struct timeval *timeout);
 
+extern int tf_select(int nfds, fd_set *readers, fd_set *writers,
+    fd_set *excepts, struct timeval *timeout);
+extern void tf_set_select_func(tf_select_func_t select_func);
 extern int tfselect(int nfds, fd_set *readers, fd_set *writers,
     fd_set *excepts, struct timeval *timeout);
 

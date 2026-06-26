@@ -6,14 +6,47 @@ if(PKG_CONFIG_FOUND)
     pkg_check_modules(PCRE2_PKG QUIET libpcre2-8)
 endif()
 
+if(PCRE2_PKG_FOUND)
+    if(NOT PCRE2_INCLUDE_DIRS AND EXISTS "${PCRE2_PKG_INCLUDEDIR}/pcre2.h")
+        set(PCRE2_INCLUDE_DIRS "${PCRE2_PKG_INCLUDEDIR}")
+    endif()
+    if(NOT PCRE2_LIBRARIES)
+        foreach(pcre2_libdir ${PCRE2_PKG_LIBRARY_DIRS})
+            if(EXISTS "${pcre2_libdir}/libpcre2-8.a")
+                set(PCRE2_LIBRARIES "${pcre2_libdir}/libpcre2-8.a")
+                break()
+            endif()
+        endforeach()
+    endif()
+endif()
+
 find_path(PCRE2_INCLUDE_DIRS
     NAMES pcre2.h
-    HINTS ${PCRE2_PKG_INCLUDE_DIRS}
+    HINTS ${PCRE2_PKG_INCLUDE_DIRS} ${TF_EXTRA_INCLUDE_DIRS}
 )
 find_library(PCRE2_LIBRARIES
     NAMES pcre2-8
-    HINTS ${PCRE2_PKG_LIBRARY_DIRS}
+    HINTS ${PCRE2_PKG_LIBRARY_DIRS} ${TF_EXTRA_LIBRARY_DIRS}
 )
+
+if(NOT PCRE2_INCLUDE_DIRS)
+    find_path(PCRE2_INCLUDE_DIRS
+        NAMES pcre2.h
+        HINTS ${TF_EXTRA_INCLUDE_DIRS} ${CMAKE_PREFIX_PATH}
+        PATH_SUFFIXES include
+        NO_DEFAULT_PATH
+        NO_CMAKE_FIND_ROOT_PATH
+    )
+endif()
+if(NOT PCRE2_LIBRARIES)
+    find_library(PCRE2_LIBRARIES
+        NAMES pcre2-8
+        HINTS ${TF_EXTRA_LIBRARY_DIRS} ${CMAKE_PREFIX_PATH}
+        PATH_SUFFIXES lib lib64
+        NO_DEFAULT_PATH
+        NO_CMAKE_FIND_ROOT_PATH
+    )
+endif()
 
 if(PCRE2_INCLUDE_DIRS AND EXISTS "${PCRE2_INCLUDE_DIRS}/pcre2.h")
     file(READ "${PCRE2_INCLUDE_DIRS}/pcre2.h" PCRE2_H_CONTENT)

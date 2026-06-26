@@ -37,6 +37,9 @@
 #include "expand.h"
 #include "expr.h"
 #include "process.h"
+#if PLATFORM_WASM
+# include "wasm_platform.h"
+#endif
 
 static void read_configuration(const char *fname);
 int main(int argc, char **argv);
@@ -121,6 +124,9 @@ int main(int argc, char *argv[])
     init_expand();			/* expand.c   */
     init_variables();			/* variable.c */
     init_signals();			/* signals.c  */
+#if PLATFORM_WASM
+    init_wasm_platform();		/* wasm_platform.c */
+#endif
     init_sock();			/* socket.c   */
     init_macros();			/* macro.c    */
     init_histories();			/* history.c  */
@@ -163,6 +169,10 @@ int main(int argc, char *argv[])
 	Stringfree(scmd);
     }
 
+#if PLATFORM_WASM
+    run_wasm_startup_script();
+#endif
+
     /* If %visual was not explicitly set, set it now. */
     if (getintvar(VAR_visual) < 0 && !no_tty)
         set_var_by_id(VAR_visual, autovisual);
@@ -187,6 +197,10 @@ int main(int argc, char *argv[])
         world_hook("---- No world ----", NULL);
     }
 
+#if PLATFORM_WASM
+    oflush();
+    return 0;
+#else
     main_loop();
 
     kill_procs();
@@ -217,6 +231,7 @@ int main(int argc, char *argv[])
 #endif
 
     return 0;
+#endif
 }
 
 static void read_configuration(const char *fname)
@@ -243,4 +258,3 @@ static void read_configuration(const char *fname)
     /* support for old fashioned .tinytalk files */
     do_file_load((fname = getvar("TINYTALK")) ? fname : "~/.tinytalk", TRUE);
 }
-

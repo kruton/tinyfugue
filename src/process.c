@@ -130,7 +130,7 @@ struct Value *handle_ps_command(String *args, int offset)
     if (*ptr)
         pid = numarg(&ptr);
 
-    gettime(&now);
+    tf_gettime(&now);
     if (!repeatflag && !quoteflag)
         repeatflag = quoteflag = TRUE;
     if (!shortflag)
@@ -224,10 +224,10 @@ static struct Value *newproc(int type, int (*func)(Proc *proc), int count,
     proc->ptime = *ptime;
 
     if (ptime->tv_sec == PTIME_VAR) {
-        gettime(&proc->timer);
+        tf_gettime(&proc->timer);
 	if (delay) tvadd(&proc->timer, &proc->timer, &process_time);
     } else if (ptime->tv_sec >= 0) {
-        gettime(&proc->timer);
+        tf_gettime(&proc->timer);
         if (delay) tvadd(&proc->timer, &proc->timer, &proc->ptime);
     }
 
@@ -371,7 +371,7 @@ void runall(int prompted, World *world)
     int resched;	/* consider this process in proctime calculation? */
     int promptable;	/* proc should be run iff prompted */
 
-    gettime(&now);
+    tf_gettime(&now);
     runall_depth++;
     if (!prompted)
 	proctime = tvzero;
@@ -423,7 +423,7 @@ static int runproc(Proc *p)
     if (!done && p->ptime.tv_sec >= PTIME_VAR) {   /* timed */
         tvadd(&p->timer, &p->timer,
             (p->ptime.tv_sec < 0) ? &process_time : &p->ptime);
-        gettime(&now);
+        tf_gettime(&now);
         if (tvcmp(&p->timer, &now) < 0) {
             /* We missed 2 or more appointments, presumably because tf was
              * suspended or blocked.  To prevent multiple execution,

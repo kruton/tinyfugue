@@ -96,6 +96,53 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  wasm:
+    name: WebAssembly
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -q -y cmake git ninja-build nodejs
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git /tmp/emsdk
+          /tmp/emsdk/emsdk install latest
+          /tmp/emsdk/emsdk activate latest
+      - name: Build PCRE2 for WebAssembly
+        run: |
+          . /tmp/emsdk/emsdk_env.sh
+          git clone --depth 1 https://github.com/PCRE2Project/pcre2.git /tmp/pcre2
+          emcmake cmake -S /tmp/pcre2 -B /tmp/pcre2-build -G Ninja \
+            -DCMAKE_INSTALL_PREFIX=/tmp/pcre2-wasm \
+            -DPCRE2_BUILD_PCRE2_8=ON \
+            -DPCRE2_BUILD_PCRE2_16=OFF \
+            -DPCRE2_BUILD_PCRE2_32=OFF \
+            -DPCRE2_BUILD_TESTS=OFF \
+            -DPCRE2_BUILD_PCRE2GREP=OFF \
+            -DPCRE2_BUILD_PCRE2TEST=OFF \
+            -DPCRE2_SUPPORT_JIT=OFF \
+            -DPCRE2_SUPPORT_UNICODE=OFF
+          cmake --build /tmp/pcre2-build
+          cmake --install /tmp/pcre2-build
+      - name: Configure
+        run: |
+          . /tmp/emsdk/emsdk_env.sh
+          emcmake cmake -S . -B build-wasm -G Ninja -DBUILD_TESTING=ON \
+            -DTF_WASM=ON \
+            -DCMAKE_PREFIX_PATH=/tmp/pcre2-wasm
+      - name: Build
+        run: |
+          . /tmp/emsdk/emsdk_env.sh
+          cmake --build build-wasm
+          cmake --build build-wasm --target wasm-dist
+      - name: Test
+        run: |
+          . /tmp/emsdk/emsdk_env.sh
+          ctest --test-dir build-wasm --output-on-failure
+
   freebsd:
     name: FreeBSD
     runs-on: ubuntu-latest

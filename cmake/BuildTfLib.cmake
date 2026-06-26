@@ -16,7 +16,7 @@ list(SORT topic_files)
 set(command_help "${OUTPUT_DIR}/tf-help.commands")
 set(topic_help "${OUTPUT_DIR}/tf-help.topics")
 execute_process(
-    COMMAND "${HTML2TF}" ${command_files}
+    COMMAND ${HTML2TF} ${command_files}
     OUTPUT_FILE "${command_help}"
     RESULT_VARIABLE html2tf_commands_result)
 if(NOT html2tf_commands_result EQUAL 0)
@@ -25,7 +25,7 @@ if(NOT html2tf_commands_result EQUAL 0)
 endif()
 
 execute_process(
-    COMMAND "${HTML2TF}" ${topic_files}
+    COMMAND ${HTML2TF} ${topic_files}
     OUTPUT_FILE "${topic_help}"
     RESULT_VARIABLE html2tf_topics_result)
 if(NOT html2tf_topics_result EQUAL 0)
@@ -44,7 +44,7 @@ if(NOT concatenate_result EQUAL 0)
 endif()
 
 execute_process(
-    COMMAND "${MAKEHELP}"
+    COMMAND ${MAKEHELP}
     INPUT_FILE "${OUTPUT_DIR}/tf-help"
     OUTPUT_FILE "${OUTPUT_DIR}/tf-help.idx"
     RESULT_VARIABLE makehelp_result)
