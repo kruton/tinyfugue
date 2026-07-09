@@ -261,31 +261,31 @@ jobs:
           fetch-depth: 0
 
       - name: Download Debian packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: debian-packages
           path: release-artifacts
 
       - name: Download RPM packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: rpm-packages
           path: release-artifacts
 
       - name: Download Homebrew bottle
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: homebrew-bottle
           path: release-artifacts
 
       - name: Download FreeBSD package
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: freebsd-package
           path: release-artifacts
 
       - name: Download Cygwin packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: cygwin-packages
           path: release-artifacts
