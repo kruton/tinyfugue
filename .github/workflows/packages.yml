@@ -261,31 +261,31 @@ jobs:
           fetch-depth: 0
 
       - name: Download Debian packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: debian-packages
           path: release-artifacts
 
       - name: Download RPM packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: rpm-packages
           path: release-artifacts
 
       - name: Download Homebrew bottle
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: homebrew-bottle
           path: release-artifacts
 
       - name: Download FreeBSD package
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: freebsd-package
           path: release-artifacts
 
       - name: Download Cygwin packages
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372ec806872  # v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           name: cygwin-packages
           path: release-artifacts
