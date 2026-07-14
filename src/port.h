@@ -79,6 +79,11 @@ extern int errno;  /* Some systems don't declare errno in errno.h. Duh. */
 
 #include <stdio.h>
 
+#define RETRY_ON_EINTR(result, expr) \
+    do {                             \
+	(result) = (expr);           \
+    } while ((result) == -1 && errno == EINTR)
+
 #ifndef SEEK_SET
 # define SEEK_SET 0
 #endif
