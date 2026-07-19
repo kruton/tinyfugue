@@ -59,7 +59,7 @@ static Value *valpool = NULL;		/* freelist */
 
 typedef struct ExprFunc {
     const char *name;		/* name invoked by user */
-    int min, max;		/* allowable argument counts */
+    unsigned min, max;		/* allowable argument counts */
 } ExprFunc;
 
 static ExprFunc functab[] = {
