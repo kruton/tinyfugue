@@ -612,6 +612,31 @@ static void test_grapheme_expr_functions(void)
     }
 }
 
+static void test_variadic_expr_functions(void)
+{
+    Value *val;
+
+    val = expr_value("strcat('one', '-', 'two')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("one-two", 7, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("pad('a', 3, 'b', -3, 'c')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("  ab  c", 7, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+}
+
 static void test_tf_utf8_incomplete_bytes(void)
 {
     EXPECT_INT(1, tf_utf8_incomplete_bytes("\xc3", 1));
@@ -1052,6 +1077,7 @@ int main(void)
     test_display_width_helpers();
     test_default_tflibdir();
     test_regex_compat();
+    test_variadic_expr_functions();
 #if WIDECHAR
     test_character_offsets();
     test_decode_ansi_utf8();
