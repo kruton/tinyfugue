@@ -117,6 +117,31 @@ static void test_default_tflibdir(void)
     EXPECT_TRUE(strcmp(DEFAULT_TFLIBD, EXPECTED_TFLIBDIR) == 0);
 }
 
+static void test_variadic_expr_functions(void)
+{
+    Value *val;
+
+    val = expr_value("strcat('one', '-', 'two')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("one-two", 7, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+
+    val = expr_value("pad('a', 3, 'b', -3, 'c')");
+    EXPECT_TRUE(val != NULL);
+    if (val) {
+        EXPECT_TRUE((val->type & TYPE_STR) != 0);
+        if (val->type & TYPE_STR) {
+            expect_bytes("  ab  c", 7, (const String *)valstr(val));
+        }
+        freeval(val);
+    }
+}
+
 #if WIDECHAR
 static void test_character_offsets(void)
 {
@@ -608,31 +633,6 @@ static void test_grapheme_expr_functions(void)
     EXPECT_TRUE(val != NULL);
     if (val) {
         EXPECT_INT(1, valint(val));
-        freeval(val);
-    }
-}
-
-static void test_variadic_expr_functions(void)
-{
-    Value *val;
-
-    val = expr_value("strcat('one', '-', 'two')");
-    EXPECT_TRUE(val != NULL);
-    if (val) {
-        EXPECT_TRUE((val->type & TYPE_STR) != 0);
-        if (val->type & TYPE_STR) {
-            expect_bytes("one-two", 7, (const String *)valstr(val));
-        }
-        freeval(val);
-    }
-
-    val = expr_value("pad('a', 3, 'b', -3, 'c')");
-    EXPECT_TRUE(val != NULL);
-    if (val) {
-        EXPECT_TRUE((val->type & TYPE_STR) != 0);
-        if (val->type & TYPE_STR) {
-            expect_bytes("  ab  c", 7, (const String *)valstr(val));
-        }
         freeval(val);
     }
 }
