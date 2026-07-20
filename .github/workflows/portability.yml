@@ -29,7 +29,7 @@ jobs:
             action: solaris
     steps:
       - name: Checkout source
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: NetBSD build
         if: matrix.action == 'netbsd'
         uses: vmactions/netbsd-vm@fac0a63f3e5244c600cb9ca532d27ee774ecdb4b # v1.4.3
