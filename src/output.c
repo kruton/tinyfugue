@@ -2862,6 +2862,17 @@ void logical_refresh(void)
 #if !WIDECHAR
         niy = istarty + (keyboard_pos - kpos) / Wrap;
 #endif
+        /*
+         * A fresh input starts on the last row after the previous input is
+         * submitted.  If the new input wraps but still fits in the input
+         * window, move its start up so logical_refresh() redraws all of it.
+         * Otherwise the overflow path below treats the first row as clipped,
+         * leaving stale text there while placing the cursor on the last row.
+         */
+        if (niy > lines && niy - istarty < isize) {
+            istarty -= niy - lines;
+            niy = lines;
+        }
         if (niy <= lines) {
             clear_input_line();
         } else {
