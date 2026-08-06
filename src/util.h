@@ -14,6 +14,8 @@ struct feature {
     const int *flag;
 };
 
+struct iovec;
+
 #undef CTRL
 /* convert to or from ctrl character */
 #define CTRL(c)  (ucase(c) ^ '@')
@@ -101,6 +103,10 @@ extern const conString* print_to_ascii(String *buf, const char *str);
 extern const conString* ascii_to_print(const char *str);
 extern char  *cstrchr(const char *s, int c);
 extern char  *estrchr(const char *s, int c, int e);
+extern int    read_full(int fd, char *buf, size_t len);
+extern int    write_full(int fd, const char *buf, size_t len);
+/* writev_full() mutates iov while advancing through partial writes. */
+extern int    writev_full(int fd, struct iovec *iov, int niov);
 extern int    numarg(const char **str);
 extern int    nullstrcmp(const char *s, const char *t);
 extern int    nullcstrcmp(const char *s, const char *t);

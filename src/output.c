@@ -349,8 +349,12 @@ void bufflush(void)
 	n = outbuf->len - written;
 	if (n > 2048)
 	    n = 2048;
-        result = write(STDOUT_FILENO, outbuf->data + written, n);
-	if (result < 0) break;
+	RETRY_ON_EINTR(result, write(STDOUT_FILENO,
+				     outbuf->data + written, n));
+	if (result < 0)
+	    break;
+	if (result == 0)
+	    break;
 	written += result;
     }
     Stringtrunc(outbuf, 0);
