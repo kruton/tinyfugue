@@ -140,7 +140,8 @@ int handle_keyboard_input(int read_flag)
         }
     }
 
-    if (count == 0 && place == 0)
+    /* A previous pass may have shifted unprocessed pasted input to offset 0. */
+    if (count == 0 && place == 0 && current_input->len == 0)
 	goto end;
 
     for (i = 0; i < count; i++) {
