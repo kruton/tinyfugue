@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: NetBSD build
         if: matrix.action == 'netbsd'
-        uses: vmactions/netbsd-vm@876c34ff21c80ccbf67143b65f1cc5d843d510a4 # v1.5.1
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92 # v1.5.2
         with:
           usesh: true
           prepare: /usr/sbin/pkg_add -u cmake ninja-build pcre2 icu openssl ncurses
